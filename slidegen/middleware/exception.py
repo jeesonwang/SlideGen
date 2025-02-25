@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from loguru import logger
 
-from core.context import g
+from contexts.context import g
 from exception import ApiError, UnknownErrorCode, ParamCheckErrorCode, MESSAGE
 
 

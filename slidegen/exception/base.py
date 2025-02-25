@@ -1,5 +1,5 @@
 from exception.error_code import UnknownErrorCode, MESSAGE
-from core import BaseResponse
+from contexts import BaseResponse
 
 
 class ApiError(Exception):

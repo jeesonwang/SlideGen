@@ -17,7 +17,7 @@ from config.conf import (
     MYSQL_CHARSET,
     DB_TYPE,
 )
-from core import g
+from contexts import g
 
 if DB_TYPE == "MYSQL":
     SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{quote_plus(MYSQL_PASSWORD)}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}?charset={MYSQL_CHARSET}"

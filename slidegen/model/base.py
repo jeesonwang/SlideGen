@@ -3,7 +3,7 @@ from typing import Any
 
 from sqlalchemy import Column, Integer, DateTime, TypeDecorator, Text, SmallInteger
 
-from core import g
+from contexts import g
 from common.patch.json_decoder import CustomJSONEncoder
 from util.time import now_datetime
 
