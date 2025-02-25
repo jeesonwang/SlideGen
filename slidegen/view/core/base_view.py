@@ -1,16 +1,17 @@
-from typing import Any
+from typing import Any, Union
 import inspect
 
 from fastapi import APIRouter, Depends
 
 from core import g
-from engine.rdb import get_db
+from engine.rdb import get_db, get_db_sync
+from core.schema import Pager
 
 base_router = APIRouter()
 
 
 class BaseView:
-    method_decorators = []
+    permissions_classes = []
     path: str = None
 
     def __init__(self, path: str, tags: list[str]):
@@ -30,6 +31,25 @@ class BaseView:
     def user_id(self):
         return g.user.id
 
+    @property
+    def role_ids(self):
+        return g.user.role_ids
+
+    @staticmethod
+    def response(code: int = 0, message: str = "请求成功", data: Union[dict, None, list, str] = None,
+                 pager: Pager = None):
+        if isinstance(data, list):
+            if pager:
+                data = {"items": data or [], **pager.model_dump()}
+            else:
+                data = {"items": data or []}
+
+        return {
+            "code": code,
+            "message": message,
+            "trace_id": g.trace_id,
+            "data": data or {}
+        }
 
     def get_dependencies(self, extra_params: dict, method):
         custom_permission_classes = extra_params.pop('permission_classes', None)
@@ -40,31 +60,28 @@ class BaseView:
                               self.permissions_classes)
         dependencies = [Depends(_(name='')(method)) for _ in authentication_classes] + \
                        [Depends(_(method)) for _ in permission_classes]
-        depend_session: bool = extra_params.pop("depend_session", True)
-        if depend_session:
-            dependencies.append(Depends(get_db))
+        if inspect.iscoroutinefunction(method):
+            dependencies += [Depends(get_db)]
+        else:
+            dependencies += [Depends(get_db_sync)]
         return dependencies
 
     def register_routes(self):
         method_map = {
-            "get": ["GET"],
-            "post": ["POST"],
-            "put": ["PUT"],
-            "delete": ["DELETE"],
+            "get": {'path': self.path, 'methods': ['GET'], },
+            'post': {'path': self.path, 'methods': ['POST'], },
+            'put': {'path': self.path, 'methods': ['PUT'], },
+            'delete': {'path': self.path, 'methods': ['DELETE'], },
         }
-        for func_name, methods in method_map.items():
-            endpoint = getattr(self, func_name, None)
-            if not endpoint:
-                continue
-            for decorator in self.method_decorators:
-                endpoint = decorator(endpoint)
-            if self.is_method_overridden(func_name):
-                extra_params = getattr(endpoint, "_extra_params", {})
-                base_router.add_api_route(path=self.path,
-                                          endpoint=endpoint,
-                                          methods=methods,
-                                          tags=self.tags,
-                                          **extra_params)
+        for method_name, router_info in method_map.items():
+            method = getattr(self, method_name, None)
+            if self.is_method_overridden(method_name):
+                extra_params = getattr(method, '_extra_params', {})
+                dependencies = self.get_dependencies(extra_params, method)
+                base_router.add_api_route(router_info['path'], method,
+                                          methods=router_info['methods'],
+                                          dependencies=dependencies,
+                                          tags=self.tags, **extra_params)
 
     def is_method_overridden(self, method_name: str) -> bool:
         subclass_method = getattr(self, method_name, None)
@@ -85,4 +102,3 @@ class BaseView:
 
     def delete(self, *args, **kwargs):
         raise ImportError("Not implemented")
-

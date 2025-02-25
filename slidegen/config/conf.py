@@ -30,6 +30,7 @@ REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 CELERY_BROKER_DB = int(os.getenv("REDIS_DB", 0))
+REDIS_CACHE_DB = int(os.getenv("REDIS_CACHE_DB", 1))
 
 # [DB_TYPE]
 DB_TYPE = os.getenv("DB_TYPE", "MYSQL")

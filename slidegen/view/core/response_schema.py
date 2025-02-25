@@ -4,6 +4,7 @@ from typing import Any, Annotated, TypeVar
 from pydantic import BaseModel, WrapValidator, ConfigDict
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler, ValidationInfo
 
+T = TypeVar("T", bound=BaseModel)
 
 def maybe_strip_whitespace(
         v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
@@ -30,17 +31,17 @@ class CustomModel(BaseModel):
     )
 
 
-def Res(data_model, validate: bool = False):
+def Res(data_model: T, validate: bool = False):
     class ResponseModel(CustomModel):
         model_config = model_config
         code: int = 0
-        data: data_model
+        data: T
         message: str = "Success"
 
     class ResponseSoftModel(CustomModel):
         model_config = model_config
         code: int = 0
-        data: Annotated[data_model, WrapValidator(maybe_strip_whitespace)] = None
+        data: Annotated[T, WrapValidator(maybe_strip_whitespace)] = None
         message: str = "Success"
 
     if validate:
@@ -56,7 +57,7 @@ def ListRes(data_model, validate: bool = False):
         page: int
         pages: int
         total: int
-        items: list[data_model]
+        items: list[T]
 
     class ResponseModel(CustomModel):
         model_config = model_config
@@ -75,14 +76,14 @@ def ListRes(data_model, validate: bool = False):
     else:
         return ResponseSoftModel
 
-def PagerRes(data_model, validate: bool = False):
+def PagerRes(data_model: T, validate: bool = False):
     class ListResponseModel(CustomModel):
         model_config = model_config
         per_page: int
         page: int
         pages: int
         total: int
-        items: list[data_model]
+        items: list[T]
 
     class ResponseModel(CustomModel):
         model_config = model_config

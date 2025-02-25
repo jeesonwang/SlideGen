@@ -7,8 +7,8 @@ class BaseResponse(BaseModel):
     message: str = "请求成功"
     data: dict | None = {}
 
-
 class Pager(BaseModel):
+    per_page: int
     page: int
-    per_page: int = 20
-    total: int = 0
+    pages: int
+    total: int

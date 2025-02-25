@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 
-
 from common.log import init as logger_init
 from middleware import register_middleware
 from view import register_routes
