@@ -1,5 +1,3 @@
-from typing_extensions import TypeAlias
-
 from typing import (
     Any,
     Callable,
@@ -8,26 +6,26 @@ from typing import (
     Iterable,
     Mapping,
     Optional,
-    Pattern,
+    TYPE_CHECKING,
     Union,
-    List as ListType
+    List
 )
-from elements import (
-    Element,
-    Paragraph,
-    Heading,
-    Table,
-    Cell,
-    Row,
-    CodeBlock,
-    Picture,
-    MList,
-    MListItem
-)
+
+from typing_extensions import TypeAlias
+
+if TYPE_CHECKING:
+    from core.docparse.markdown_parser.elements import (
+        Element,
+        Paragraph,
+        Heading,
+        Table,
+        CodeBlock,
+        Picture
+    )
 
 _IncomingSource: TypeAlias = Union[str, bytes, IO[str], IO[bytes]]
-_MarkdownNode: TypeAlias = Union["Element", "Paragraph", "Heading", "Table", "Cell", "Row", "CodeBlock", "Picture", "MList", "MListItem"]
+_MarkdownNode: TypeAlias = Union["Element", "Paragraph", "Heading", "Table", "CodeBlock", "Picture"]
 _AtMostOneNode: TypeAlias = Optional[_MarkdownNode]
 
-_OutElement: TypeAlias = Union["Element", "Paragraph", "Heading", "Table", "Cell", "Row", "CodeBlock", "Picture", "MList", "MListItem"]
+_OutElement: TypeAlias = Union["Element", "Paragraph", "Heading", "Table", "CodeBlock", "Picture"]
 _InsertableElement: TypeAlias = Union["Element", str]

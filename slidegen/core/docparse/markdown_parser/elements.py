@@ -1,11 +1,20 @@
-from typing import Optional, Dict, Any, Self, Iterator, Iterable, Type, Optional, cast
+from typing import (
+    Optional, 
+    Dict, 
+    Any, 
+    Self, 
+    Iterator, 
+    Iterable, 
+    Type, 
+    Optional, 
+    cast,
+    List as ListType,
+)
+import re
 
-from ._typing import _AtMostOneNode, ListType, _InsertableElement, _OutElement
-from markdown_parser import MarkdownDocument
+from ._typing import _AtMostOneNode, _InsertableElement, _OutElement
 
 class Element:
-
-    _decomposed: bool = False
 
     parent: Optional["Element"]
     next_element: _AtMostOneNode
@@ -13,7 +22,8 @@ class Element:
     next_sibling: _AtMostOneNode
     previous_sibling: _AtMostOneNode
 
-    contents = ListType[Type["Element"]] = []
+    contents: ListType[Type["Element"]] = []
+    _decomposed: bool = False
 
     def setup(
         self,
@@ -261,7 +271,8 @@ class Element:
             raise ValueError("Cannot insert a Element into itself.")
         if isinstance(new_child, str):
             raise TypeError("Cannot insert a string into a Element. Please convert to an Element first.")
-
+        
+        from . import MarkdownDocument
         if isinstance(new_child, MarkdownDocument):
             return self.insert(position, *list(new_child.contents))
         position = min(position, len(self.contents))
@@ -481,73 +492,79 @@ class Element:
 class Heading(Element):
     """Represents a heading element in a Markdown document."""
 
+    element_text_source: Optional[str] = None
+
     def __init__(self, level: int, text: str):
         """Initializes a Heading object.
 
         :param level: The heading level (1-6).
         :param text: The text content of the heading.
         """
+        self.setup()
         self.level = level
         self._text = text
     
+    def _all_strings(self, strip = False, types = tuple()):
+        for descendant in self.descendants:
+            if not types or isinstance(descendant, types):
+                text = descendant.element_text
+                if isinstance(descendant, Heading) and not strip:
+                    text = descendant.element_text_source
+                if text:
+                    yield text
+
     @property
-    def text(self):
+    def element_text_source(self):
+        if self.element_text_source is None:
+            return "#" * self.level + self.element_text
+        return self.element_text_source
+    
+    @property
+    def element_text(self) -> str:
         return self._text
     
+    @element_text.setter
+    def heading_text(self, text: str):
+        self._text = text
+
     def __repr__(self) -> str:
         return f"<Heading level={self.level} text='{self.text}'>"
 
 
 class Paragraph(Element):
     """Represents a paragraph element in a Markdown document."""
+    
+    ORDERED_PATTERN = r'^[\s]*[-*+]\s+'
+    UNORDERED_PATTERN = r'^[\s]*\d+\.\s+'
 
     def __init__(self, text: str):
         """Initializes a Paragraph object.
 
         :param text: The text content of the paragraph.
         """
-        super().__init__()
-        self.text = text
+        self.setup()
+        self._text = text
+    
+    @property
+    def element_text(self) -> str:
+        return self._text
+    
+    @element_text.setter
+    def element_text(self, text: str):
+        self._text = text
+    
+    def _all_strings(self, strip = False, types = tuple()):
+        if types:
+            raise ValueError("Paragraph does not support types")
+        if strip:
+            # strip markdown syntax
+            _text = re.sub(self.ORDERED_PATTERN, '', self._text)
+            _text = re.sub(self.UNORDERED_PATTERN, '', _text).strip()
+
+        yield _text
 
     def __repr__(self) -> str:
         return f"<Paragraph text='{self.text}'>"
-
-class MListItem(Element):
-    """Represents a list item element in a Markdown document."""
-
-    def __init__(self, text: str):
-        """Initializes a ListItem object.
-
-        :param text: The text content of the list item.
-        """
-        super().__init__()
-        self.text = text
-
-    def __repr__(self) -> str:
-        return f"<ListItem text='{self.text}'>"
-
-class MList(Element):
-    """Represents a list element in a Markdown document."""
-
-    def __init__(self, ordered: bool = False):
-        """Initializes a List object.
-
-        :param ordered: Whether the list is ordered (numbered) or unordered (bulleted).
-        """
-        super().__init__()
-        self.ordered = ordered
-        self.items: ListType[MListItem] = []
-
-    def add_item(self, item: "MListItem") -> None:
-        """Adds a ListItem to the list.
-
-        :param item: The ListItem to add.
-        """
-        self.items.append(item)
-
-    def __repr__(self) -> str:
-        list_type = "Ordered" if self.ordered else "Unordered"
-        return f"<{list_type} List items={len(self.items)}>"
     
 class CodeBlock(Element):
     """Represents a code block element in a Markdown document."""
@@ -558,9 +575,24 @@ class CodeBlock(Element):
         :param code: The code content of the block.
         :param language: The programming language of the code block, if specified.
         """
-        super().__init__()
+        self.setup()
         self.code = code
         self.language = language
+    
+    @property
+    def element_text(self) -> str:
+        return self.code
+    
+    @element_text.setter
+    def element_text(self, text: str):
+        self.code = text
+
+    def _all_strings(self, strip = False, types = tuple()):
+        if types:
+            raise ValueError("CodeBlock does not support types")
+        if strip:
+            code_text = self.code.strip()
+        yield code_text
 
     def __repr__(self) -> str:
         lang = f" language='{self.language}'" if self.language else ""
@@ -569,55 +601,36 @@ class CodeBlock(Element):
 class Table(Element):
     """Represents a table element in a Markdown document."""
 
-    def __init__(self, headers: ListType[str]):
+    row_number = 0
+    col_number = 0
+    table_type: Optional[str] = None
+
+    def __init__(self, headers: ListType[str], text: Optional[str] = None):
         """Initializes a Table object.
 
         :param headers: A list of header names for the table.
         """
-        super().__init__()
+        self.setup()
         self.headers = headers
-        self.rows: ListType[Row] = []
+        self._text: Optional[str] = text
 
-    def add_row(self, row: "Row") -> None:
-        """Adds a Row to the table.
+    @property
+    def element_text(self):
+        return self._text
+    
+    @element_text.setter
+    def element_text(self, text: str):
+        self._text = text
 
-        :param row: The Row to add.
-        """
-        self.rows.append(row)
-
-    def __repr__(self) -> str:
-        return f"<Table headers={self.headers} rows={len(self.rows)}>"
-
-class Row(Element):
-    """Represents a row in a table."""
-
-    def __init__(self, cells: ListType["Cell"]):
-        """Initializes a Row object.
-
-        :param cells: A list of Cell objects in the row.
-        """
-        super().__init__()
-        self.cells = cells
-
-    def add_cell(self, cell: "Cell"):
-        self.cells.append(cell)
+    def _all_strings(self, strip = False, types = tuple()):
+        if types:
+            raise ValueError("Table does not support types")
+        if strip:
+            _text = self._text.strip()
+        yield _text
 
     def __repr__(self) -> str:
-        return f"<Row cells={len(self.cells)}>"
-
-class Cell(Element):
-    """Represents a cell in a table row."""
-
-    def __init__(self, content: str):
-        """Initializes a Cell object.
-
-        :param content: The content of the cell.
-        """
-        super().__init__()
-        self.content = content
-
-    def __repr__(self) -> str:
-        return f"<Cell content='{self.content}'>"
+        return f"<Table headers={self.headers}>"
 
 class Picture(Element):
     """Represents a picture element in a Markdown document."""
@@ -629,11 +642,28 @@ class Picture(Element):
         :param alt_text: The alternative text for the picture.
         :param title: The title of the picture, if specified.
         """
-        super().__init__()
+        self.setup()
         self.src = src
         self.alt_text = alt_text
         self.title = title
+    
+    @property
+    def element_text(self) -> str:
+        return f"""![{self.alt_text}]({self.src} "{self.title}")"""
+    
+    @element_text.setter
+    def element_text(self, text: str):
+        return text
+    
+    elelement_text_source = element_text
 
+    def _all_strings(self, strip = False, types = tuple()):
+        if types:
+            raise ValueError("Picture does not support types")
+        if strip:
+            element_text = self.element_text.strip()
+        yield element_text
+    
     def __repr__(self) -> str:
         alt = f" alt='{self.alt_text}'" if self.alt_text else ""
         title = f" title='{self.title}'" if self.title else ""
