@@ -587,11 +587,15 @@ class CodeBlock(Element):
     def element_text(self, text: str):
         self.code = text
 
+    @property
+    def elelement_text_source(self):
+        return f"```{self.language}\n{self.code}\n```"
+
     def _all_strings(self, strip = False, types = tuple()):
         if types:
             raise ValueError("CodeBlock does not support types")
         if strip:
-            code_text = self.code.strip()
+            code_text = self.elelement_text_source.strip()
         yield code_text
 
     def __repr__(self) -> str:
@@ -621,6 +625,8 @@ class Table(Element):
     @element_text.setter
     def element_text(self, text: str):
         self._text = text
+
+    elelement_text_source = element_text
 
     def _all_strings(self, strip = False, types = tuple()):
         if types:
