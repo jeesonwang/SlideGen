@@ -14,7 +14,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 if TYPE_CHECKING:
-    from core.docparse.markdown_parser.elements import (
+    from .elements import (
         Element,
         Paragraph,
         Heading,

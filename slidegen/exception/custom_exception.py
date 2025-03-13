@@ -50,3 +50,9 @@ class ServiceConnectionError(ApiError):
 
 class AccessDeniedError(ApiError):
     default_code = AccessDeniedCode
+
+class FileParseError(ApiError):
+    default_code = InsideServerErrorCode
+
+class FileTypeError(ApiError):
+    default_code = InsideServerErrorCode

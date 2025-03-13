@@ -268,7 +268,7 @@ class MarkdownParser:
         else:
             raise Exception(f'Not support level: {level}')
 
-        regex = '^\s?%s{3,}\s*$' % tmpl
+        regex = r'^\s?%s{3,}\s*$' % tmpl
         result = re.search(regex, next_string)
 
         if result is None:
@@ -282,7 +282,7 @@ class MarkdownParser:
 
     def _parse_heading_var_two(self, level, string):
         
-        regex = '^(\s?#{%s}\s+)(.*)$' % level
+        regex = r'^(\s?#{%s}\s+)(.*)$' % level
         result = re.search(regex, string)
 
         if result is None:
