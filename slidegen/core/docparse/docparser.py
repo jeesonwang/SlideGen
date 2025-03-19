@@ -1,12 +1,14 @@
 import copy
-import mimetypes
 import os
 import re
-from typing import List, Optional, Tuple, Union
+import sys
+import tempfile
+from pathlib import Path
+from typing import List, Optional, BinaryIO, Union, Any
 import traceback
 
-import puremagic
 from loguru import logger
+import puremagic
 
 from exception.custom_exception import FileParseError, FileTypeError
 from .parsers import (
@@ -17,18 +19,80 @@ from .parsers import (
     ExcelParser,
 )
 
-mimetypes.add_type("text/csv", ".csv")
-
 class MarkdownConverter:
 
     def __init__(self):
+        self._builtins_enabled = False
         self.document_parsers: List[DocumentParser] = []
+
+    def register_builtins(self, **kwargs) -> None:
+        if not self._builtins_enabled:
+            
+            self.register_parser(DocxParser())
+            self.register_parser(HtmlParser())
+            self.register_parser(ExcelParser())
+            # TODO: Add more parsers here
+            self._builtins_enabled = True
+        else:
+            logger.warning("Builtins parsers already registered")
+
+    def convert_local(
+        self, path: Union[str, Path], **kwargs: Any
+    ) -> DocumentParseResult:
+        if isinstance(path, Path):
+            path = str(path)
+
+        ext = kwargs.get("file_extension")
+        extensions = [ext] if ext is not None else []
+
+
+        base, ext = os.path.splitext(path)
+        self._append_ext(extensions, ext)
+
+        for g in self._guess_ext_magic(path):
+            self._append_ext(extensions, g)
+
+        # Convert
+        return self._convert(path, extensions, **kwargs)
+    
+    def convert_stream(
+        self, stream: BinaryIO, **kwargs: Any
+    ) -> DocumentParseResult:
+
+        ext = kwargs.get("file_extension")
+        extensions = [ext] if ext is not None else []
+
+        # Save the file locally to a temporary file. It will be deleted before this method exits
+        handle, temp_path = tempfile.mkstemp()
+        fh = os.fdopen(handle, "wb")
+        result = None
+        try:
+            # Write to the temporary file
+            content = stream.read()
+            if isinstance(content, str):
+                fh.write(content.encode("utf-8"))
+            else:
+                fh.write(content)
+            fh.close()
+
+            # Use puremagic to check for more extension options
+            for g in self._guess_ext_magic(temp_path):
+                self._append_ext(extensions, g)
+
+            result = self._convert(temp_path, extensions, **kwargs)
+        finally:
+            try:
+                fh.close()
+            except Exception:
+                pass
+            os.unlink(temp_path) # Delete the temporary file
+
+        return result
 
     def _convert(
         self, local_path: str, extensions: List[Union[str, None]], **kwargs
     ) -> DocumentParseResult:
         error_trace = ""
-
         for ext in extensions + [None]:  # Try last with no extension
             for converter in self.document_parsers:
                 _kwargs = copy.deepcopy(kwargs)
@@ -60,14 +124,39 @@ class MarkdownConverter:
         raise FileTypeError(
             f"Could not convert '{local_path}' to Markdown. The formats {extensions} are not supported."
         )
+    
+    def convert(
+        self, source: Union[str, Path], **kwargs: Any
+    ) -> DocumentParseResult:
+
+        # TODO: Add support for other source types
+        if isinstance(source, str):
+            return self.convert_local(source, **kwargs)
+        elif isinstance(source, Path):
+            return self.convert_local(source, **kwargs)
+        elif isinstance(source, BinaryIO):
+            return self.convert_stream(source, **kwargs)
+        else:
+            raise ValueError(f"Unknown source type {type(source)}")
+        
+    def _append_ext(self, extensions, ext):
+        """Append a unique non-None, non-empty extension to a list of extensions."""
+        if ext is None:
+            return
+        ext = ext.strip()
+        if ext == "":
+            return
+        if ext in extensions:
+            return
+        # if ext not in extensions:
+        extensions.append(ext)
 
     def register_parser(self, parser: DocumentParser) -> None:
-        """Register a page text converter."""
-        self._page_converters.insert(0, parser)
+        """Register a document parser."""
+        self.document_parsers.insert(0, parser)
 
     def _guess_ext_magic(self, path):
         """Use puremagic (a Python implementation of libmagic) to guess a file's extension based on the first few bytes."""
-        # Use puremagic to guess
         try:
             guesses = puremagic.magic_file(path)
 
