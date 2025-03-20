@@ -296,7 +296,7 @@ class MarkdownParser:
 
     def _parse_heading_action(self, level, text, text_source):
         cur_heading = Heading(level, text)
-        cur_heading.text_source = text_source
+        cur_heading.element_text_source = text_source
         if self.previous_heading is self.document:
             self.previous_heading.append(cur_heading)
         elif isinstance(self.previous_heading, Heading):

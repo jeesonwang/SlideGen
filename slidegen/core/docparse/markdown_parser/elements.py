@@ -501,7 +501,7 @@ class Element:
 class Heading(Element):
     """Represents a heading element in a Markdown document."""
 
-    element_text_source: Optional[str] = None
+    _element_text_source: Optional[str] = None
 
     def __init__(self, level: int, text: str, **kwargs: Any):
         """Initializes a Heading object.
@@ -524,9 +524,13 @@ class Heading(Element):
 
     @property
     def element_text_source(self):
-        if self.element_text_source is None:
+        if self._element_text_source is None:
             return "#" * self.level + self.element_text
-        return self.element_text_source
+        return self._element_text_source
+    
+    @element_text_source.setter
+    def element_text_source(self, text: str):
+        self._element_text_source = text
     
     @property
     def element_text(self) -> str:
