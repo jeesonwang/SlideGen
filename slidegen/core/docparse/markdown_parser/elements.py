@@ -25,6 +25,15 @@ class Element:
     contents: ListType[Type["Element"]] = []
     _decomposed: bool = False
 
+    def __init__(self, **kwargs: Any) -> None:
+        self.__dict__.update(kwargs)
+        parent = kwargs.get("parent")
+        previous_element = kwargs.get("previous_element")
+        next_element = kwargs.get("next_element")
+        previous_sibling = kwargs.get("previous_sibling")
+        next_sibling = kwargs.get("next_sibling")
+        self.setup(parent, previous_element, next_element, previous_sibling, next_sibling)
+
     def setup(
         self,
         parent: Optional["Element"] = None,
@@ -494,13 +503,13 @@ class Heading(Element):
 
     element_text_source: Optional[str] = None
 
-    def __init__(self, level: int, text: str):
+    def __init__(self, level: int, text: str, **kwargs: Any):
         """Initializes a Heading object.
 
         :param level: The heading level (1-6).
         :param text: The text content of the heading.
         """
-        self.setup()
+        super().__init__(**kwargs)
         self.level = level
         self._text = text
     
@@ -537,12 +546,12 @@ class Paragraph(Element):
     ORDERED_PATTERN = r'^[\s]*[-*+]\s+'
     UNORDERED_PATTERN = r'^[\s]*\d+\.\s+'
 
-    def __init__(self, text: str):
+    def __init__(self, text: str, **kwargs: Any):
         """Initializes a Paragraph object.
 
         :param text: The text content of the paragraph.
         """
-        self.setup()
+        super().__init__(**kwargs)
         self._text = text
     
     @property
@@ -569,13 +578,13 @@ class Paragraph(Element):
 class CodeBlock(Element):
     """Represents a code block element in a Markdown document."""
 
-    def __init__(self, code: str, language: Optional[str] = None):
+    def __init__(self, code: str, language: Optional[str] = None, **kwargs: Any):
         """Initializes a CodeBlock object.
 
         :param code: The code content of the block.
         :param language: The programming language of the code block, if specified.
         """
-        self.setup()
+        super().__init__(**kwargs)
         self.code = code
         self.language = language
     
@@ -609,12 +618,12 @@ class Table(Element):
     col_number = 0
     table_type: Optional[str] = None
 
-    def __init__(self, headers: ListType[str], text: Optional[str] = None):
+    def __init__(self, headers: ListType[str], text: Optional[str] = None, **kwargs: Any):
         """Initializes a Table object.
 
         :param headers: A list of header names for the table.
         """
-        self.setup()
+        super().__init__(**kwargs)
         self.headers = headers
         self._text: Optional[str] = text
 
@@ -641,14 +650,14 @@ class Table(Element):
 class Picture(Element):
     """Represents a picture element in a Markdown document."""
 
-    def __init__(self, src: str, alt_text: Optional[str] = None, title: Optional[str] = None):
+    def __init__(self, src: str, alt_text: Optional[str] = None, title: Optional[str] = None, **kwargs: Any):
         """Initializes a Picture object.
 
         :param src: The source URL of the picture.
         :param alt_text: The alternative text for the picture.
         :param title: The title of the picture, if specified.
         """
-        self.setup()
+        super().__init__(**kwargs)
         self.src = src
         self.alt_text = alt_text
         self.title = title
@@ -674,4 +683,3 @@ class Picture(Element):
         alt = f" alt='{self.alt_text}'" if self.alt_text else ""
         title = f" title='{self.title}'" if self.title else ""
         return f"<Picture src='{self.src}'{alt}{title}>"
-
