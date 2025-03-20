@@ -10,7 +10,7 @@ import traceback
 from loguru import logger
 import puremagic
 
-from exception.custom_exception import FileParseError, FileTypeError
+from exception import FileParseError, FileTypeError
 from .parsers import (
     DocumentParser,
     DocumentParseResult,
