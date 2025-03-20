@@ -537,7 +537,7 @@ class Heading(Element):
         return self._text
     
     @element_text.setter
-    def heading_text(self, text: str):
+    def element_text(self, text: str):
         self._text = text
 
     def __repr__(self) -> str:
