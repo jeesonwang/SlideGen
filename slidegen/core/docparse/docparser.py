@@ -130,9 +130,7 @@ class MarkdownConverter:
     ) -> DocumentParseResult:
 
         # TODO: Add support for other source types
-        if isinstance(source, str):
-            return self.convert_local(source, **kwargs)
-        elif isinstance(source, Path):
+        if isinstance(source, (str, Path)):
             return self.convert_local(source, **kwargs)
         elif isinstance(source, BinaryIO):
             return self.convert_stream(source, **kwargs)
