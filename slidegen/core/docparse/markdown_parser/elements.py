@@ -560,24 +560,34 @@ class Paragraph(Element):
     
     @property
     def element_text(self) -> str:
-        return self._text
-    
+        # strip markdown syntax
+        _text = re.sub(self.ORDERED_PATTERN, '', self._text)
+        _text = re.sub(self.UNORDERED_PATTERN, '', _text).strip()
+        return _text
+
     @element_text.setter
     def element_text(self, text: str):
+        self._text = text
+
+    @property
+    def element_text_source(self) -> str:
+        return self._text
+    
+    @element_text_source.setter
+    def element_text_source(self, text: str):
         self._text = text
     
     def _all_strings(self, strip = False, types = tuple()):
         if types:
             raise ValueError("Paragraph does not support types")
         if strip:
-            # strip markdown syntax
-            _text = re.sub(self.ORDERED_PATTERN, '', self._text)
-            _text = re.sub(self.UNORDERED_PATTERN, '', _text).strip()
-
+            _text = self.element_text
+        else:
+            _text = self.element_text_source
         yield _text
 
     def __repr__(self) -> str:
-        return f"<Paragraph text='{self.text}'>"
+        return f"<Paragraph text='{self._text}'>"
     
 class CodeBlock(Element):
     """Represents a code block element in a Markdown document."""
@@ -601,14 +611,14 @@ class CodeBlock(Element):
         self.code = text
 
     @property
-    def elelement_text_source(self):
+    def element_text_source(self):
         return f"```{self.language}\n{self.code}\n```"
 
     def _all_strings(self, strip = False, types = tuple()):
         if types:
             raise ValueError("CodeBlock does not support types")
         if strip:
-            code_text = self.elelement_text_source.strip()
+            code_text = self.element_text_source.strip()
         yield code_text
 
     def __repr__(self) -> str:
@@ -639,7 +649,7 @@ class Table(Element):
     def element_text(self, text: str):
         self._text = text
 
-    elelement_text_source = element_text
+    element_text_source = element_text
 
     def _all_strings(self, strip = False, types = tuple()):
         if types:
@@ -674,7 +684,7 @@ class Picture(Element):
     def element_text(self, text: str):
         return text
     
-    elelement_text_source = element_text
+    element_text_source = element_text
 
     def _all_strings(self, strip = False, types = tuple()):
         if types:
