@@ -1,5 +1,5 @@
 import re
-from typing import cast, Optional
+from typing import Iterable, Type, cast, Optional
 
 from .elements import (
     Element,
@@ -14,19 +14,28 @@ from ._typing import _IncomingSource
 class MarkdownDocument(Element):
     ROOT_ELEMENT_NAME: str = "[markdowndocument]"
     
-    def __init__(self, souce: _IncomingSource):
+    def __init__(self, source: _IncomingSource):
         self.setup()
         self.main: Optional[Heading] = None
-        if hasattr(souce, "read"):  # It's a file-type object.
-            souce = souce.read()
-        if isinstance(souce, bytes):
-            souce = souce.decode()
-        if souce:
-            self.parse(souce)
+        if hasattr(source, "read"):  # It's a file-type object.
+            source = source.read()
+        if isinstance(source, bytes):
+            source = source.decode()
+        if source:
+            self.parse(source)
 
     def parse(self, markdown_text: str):
         parser = MarkdownParser(self)
         parser.parse(markdown_text)
+    
+    def _all_strings(self, strip: bool = False, types: Iterable[type[Element]] = ()):
+        types = tuple(types)
+        for child in self.descendants:
+            if not types or isinstance(child, types):
+                if strip:
+                    yield child.element_text.strip()
+                else:
+                    yield child.element_text_source
 
     @property
     def title(self) -> str:
@@ -103,6 +112,7 @@ class MarkdownParser:
         self.code_language = None
 
     def process_heading(self, line: str, next_line: Optional[str] = None) -> bool:
+        is_heading = False
         for level in range(1, 3):
             is_heading = self._parse_heading_var_one(level, line, next_line)
             if is_heading:
@@ -268,7 +278,7 @@ class MarkdownParser:
         else:
             raise Exception(f'Not support level: {level}')
 
-        regex = r'^\s?%s{3,}\s*$' % tmpl
+        regex = r'^%s{3,}\s*$' % tmpl
         result = re.search(regex, next_string)
 
         if result is None:
