@@ -9,7 +9,7 @@ class ExcelParser(HtmlParser):
     Parser for excel files.
     """
 
-    def __init__(**kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def convert(self, local_path, **kwargs) -> None | DocumentParseResult:
