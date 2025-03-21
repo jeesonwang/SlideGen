@@ -23,9 +23,9 @@ class MarkdownDocument(Element):
         elif isinstance(source, bytes):
             source = source.decode()
         if source:
-            self.parse(source)
+            self._parse(source)
 
-    def parse(self, markdown_text: str):
+    def _parse(self, markdown_text: str):
         parser = MarkdownParser(self)
         parser.parse(markdown_text)
     
