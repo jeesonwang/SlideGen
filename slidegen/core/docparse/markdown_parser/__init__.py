@@ -1,5 +1,5 @@
 import re
-from typing import Iterable, Type, cast, Optional
+from typing import Iterable, Any, cast, Optional
 
 from .elements import (
     Element,
@@ -14,12 +14,13 @@ from ._typing import _IncomingSource
 class MarkdownDocument(Element):
     ROOT_ELEMENT_NAME: str = "[markdowndocument]"
     
-    def __init__(self, source: _IncomingSource):
-        self.setup()
+    def __init__(self, source: _IncomingSource, **kwargs: Any):
+        super().__init__(**kwargs)
         self.main: Optional[Heading] = None
+        
         if hasattr(source, "read"):  # It's a file-type object.
             source = source.read()
-        if isinstance(source, bytes):
+        elif isinstance(source, bytes):
             source = source.decode()
         if source:
             self.parse(source)
