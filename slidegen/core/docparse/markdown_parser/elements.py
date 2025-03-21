@@ -21,11 +21,12 @@ class Element:
     previous_element: _AtMostOneNode
     next_sibling: _AtMostOneNode
     previous_sibling: _AtMostOneNode
-
-    contents: ListType[Type["Element"]] = []
+    
+    contents: ListType[Type["Element"]]
     _decomposed: bool = False
 
     def __init__(self, **kwargs: Any) -> None:
+        self.contents = []
         self.__dict__.update(kwargs)
         parent = kwargs.get("parent")
         previous_element = kwargs.get("previous_element")
@@ -365,7 +366,7 @@ class Element:
     def __contains__(self, x: Any) -> bool:
         return x in self.contents
     
-    def __getitem__(self, key: str) -> _OutElement:
+    def __getitem__(self, key: int) -> _OutElement:
         """tag[key] returns the value of the 'key' attribute for the Tag,
         and throws an exception if it's not there."""
         return self.contents[key]
@@ -619,6 +620,8 @@ class CodeBlock(Element):
             raise ValueError("CodeBlock does not support types")
         if strip:
             code_text = self.element_text_source.strip()
+        else:
+            code_text = self.element_text_source
         yield code_text
 
     def __repr__(self) -> str:
@@ -656,6 +659,8 @@ class Table(Element):
             raise ValueError("Table does not support types")
         if strip:
             _text = self._text.strip()
+        else:
+            _text = self._text
         yield _text
 
     def __repr__(self) -> str:
@@ -675,14 +680,15 @@ class Picture(Element):
         self.src = src
         self.alt_text = alt_text
         self.title = title
-    
+        self._text = f"""![{self.alt_text}]({self.src} "{self.title}")"""
+
     @property
     def element_text(self) -> str:
-        return f"""![{self.alt_text}]({self.src} "{self.title}")"""
+        return self._text
     
     @element_text.setter
     def element_text(self, text: str):
-        return text
+        self._text = text
     
     element_text_source = element_text
 
@@ -690,8 +696,9 @@ class Picture(Element):
         if types:
             raise ValueError("Picture does not support types")
         if strip:
-            element_text = self.element_text.strip()
-        yield element_text
+            yield self.element_text.strip()
+        else:
+            yield self.element_text
     
     def __repr__(self) -> str:
         alt = f" alt='{self.alt_text}'" if self.alt_text else ""
