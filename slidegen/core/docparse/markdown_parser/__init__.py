@@ -43,8 +43,10 @@ class MarkdownDocument(Element):
         return self.main.text if self.main is not None else ''
 
     def __str__(self):
-        return 'MarkdownDocument(title=%s)' % self.title
+        return '<MarkdownDocument title={self.title}>'
     
+    def __repr__(self) -> str:
+        return self.__str__()
 
 class MarkdownParser:
     def __init__(self, document: MarkdownDocument):
