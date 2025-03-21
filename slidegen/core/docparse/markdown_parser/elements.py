@@ -542,7 +542,7 @@ class Heading(Element):
         self._text = text
 
     def __repr__(self) -> str:
-        return f"<Heading level={self.level} text='{self.text}'>"
+        return f"<Heading level={self.level} text={self.element_text}>"
 
 
 class Paragraph(Element):
