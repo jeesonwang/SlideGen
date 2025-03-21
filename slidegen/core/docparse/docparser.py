@@ -20,10 +20,12 @@ from .parsers import (
 )
 
 class MarkdownConverter:
+    """Convert file to markdown"""
 
     def __init__(self):
         self._builtins_enabled = False
         self.document_parsers: List[DocumentParser] = []
+        self.register_builtins()
 
     def register_builtins(self, **kwargs) -> None:
         if not self._builtins_enabled:
@@ -126,7 +128,7 @@ class MarkdownConverter:
         )
     
     def convert(
-        self, source: Union[str, Path], **kwargs: Any
+        self, source: Union[str, Path, BinaryIO, Any], **kwargs: Any
     ) -> DocumentParseResult:
 
         # TODO: Add support for other source types
@@ -137,7 +139,7 @@ class MarkdownConverter:
         else:
             raise ValueError(f"Unknown source type {type(source)}")
         
-    def _append_ext(self, extensions, ext):
+    def _append_ext(self, extensions: List[str], ext: str | None) -> None:
         """Append a unique non-None, non-empty extension to a list of extensions."""
         if ext is None:
             return
