@@ -64,3 +64,10 @@ win32-setctime==1.1.0
 aiomysql==0.2.0
 openpyxl==3.1.5
 xlrd==2.0.1
+puremagic
+python-pptx
+types-pytz
+mammoth
+bs4
+markdownify==0.14.1
+pandas
