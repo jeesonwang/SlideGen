@@ -356,17 +356,17 @@ class CatalogPage(Page):
             text_shape.text = cur_content
             catalog_items[i].text_shape['text'] = cur_content
             CatalogPage._set_text_style(text_shape, text_style)
-            # 序号都采用“01”格式
+            # The chapter number is formatted as "01"
             number_shape.text = str(cur_number).zfill(2)
             catalog_items[i].number_shape['text'] = str(cur_number).zfill(2)
             CatalogPage._set_text_style(number_shape, number_style)
             begin_number += 1
-        # 如果catalog_num小于catalog_items的数量，则生成新的catalog page
+        # If the number of catalog_num is less than the number of catalog_items, generate a new catalog page
         if begin_number-1 < catalog_num:
             new_catalog_slide = CatalogPage.duplicate_slide(prs, catalog_page_index)
             catalog_page_index += 1
             CatalogPage.move_slide(prs, new_catalog_slide, catalog_page_index)
-            # 递归生成新的catalog page
+            # Recursively generate the new catalog page
             CatalogPage.generate_slide(prs, content[len(catalog_items):], catalog_page_index, begin_number)
 
 
