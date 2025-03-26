@@ -1,0 +1,379 @@
+import os
+import io
+import copy
+from typing import cast
+
+from pptx.presentation import Presentation
+from pptx.slide import Slide
+from pptx.util import Inches, Pt
+from pptx.enum.text import PP_ALIGN
+from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE, PP_PLACEHOLDER
+from pptx.enum.text import MSO_AUTO_SIZE
+from pptx.oxml.shapes.groupshape import CT_GroupShape
+from pptx.shapes.base import BaseShape
+from pptx.shapes.autoshape import Shape
+
+from core.docparse.markdown_parser import Element, Paragraph, Picture, Heading
+from core.pptgen.utils import (
+    FONT_SIZE_CASE, 
+    SCALE_FACTOR, 
+    SCALE_FACTOR_CH, 
+    is_chinese, 
+    is_english, 
+    CatalogLayout,
+    CatalogItem,
+    CatalogList
+)
+from exception import PPTTemplateError, PPTGenError
+
+
+class Page:
+    """PPT pages base class"""
+
+    @staticmethod
+    def remove_shapes(sp_tree: CT_GroupShape, shapes: list[Shape]):
+        for shp in shapes:
+            sp_tree.remove(shp.element)
+
+    @staticmethod
+    def _get_shape_text_style(shape: Shape) -> dict:
+        """Get the input `Shape` text style"""
+        if not shape.has_text_frame:
+            return {}
+
+        tf = shape.text_frame
+        paragraph = tf.paragraphs[0]
+        font = (paragraph.runs[0].font if paragraph.runs else paragraph.font)
+        def get_attr(attr_name, default=None):
+            return getattr(font, attr_name, default)
+        
+        return {
+            'font_name': get_attr('name'),
+            'font_size': get_attr('size'),
+            'bold': get_attr('bold'),
+            'italic': get_attr('italic'),
+            'underline': get_attr('underline')
+        }
+    
+    @staticmethod
+    def _set_text_style(shape: Shape, style: dict):
+        """Set the input `Shape` text style"""
+        if not shape.has_text_frame:
+            return
+        tf = shape.text_frame
+        paragraph = tf.paragraphs[0]
+        for key, value in style.items():
+            if value is None:
+                continue
+            setattr(paragraph.font, key, value)
+    
+    @staticmethod
+    def move_slide(pres: Presentation, slide: Slide, index: int) -> None:
+        """
+        Move the slide to the new index
+        
+        Args:
+            pres: Presentation object
+            slide: Slide object to be moved
+            index: New index of the slide
+        """
+        old_index = pres.slides.index(slide)
+        xml_slides = pres.slides._sldIdLst
+        slides = list(xml_slides)
+        xml_slides.remove(slides[old_index])
+        xml_slides.insert(index, slides[old_index])
+
+    @staticmethod
+    def duplicate_slide(pres: Presentation, index: int) -> Slide:
+        template = pres.slides[index]
+        copied_slide = pres.slides.add_slide(template.slide_layout)
+        # Delete the existing shapes that are part of the layout
+        for shp in copied_slide.shapes:
+            copied_slide.shapes.element.remove(shp.element)        
+        
+        # Perform a deep copy of the shapes from the template
+        for shp in template.shapes:
+            if "Picture" in shp.name:
+                img = io.BytesIO(shp.image.blob)
+                copied_slide.shapes.add_picture(image_file = img, left = shp.left, top = shp.top,
+                                                width = shp.width, height = shp.height)
+            else:
+                el = shp.element
+                newel = copy.deepcopy(el)
+                copied_slide.shapes._spTree.insert_element_before(newel, 'p:extLst')
+    
+        return copied_slide
+    
+    def generate_slide(self, prs: Presentation, content) -> Slide:
+        raise NotImplementedError("Must implement generate_slide")
+
+
+class CoverPage(Page):
+    """Presentation cover page"""
+    
+    @staticmethod
+    def generate_slide(prs: Presentation, content: Heading) -> list[Slide]:
+        cover_slide = prs.slides[0]
+
+        assert content.level == 1, "Cover page must have a level 1 heading"
+        main_title = content.element_text
+        if not main_title.strip():
+            main_title = "Presentation Title"
+
+        # TODO: add subtitle
+        for placeholder in  cover_slide.shapes.placeholders:
+            
+            if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
+                placeholder.text = main_title
+                text_frame = placeholder.text_frame
+                paragraph = text_frame.paragraphs[0]
+                font = paragraph.font
+                font_size = font.size
+                if font_size is None:
+                    font.size = font_size = Pt(FONT_SIZE_CASE[PP_PLACEHOLDER.TITLE])
+                text_width = 0.0
+                for char in main_title:
+                    if is_chinese(char):  # if the char is a Chinese character
+                        char_width = font_size.pt * 1.0
+                    else:
+                        char_width = font_size.pt * 0.6
+                    text_width += char_width
+                text_width_emu = int(text_width * SCALE_FACTOR)
+                min_width = placeholder.width
+                max_width = prs.slide_width * 0.9
+                new_width = max(min_width, min(text_width_emu, max_width))
+                placeholder.width = new_width
+                placeholder.height = int(font_size.pt * SCALE_FACTOR_CH)
+                text_frame.word_wrap = False
+                break
+
+        return [cover_slide]
+
+
+class CatalogPage(Page):
+    """Presentation catalog page"""
+
+    # vertical tolerance coefficient
+    vertical_tolerance = 1.5
+    
+    @staticmethod
+    def _calculate_distance(shape1: dict, shape2: dict) -> float:
+        """Calculate the distance between two shapes"""
+        return ((shape1['left'] - shape2['left']) ** 2 + 
+                (shape1['top'] - shape2['top']) ** 2) ** 0.5
+
+    @staticmethod
+    def _layout_direction(number_shapes: list[dict]) -> str:
+        """Judge the layout direction of the catalog page"""
+        if len(number_shapes) < 2:
+            raise PPTTemplateError("To judge the layout direction, catalog page must have at least two chapter numbers")
+        
+        sorted_numbers = sorted(number_shapes, key=lambda x: (x['left'], x['top']))
+        horizontal_diffs = []
+        vertical_diffs = []
+        
+        for i in range(len(sorted_numbers) - 1):
+            horizontal_diffs.append(abs(sorted_numbers[i+1]['left'] - sorted_numbers[i]['left']))
+            vertical_diffs.append(abs(sorted_numbers[i+1]['top'] - sorted_numbers[i]['top']))
+        avg_horizontal_diff = sum(horizontal_diffs) / len(horizontal_diffs) if horizontal_diffs else 0
+        avg_vertical_diff = sum(vertical_diffs) / len(vertical_diffs) if vertical_diffs else 0
+
+        if avg_horizontal_diff > avg_vertical_diff:
+            return CatalogLayout.HORIZONTAL
+        else:
+            return CatalogLayout.VERTICAL
+
+    @staticmethod
+    def _get_catalog_items(slide: Slide) -> CatalogList:
+        number_shapes = []
+        text_shapes = []
+        all_shapes = []
+        for shape in slide.shapes:
+            if shape.is_placeholder:
+                # placeholder shapes are not included in the all_shapes list
+                continue
+            shape_info = {
+                    'text': shape.text.strip() if shape.has_text_frame else None,
+                    'left': shape.left,
+                    'top': shape.top,
+                    'width': shape.width,
+                    'height': shape.height,
+                    'shape_type': shape.shape_type,
+                    'shape_id': shape.shape_id,
+                    'shape': shape
+                }
+            if shape.has_text_frame:
+                text_shapes.append(shape_info)
+            all_shapes.append(shape_info)
+        for shape in text_shapes:
+            # check if the text is a chapter number
+            if shape['text'].isdigit() or (len(shape['text']) <= 3 and shape['text'].replace('0', '').isdigit()):
+                number_shapes.append(shape)
+        number_shapes.sort(key=lambda shape: int(shape['text']))
+
+        match len(number_shapes):
+            case 0:
+                raise PPTTemplateError("Catalog page must have at least one chapter numbers")
+            case 1:
+                layout_direction = CatalogLayout.UNDEFINED
+            case _:
+                layout_direction = CatalogPage._layout_direction(number_shapes)
+        
+        title_text_shapes = [shape for shape in text_shapes 
+                                if shape not in number_shapes]
+        catalog_list = CatalogList()
+        # Find the closest text shape for each number shape
+        for number_shape in number_shapes:
+            min_distance = float('inf')
+            closest_text_shape = None
+            
+            for text_shape in title_text_shapes:
+                if layout_direction == CatalogLayout.HORIZONTAL:
+                    # For horizontal layout, find the text shape below the number shape
+                    if text_shape['top'] > number_shape['top']:
+                        distance = text_shape['top'] - number_shape['top']
+                        horizontal_overlap = (min(number_shape['left'] + number_shape['width'], 
+                                                text_shape['left'] + text_shape['width']) - 
+                                            max(number_shape['left'], text_shape['left']))
+                        if horizontal_overlap > 0 and distance < min_distance:
+                            min_distance = distance
+                            closest_text_shape = text_shape
+                elif layout_direction == CatalogLayout.VERTICAL:
+                    # For vertical layout, find the text shape to the right of the number shape
+                    if text_shape['left'] > number_shape['left']:
+                        distance = text_shape['left'] - (number_shape['left'] + number_shape['width'])
+                        vertical_overlap = (min(number_shape['top'] + number_shape['height'], 
+                                            text_shape['top'] + text_shape['height']) - 
+                                        max(number_shape['top'], text_shape['top']))
+                        if vertical_overlap > 0 and distance < min_distance:
+                            min_distance = distance
+                            closest_text_shape = text_shape
+                else:
+                    distance = CatalogPage._calculate_distance(number_shape, text_shape)
+                    if distance < min_distance:
+                        min_distance = distance
+                        closest_text_shape = text_shape
+
+            if closest_text_shape:
+                catalog_list.append(CatalogItem(number_shape, closest_text_shape))
+            all_shapes.remove(number_shape)
+            all_shapes.remove(closest_text_shape)
+        assert len(number_shapes) == len(catalog_list), "The number of chapter numbers and chapter titles must be the same"
+
+        if len(all_shapes) >= len(number_shapes):
+            # continue to calculate the distance to find the background shape
+            for i, number_shape in enumerate(number_shapes):
+                min_distance = float('inf')
+                closest_background_shape = None
+                for shape in all_shapes:
+                    distance = CatalogPage._calculate_distance(number_shape, shape)
+                    if distance < min_distance:
+                        min_distance = distance
+                        if min_distance < shape['height'] * CatalogPage.vertical_tolerance:
+                            closest_background_shape = shape
+                if closest_background_shape:
+                    cast(CatalogItem, catalog_list[i]).background_shape = closest_background_shape
+
+        return catalog_list
+
+    @staticmethod
+    def _get_cataloglist_text_style(catalog_list: CatalogList) -> tuple[dict, dict]:
+        """Get the text style and number style of the catalog list"""
+        text_style = {
+            'font_name': None,
+            'font_size': None,
+            'bold': None,
+            'italic': None,
+            'underline': None
+        }
+        
+        number_style = {
+            'font_name': None,
+            'font_size': None,
+            'bold': None,
+            'italic': None,
+            'underline': None
+        }
+
+        style_attrs = ['font_name', 'font_size', 'bold', 'italic', 'underline']
+        for item in catalog_list:
+            cur_text_style = CatalogPage._get_shape_text_style(item.text_shape['shape'])
+            cur_number_style = CatalogPage._get_shape_text_style(item.number_shape['shape'])
+            
+            for attr in style_attrs:
+                if cur_text_style.get(attr) is not None:
+                    text_style[attr] = cur_text_style[attr]
+                if cur_number_style.get(attr) is not None:
+                    number_style[attr] = cur_number_style[attr]
+        
+        return text_style, number_style
+
+    @staticmethod
+    def generate_slide(prs: Presentation, 
+                       content: list[Heading], 
+                       catalog_page_index: int = 1, 
+                       begin_number: int = 1):
+        """
+        Generate the catalog page
+        
+        Args:
+            prs: Presentation object
+            content: list of Heading objects
+            catalog_page_index: index of the catalog page
+            begin_number: starting number of the catalog page
+        """
+        if not content:
+            raise PPTGenError("Catalog page must have content.")
+        catalog_num = len(content)
+        catalog_slide = prs.slides[catalog_page_index]
+        catalog_items = CatalogPage._get_catalog_items(catalog_slide)
+
+        sp_tree = catalog_slide.shapes._spTree
+        if len(catalog_items) > catalog_num:
+            # delete the excess shape pairs from the slide
+            excess_items = catalog_items[catalog_num:]
+            for item in excess_items:
+                # delete the excess chapter number and chapter title shapes
+                Page.remove_shapes(sp_tree, [item.number_shape['shape'], 
+                                             item.text_shape['shape'], 
+                                             item.background_shape['shape']])
+            
+            catalog_items = catalog_items[:catalog_num]
+        # TODO: Add catalog items to the slide
+        for i in range(len(catalog_items)):
+            cur_content = content[i].element_text
+            cur_number = begin_number
+            text_shape = catalog_items[i].text_shape['shape']
+            number_shape = catalog_items[i].number_shape['shape']
+
+            text_style, number_style = CatalogPage._get_cataloglist_text_style(catalog_items)
+            text_shape.text = cur_content
+            catalog_items[i].text_shape['text'] = cur_content
+            CatalogPage._set_text_style(text_shape, text_style)
+            # 序号都采用“01”格式
+            number_shape.text = str(cur_number).zfill(2)
+            catalog_items[i].number_shape['text'] = str(cur_number).zfill(2)
+            CatalogPage._set_text_style(number_shape, number_style)
+            begin_number += 1
+        # 如果catalog_num小于catalog_items的数量，则生成新的catalog page
+        if begin_number-1 < catalog_num:
+            new_catalog_slide = CatalogPage.duplicate_slide(prs, catalog_page_index)
+            catalog_page_index += 1
+            CatalogPage.move_slide(prs, new_catalog_slide, catalog_page_index)
+            # 递归生成新的catalog page
+            CatalogPage.generate_slide(prs, content[len(catalog_items):], catalog_page_index, begin_number)
+
+
+class ChapterHomePage(Page):
+    def generate_slide(self, prs: Presentation, content):
+        pass
+
+
+class ChapterContentPage(Page):
+    def generate_slide(self, prs: Presentation, content):
+        pass
+
+
+class EndPage(Page):
+    def generate_slide(self, prs: Presentation, content):
+        pass
