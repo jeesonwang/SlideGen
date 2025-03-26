@@ -56,3 +56,9 @@ class FileParseError(ApiError):
 
 class FileTypeError(ApiError):
     default_code = InsideServerErrorCode
+
+class PPTGenError(ApiError):
+    default_code = InsideServerErrorCode
+
+class PPTTemplateError(ApiError):
+    default_code = InsideServerErrorCode
