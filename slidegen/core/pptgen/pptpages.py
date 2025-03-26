@@ -31,6 +31,12 @@ class Page:
     """PPT pages base class"""
 
     @staticmethod
+    def remove_slide(pres, index):
+        """Delete the slide at the given index"""
+        xml_slides = pres.slides._sldIdLst
+        xml_slides.remove(list(xml_slides)[index])
+
+    @staticmethod
     def remove_shapes(sp_tree: CT_GroupShape, shapes: list[Shape]):
         for shp in shapes:
             sp_tree.remove(shp.element)
