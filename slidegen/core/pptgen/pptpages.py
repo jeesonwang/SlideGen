@@ -237,7 +237,7 @@ class CatalogPage(Page):
                 if layout_direction == CatalogLayout.HORIZONTAL:
                     # For horizontal layout, find the text shape below the number shape
                     if text_shape['top'] > number_shape['top']:
-                        distance = text_shape['top'] - number_shape['top']
+                        distance = CatalogPage._calculate_distance(number_shape, text_shape)
                         horizontal_overlap = (min(number_shape['left'] + number_shape['width'], 
                                                 text_shape['left'] + text_shape['width']) - 
                                             max(number_shape['left'], text_shape['left']))
@@ -247,7 +247,7 @@ class CatalogPage(Page):
                 elif layout_direction == CatalogLayout.VERTICAL:
                     # For vertical layout, find the text shape to the right of the number shape
                     if text_shape['left'] > number_shape['left']:
-                        distance = text_shape['left'] - (number_shape['left'] + number_shape['width'])
+                        distance = CatalogPage._calculate_distance(number_shape, text_shape)
                         vertical_overlap = (min(number_shape['top'] + number_shape['height'], 
                                             text_shape['top'] + text_shape['height']) - 
                                         max(number_shape['top'], text_shape['top']))
