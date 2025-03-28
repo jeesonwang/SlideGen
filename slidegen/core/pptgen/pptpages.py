@@ -15,10 +15,6 @@ from pptx.shapes.autoshape import Shape
 
 from core.docparse.markdown_parser import Element, Paragraph, Picture, Heading
 from core.pptgen.utils import (
-    FONT_SIZE_CASE, 
-    SCALE_FACTOR, 
-    SCALE_FACTOR_CH, 
-    is_chinese, 
     CatalogLayout,
     CatalogItem,
     CatalogList,
@@ -31,6 +27,22 @@ from exception import PPTTemplateError, PPTGenError
 
 class Page:
     """PPT pages base class"""
+
+    @staticmethod
+    def _set_text(shape: BaseShape, text: str):
+        """Set the text of the shape, keep the original paragraph style."""
+        assert shape.has_text_frame, "Shape must have a text frame"
+        tf = shape.text_frame
+        # if the shape has text, merge the runs and set the run text
+        if shape.text:
+            para = tf.paragraphs[0]
+            run = runs_merge(para)
+            run.text = text
+        # if the shape has no text, add a new paragraph and keep the original paragraph style
+        else:
+            para = tf.paragraphs[0]
+            para_xml = convert_paragraph_xml(para._element.xml, text)
+            shape = add_para_by_xml(shape, para_xml)
 
     @staticmethod
     def remove_slide(pres, index):
@@ -103,8 +115,8 @@ class CoverPage(Page):
     """Presentation cover page"""
     
     @staticmethod
-    def generate_slide(prs: Presentation, content: Heading) -> list[Slide]:
-        cover_slide = prs.slides[0]
+    def generate_slide(prs: Presentation, content: Heading, cover_slide_index: int):
+        cover_slide = prs.slides[cover_slide_index]
 
         assert content.level == 1, "Cover page must have a level 1 heading"
         main_title = content.element_text
@@ -113,33 +125,10 @@ class CoverPage(Page):
 
         # TODO: add subtitle
         for placeholder in  cover_slide.shapes.placeholders:
-            
             if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
-                placeholder.text = main_title
-                text_frame = placeholder.text_frame
-                paragraph = text_frame.paragraphs[0]
-                font = paragraph.font
-                font_size = font.size
-                if font_size is None:
-                    font.size = font_size = Pt(FONT_SIZE_CASE[PP_PLACEHOLDER.TITLE])
-                text_width = 0.0
-                for char in main_title:
-                    if is_chinese(char):  # if the char is a Chinese character
-                        char_width = font_size.pt * 1.0
-                    else:
-                        char_width = font_size.pt * 0.6
-                    text_width += char_width
-                text_width_emu = int(text_width * SCALE_FACTOR)
-                min_width = placeholder.width
-                max_width = prs.slide_width * 0.9
-                new_width = max(min_width, min(text_width_emu, max_width))
-                placeholder.width = new_width
-                placeholder.height = int(font_size.pt * SCALE_FACTOR_CH)
-                text_frame.word_wrap = False
+                CoverPage._set_text(placeholder, main_title)
+                placeholder.text_frame.word_wrap = False
                 break
-
-        return [cover_slide]
-
 
 class CatalogPage(Page):
     """Presentation catalog page"""
@@ -279,22 +268,6 @@ class CatalogPage(Page):
         return catalog_list
 
     @staticmethod
-    def _set_text(shape: Shape, text: str):
-        """Set the text of the shape, keep the original paragraph style."""
-        assert shape.has_text_frame, "Shape must have a text frame"
-        tf = shape.text_frame
-        # if the shape has text, merge the runs and set the run text
-        if shape.text:
-            para = tf.paragraphs[0]
-            run = runs_merge(para)
-            run.text = text
-        # if the shape has no text, add a new paragraph and keep the original paragraph style
-        else:
-            para = tf.paragraphs[0]
-            para_xml = convert_paragraph_xml(para._element.xml, text)
-            shape = add_para_by_xml(shape, para_xml)
-
-    @staticmethod
     def generate_slide(prs: Presentation, 
                        content: list[Heading], 
                        *,
@@ -351,9 +324,16 @@ class CatalogPage(Page):
                                         begin_number=begin_number)
 
 class ChapterHomePage(Page):
-    def generate_slide(self, prs: Presentation, content):
-        pass
+    """Chapter home page"""
 
+    @staticmethod
+    def generate_slide(prs: Presentation, content: Heading, chapter_slide_index: int):
+        chapter_home_slide = prs.slides[chapter_slide_index]
+        title = content.element_text
+        for placeholder in chapter_home_slide.shapes.placeholders:
+            if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
+                ChapterHomePage._set_text(placeholder, title)
+                break
 
 class ChapterContentPage(Page):
     def generate_slide(self, prs: Presentation, content):
