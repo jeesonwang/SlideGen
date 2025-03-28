@@ -88,6 +88,9 @@ class Page:
             else:
                 el = shp.element
                 newel = copy.deepcopy(el)
+                custDataLst = newel.xpath(".//p:custDataLst")
+                for cd in custDataLst:
+                    cd.getparent().remove(cd)
                 copied_slide.shapes._spTree.insert_element_before(newel, 'p:extLst')
     
         return copied_slide
