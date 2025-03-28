@@ -42,26 +42,6 @@ class Page:
     def remove_shapes(sp_tree: CT_GroupShape, shapes: list[Shape]):
         for shp in shapes:
             sp_tree.remove(shp.element)
-
-    @staticmethod
-    def _get_shape_text_style(shape: Shape) -> dict:
-        """Get the input `Shape` text style"""
-        if not shape.has_text_frame:
-            return {}
-
-        tf = shape.text_frame
-        paragraph = tf.paragraphs[0]
-        font = (paragraph.runs[0].font if paragraph.runs else paragraph.font)
-        def get_attr(attr_name, default=None):
-            return getattr(font, attr_name, default)
-        
-        return {
-            'font_name': get_attr('name'),
-            'font_size': get_attr('size'),
-            'bold': get_attr('bold'),
-            'italic': get_attr('italic'),
-            'underline': get_attr('underline')
-        }
     
     @staticmethod
     def _set_text_style(shape: Shape, style: dict):
