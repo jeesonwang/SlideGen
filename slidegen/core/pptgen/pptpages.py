@@ -19,10 +19,12 @@ from core.pptgen.utils import (
     SCALE_FACTOR, 
     SCALE_FACTOR_CH, 
     is_chinese, 
-    is_english, 
     CatalogLayout,
     CatalogItem,
-    CatalogList
+    CatalogList,
+    runs_merge,
+    convert_paragraph_xml,
+    add_para_by_xml
 )
 from exception import PPTTemplateError, PPTGenError
 
@@ -213,9 +215,17 @@ class CatalogPage(Page):
             all_shapes.append(shape_info)
         for shape in text_shapes:
             # check if the text is a chapter number
-            if shape['text'].isdigit() or (len(shape['text']) <= 3 and shape['text'].replace('0', '').isdigit()):
+            text = shape['text'].strip()
+            if len(text) > 3:
+                continue
+            if text.isdigit() or (text.endswith('.') and text[:-1].isdigit()):
+                if int(text.replace('.', '')) > 49:
+                    continue
                 number_shapes.append(shape)
-        number_shapes.sort(key=lambda shape: int(shape['text']))
+        try:
+            number_shapes.sort(key=lambda shape: int(shape['text']))
+        except ValueError:
+            raise PPTTemplateError("Chapter number must be a number")
 
         match len(number_shapes):
             case 0:
@@ -225,7 +235,7 @@ class CatalogPage(Page):
             case _:
                 layout_direction = CatalogPage._layout_direction(number_shapes)
         
-        title_text_shapes = [shape for shape in text_shapes 
+        except_number_shapes = [shape for shape in text_shapes 
                                 if shape not in number_shapes]
         catalog_list = CatalogList()
         # Find the closest text shape for each number shape
@@ -233,7 +243,7 @@ class CatalogPage(Page):
             min_distance = float('inf')
             closest_text_shape = None
             
-            for text_shape in title_text_shapes:
+            for text_shape in except_number_shapes:
                 if layout_direction == CatalogLayout.HORIZONTAL:
                     # For horizontal layout, find the text shape below the number shape
                     if text_shape['top'] > number_shape['top']:
@@ -262,8 +272,11 @@ class CatalogPage(Page):
 
             if closest_text_shape:
                 catalog_list.append(CatalogItem(number_shape, closest_text_shape))
-            all_shapes.remove(number_shape)
-            all_shapes.remove(closest_text_shape)
+            try:
+                all_shapes.remove(number_shape)
+                all_shapes.remove(closest_text_shape)
+            except ValueError:
+                raise PPTTemplateError(f"all shape: {all_shapes}\n current closest_text_shape: {closest_text_shape} \n current number_shape: {number_shape}")
         assert len(number_shapes) == len(catalog_list), "The number of chapter numbers and chapter titles must be the same"
 
         if len(all_shapes) >= len(number_shapes):
@@ -283,40 +296,25 @@ class CatalogPage(Page):
         return catalog_list
 
     @staticmethod
-    def _get_cataloglist_text_style(catalog_list: CatalogList) -> tuple[dict, dict]:
-        """Get the text style and number style of the catalog list"""
-        text_style = {
-            'font_name': None,
-            'font_size': None,
-            'bold': None,
-            'italic': None,
-            'underline': None
-        }
-        
-        number_style = {
-            'font_name': None,
-            'font_size': None,
-            'bold': None,
-            'italic': None,
-            'underline': None
-        }
-
-        style_attrs = ['font_name', 'font_size', 'bold', 'italic', 'underline']
-        for item in catalog_list:
-            cur_text_style = CatalogPage._get_shape_text_style(item.text_shape['shape'])
-            cur_number_style = CatalogPage._get_shape_text_style(item.number_shape['shape'])
-            
-            for attr in style_attrs:
-                if cur_text_style.get(attr) is not None:
-                    text_style[attr] = cur_text_style[attr]
-                if cur_number_style.get(attr) is not None:
-                    number_style[attr] = cur_number_style[attr]
-        
-        return text_style, number_style
+    def _set_text(shape: Shape, text: str):
+        """Set the text of the shape, keep the original paragraph style."""
+        assert shape.has_text_frame, "Shape must have a text frame"
+        tf = shape.text_frame
+        # if the shape has text, merge the runs and set the run text
+        if shape.text:
+            para = tf.paragraphs[0]
+            run = runs_merge(para)
+            run.text = text
+        # if the shape has no text, add a new paragraph and keep the original paragraph style
+        else:
+            para = tf.paragraphs[0]
+            para_xml = convert_paragraph_xml(para._element.xml, text)
+            shape = add_para_by_xml(shape, para_xml)
 
     @staticmethod
     def generate_slide(prs: Presentation, 
                        content: list[Heading], 
+                       *,
                        catalog_page_index: int = 1, 
                        begin_number: int = 1):
         """
@@ -334,8 +332,8 @@ class CatalogPage(Page):
         catalog_slide = prs.slides[catalog_page_index]
         catalog_items = CatalogPage._get_catalog_items(catalog_slide)
 
-        sp_tree = catalog_slide.shapes._spTree
         if len(catalog_items) > catalog_num:
+            sp_tree = catalog_slide.shapes._spTree
             # delete the excess shape pairs from the slide
             excess_items = catalog_items[catalog_num:]
             for item in excess_items:
@@ -352,14 +350,12 @@ class CatalogPage(Page):
             text_shape = catalog_items[i].text_shape['shape']
             number_shape = catalog_items[i].number_shape['shape']
 
-            text_style, number_style = CatalogPage._get_cataloglist_text_style(catalog_items)
-            text_shape.text = cur_content
             catalog_items[i].text_shape['text'] = cur_content
-            CatalogPage._set_text_style(text_shape, text_style)
+            CatalogPage._set_text(text_shape, cur_content)
             # The chapter number is formatted as "01"
-            number_shape.text = str(cur_number).zfill(2)
-            catalog_items[i].number_shape['text'] = str(cur_number).zfill(2)
-            CatalogPage._set_text_style(number_shape, number_style)
+            chapter_number = str(cur_number).zfill(2)
+            catalog_items[i].number_shape['text'] = chapter_number
+            CatalogPage._set_text(number_shape, chapter_number)
             begin_number += 1
         # If the number of catalog_num is less than the number of catalog_items, generate a new catalog page
         if begin_number-1 < catalog_num:
@@ -367,8 +363,9 @@ class CatalogPage(Page):
             catalog_page_index += 1
             CatalogPage.move_slide(prs, new_catalog_slide, catalog_page_index)
             # Recursively generate the new catalog page
-            CatalogPage.generate_slide(prs, content[len(catalog_items):], catalog_page_index, begin_number)
-
+            CatalogPage.generate_slide(prs, content[len(catalog_items):],
+                                        catalog_page_index=catalog_page_index,
+                                        begin_number=begin_number)
 
 class ChapterHomePage(Page):
     def generate_slide(self, prs: Presentation, content):
