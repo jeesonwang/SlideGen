@@ -166,6 +166,64 @@ def add_para_by_xml(shape: Shape, xml: str):
     del_para(0, shape)
     return shape
 
+def modify_shape_xml(xml_str: str, shape_id: int | str, shape_name: str, text_content: str) -> str:
+    """
+    Modify the XML of a PPTX shape: update the shape ID, name, and text content.
+    
+    Args:
+        xml_str (str): The input XML string.
+        shape_id (int | str): The new shape ID.
+        shape_name (str): The new shape name.
+        text_content (str): The new text content.
+    
+    Returns:
+        str: The modified XML string.
+    """
+    root = etree.fromstring(xml_str)
+    nsmap = root.nsmap
+    
+    cNvPr = root.find('.//p:cNvPr', namespaces=nsmap)
+    if cNvPr is not None:
+        cNvPr.set('id', str(shape_id))
+        cNvPr.set('name', shape_name)
+    
+    t_element = root.find('.//a:t', namespaces=nsmap)
+    if t_element is not None:
+        # Keep the original rPr format
+        r_element = t_element.getparent()
+        if r_element is not None:
+            r_pr = r_element.find('.//a:rPr', namespaces=nsmap)
+            if r_pr is not None:
+                new_r = etree.Element(f"{{{nsmap['a']}}}r")
+                new_r.append(deepcopy(r_pr))
+                new_t = etree.Element(f"{{{nsmap['a']}}}t")
+                new_t.text = text_content
+                new_r.append(new_t)
+                
+                p_element = r_element.getparent()
+                p_element.replace(r_element, new_r)
+    return etree.tostring(root, encoding='unicode', pretty_print=True)
+
+def add_shape_by_xml(slide: Slide, shape_id: int, shape_name: str, text_content: str, shape_xml: str):
+    """
+    Add a shape by XML string.
+
+    Args:
+        slide (Slide): The slide to add the shape to.
+        shape_id (int): The ID of the shape.
+        shape_name (str): The name of the shape.
+        text_content (str): The text content of the shape.
+        shape_xml (str): The XML string of the shape.
+
+    Returns:
+        Shape: The added shape.
+    """ 
+    shape_xml = modify_shape_xml(shape_xml, shape_id, shape_name, text_content)
+
+    new_shape = slide.shapes._shape_factory(
+    slide.shapes._spTree.insert_element_before(parse_xml(shape_xml), 'p:extLst'))
+    return new_shape
+
 def clone_para(paragraph_id: int, shape: BaseShape):
     """
     Clone a paragraph in a shape.
@@ -184,8 +242,8 @@ def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
         str: The converted paragraph xml.
     """
     root = etree.fromstring(paragraph_xml)
-
-    if root.tag == "{http://schemas.openxmlformats.org/drawingml/2006/main}p":
+    drawingml_ns = root.nsmap.get('a')
+    if root.tag == f"{{{drawingml_ns}}}p":
         p_element = root
     else:
         p_element = root.find(".//a:p", namespaces=root.nsmap)
@@ -193,22 +251,17 @@ def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
         return etree.tostring(root, encoding="unicode", pretty_print=True)
     
     end_para_rpr = p_element.find(".//a:endParaRPr", namespaces=root.nsmap)
-    
     if end_para_rpr is not None:
-        r_pr = etree.Element("{http://schemas.openxmlformats.org/drawingml/2006/main}rPr")
-
+        r_pr = etree.Element(f"{{{drawingml_ns}}}rPr")
         for attr, value in end_para_rpr.attrib.items():
             r_pr.set(attr, value)
         for child in end_para_rpr:
             r_pr.append(deepcopy(child))
-
-        r_element = etree.Element("{http://schemas.openxmlformats.org/drawingml/2006/main}r")
+        r_element = etree.Element(f"{{{drawingml_ns}}}r")
         r_element.append(r_pr)
-        
-        t_element = etree.Element("{http://schemas.openxmlformats.org/drawingml/2006/main}t")
+        t_element = etree.Element(f"{{{drawingml_ns}}}t")
         t_element.text = text_content
         r_element.append(t_element)
- 
         p_element.remove(end_para_rpr)
 
         p_pr = p_element.find(".//a:pPr", namespaces=root.nsmap)
