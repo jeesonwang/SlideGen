@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from copy import deepcopy
 
 from lxml import etree
+from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 from pptx.text.text import _Paragraph, _Run
 from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.oxml import parse_xml
@@ -165,6 +166,18 @@ def add_para_by_xml(shape: Shape, xml: str):
     shape.text_frame.paragraphs[0]._element.addnext(parse_xml(xml))
     del_para(0, shape)
     return shape
+
+def get_theme_colors(presentation):
+    theme_part = presentation.slide_master.part.part_related_by(RT.THEME)
+    theme = parse_xml(theme_part.blob)
+    color_elements = theme.xpath('a:themeElements/a:clrScheme/*')
+    result = {}
+    for element in color_elements:
+        namespaces = {'a': 'http://schemas.openxmlformats.org/drawingml/2006/main'}
+        root = etree.fromstring(etree.tostring(element))
+        theme_name = element.tag.replace('{http://schemas.openxmlformats.org/drawingml/2006/main}', '')
+        result[theme_name] = root.xpath('//a:srgbClr/@val', namespaces=namespaces)[0]
+    return result
 
 def modify_shape_xml(xml_str: str, shape_id: int | str, shape_name: str, text_content: str) -> str:
     """
