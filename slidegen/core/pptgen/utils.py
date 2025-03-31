@@ -10,6 +10,7 @@ from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.oxml import parse_xml
 from pptx.shapes.autoshape import Shape
 from pptx.shapes.base import BaseShape
+from pptx.slide import Slide
 
 from slidegen.exception.custom_exception import PPTGenError
 
@@ -175,6 +176,12 @@ def clone_para(paragraph_id: int, shape: BaseShape):
 def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
     """
     Convert paragraph xml to add text content and keep the original paragraph style.
+    Args:
+        paragraph_xml (str): The paragraph xml. It usually comes from an empty text shape.
+        text_content (str): The text content to add.
+
+    Returns:
+        str: The converted paragraph xml.
     """
     root = etree.fromstring(paragraph_xml)
 
