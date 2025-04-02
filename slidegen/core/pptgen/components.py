@@ -110,17 +110,6 @@ class Style:
         """Get the number of shapes"""
         return len(self.shapes)
 
-    @property
-    def shape_names(self) -> List[str]:
-        """Get a list of shape names"""
-        return list(self.shapes.keys())
-    
-    @property
-    def shape_list(self) -> List[CShape]:
-        """Get a list of shapes"""
-        return list(self.shapes.values())
-    
-
 class LayoutType:
     """Represent a layout type (like two_points or three_points)."""
     
@@ -153,9 +142,6 @@ class LayoutType:
     def get_style(self, style_name: str) -> Optional[Style]:
         return self.styles.get(style_name)
     
-    def get_style_names(self) -> List[str]:
-        return list(self.styles.keys())
-    
     def __len__(self) -> int:
         return len(self.styles)
     
@@ -175,6 +161,7 @@ class ComponentsManager:
         
         if json_path:
             self.load_from_json(json_path)
+            self.json_path = json_path
     
     def load_from_json(self, json_path: str) -> None:
         with open(json_path, 'r', encoding='utf-8') as f:
@@ -230,31 +217,27 @@ class ComponentsManager:
             root1 = etree.fromstring(xml1)
             root2 = etree.fromstring(xml2)
             nsmap = root1.nsmap
-            off_element1 = root1.find('.//a:off', namespaces=nsmap)
-            off_element2 = root2.find('.//a:off', namespaces=nsmap)
             
-            if off_element1 is not None and off_element2 is not None:
-                x1, y1 = off_element1.get('x'), off_element1.get('y')
-                x2, y2 = off_element2.get('x'), off_element2.get('y')
-                off_element1.set('x', '0')
-                off_element1.set('y', '0')
-                off_element2.set('x', '0')
-                off_element2.set('y', '0')
+            xfrm_element1 = root1.find('.//a:xfrm', namespaces=nsmap)
+            xfrm_element2 = root2.find('.//a:xfrm', namespaces=nsmap)
+            
+            if xfrm_element1 is not None and xfrm_element1.getparent() is not None:
+                xfrm_element1.getparent().remove(xfrm_element1)
+            
+            if xfrm_element2 is not None and xfrm_element2.getparent() is not None:
+                xfrm_element2.getparent().remove(xfrm_element2)
             
             cnvpr1 = root1.find('.//p:cNvPr', namespaces=nsmap)
             cnvpr2 = root2.find('.//p:cNvPr', namespaces=nsmap)
             
             if cnvpr1 is not None and cnvpr2 is not None:
-                id1, name1 = cnvpr1.get('id'), cnvpr1.get('name')
-                id2, name2 = cnvpr2.get('id'), cnvpr2.get('name')
                 cnvpr1.set('id', '1')
                 cnvpr1.set('name', 'temp')
                 cnvpr2.set('id', '1')
                 cnvpr2.set('name', 'temp')
+                
             t_elements1 = root1.findall('.//a:t', namespaces=nsmap)
             t_elements2 = root2.findall('.//a:t', namespaces=nsmap)
-            text_contents1 = [(t, t.text) for t in t_elements1]
-            text_contents2 = [(t, t.text) for t in t_elements2]
             
             for t_elem in t_elements1:
                 t_elem.text = "placeholder_text"
@@ -264,24 +247,6 @@ class ComponentsManager:
 
             xml_str1 = etree.tostring(root1, encoding='unicode')
             xml_str2 = etree.tostring(root2, encoding='unicode')
-
-            if off_element1 is not None and off_element2 is not None:
-                off_element1.set('x', x1)
-                off_element1.set('y', y1)
-                off_element2.set('x', x2)
-                off_element2.set('y', y2)
-            
-            if cnvpr1 is not None and cnvpr2 is not None:
-                cnvpr1.set('id', id1)
-                cnvpr1.set('name', name1)
-                cnvpr2.set('id', id2)
-                cnvpr2.set('name', name2)
-            
-            for t_elem, text in text_contents1:
-                t_elem.text = text
-            
-            for t_elem, text in text_contents2:
-                t_elem.text = text
 
             return xml_str1 == xml_str2
             
@@ -299,7 +264,7 @@ class ComponentsManager:
         """
         layout = self.get_layout_type(layout_type)
         if not layout:
-            raise ValueError(f"Layout type '{layout_type}' not found")
+            raise ValueError(f"Layout type '{layout_type}' not found, available layout types: {self.layout_types_names}")
         
         if style_name in layout.styles:
             raise ValueError(f"{self.__class__.__name__}: Style '{style_name}' already exists in layout type '{layout_type}'")
@@ -308,7 +273,7 @@ class ComponentsManager:
         
         shapes = slide.shapes
         shape_data_dict = {}
-        max_height = 0
+        area = 0
         for i, shape in enumerate(shapes):
             if shape.is_placeholder:
                 continue
@@ -334,12 +299,17 @@ class ComponentsManager:
             elif shape.has_text_frame:
                 xml_str = shape._element.xml
                 xml_str = remove_custDataLst(xml_str)
-                if shape.height > max_height:
-                    max_height = shape.height
+                current_area = shape.height * shape.width
+                if current_area > area:
+                    area = current_area
+                shape_text = shape.text
+                content_type = None
+                if shape_text:
+                    content_type = "content"
                 shape_data = {
                     "xml": xml_str,
                     "zorder": i,
-                    "content_type": "content",
+                    "content_type": content_type,
                     "path": None,
                     "location": [{"x": location.x, "y": location.y, "width": location.width, "height": location.height}]
                 }
@@ -371,7 +341,8 @@ class ComponentsManager:
                 continue
 
             if shape_data["content_type"] == "content":
-                if shape_data["location"][0]["height"] < (max_height - 10000):
+                current_area = shape_data["location"][0]["height"] * shape_data["location"][0]["width"]
+                if current_area < (area - 10000):
                     if self.get_text_from_xml(shape_data["xml"]).isdigit():
                         shape_data["content_type"] = "number"
                     else:
@@ -412,5 +383,13 @@ class ComponentsManager:
         nsmap = root.nsmap
         t_elements = root.findall('.//a:t', namespaces=nsmap)
         return "".join([t.text for t in t_elements])
+    
+    def reload(self, json_path: str) -> None:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        self.layout_types = {}
+        for layout_name, layout_data in data.items():
+            self.layout_types[layout_name] = LayoutType(layout_name, layout_data)
+        logger.info(f"Reloaded components from {json_path}")
 
 components_manager = ComponentsManager(COMPONENTS_PATH)
