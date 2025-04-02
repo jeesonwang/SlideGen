@@ -13,7 +13,7 @@ from pptx.shapes.autoshape import Shape
 from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 
-from slidegen.exception.custom_exception import PPTGenError
+from exception.custom_exception import PPTGenError
 
 FONT_SIZE_CASE = {
     PP_PLACEHOLDER.TITLE: 54,
@@ -284,3 +284,31 @@ def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
             p_element.insert(0, r_element)
 
     return etree.tostring(root, encoding="unicode", pretty_print=True)
+
+
+def remove_custDataLst(xml_str: str) -> str:
+    """
+    Remove the <p:custDataLst> part in the XML and return the processed XML string.
+    
+    Args:
+        xml_str (str): The input XML string, containing the <p:custDataLst> part.
+        
+    Returns:
+        str: The processed XML string, without the <p:custDataLst> part.
+    """
+    root = etree.fromstring(xml_str)
+    ns = root.nsmap
+    
+    cust_data_list = root.find(".//p:custDataLst", namespaces=ns)
+    
+    if cust_data_list is not None:
+        parent = cust_data_list.getparent()
+        if parent is not None:
+            parent.remove(cust_data_list)
+    
+    return etree.tostring(
+        root,
+        encoding="unicode",
+        pretty_print=True,
+        xml_declaration=False,
+    )
