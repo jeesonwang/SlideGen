@@ -8,6 +8,7 @@ from loguru import logger
 from pptx.slide import Slide
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
+from config.conf import COMPONENTS_PATH
 from core.pptgen.utils import remove_custDataLst
 
 @dataclass
@@ -412,17 +413,4 @@ class ComponentsManager:
         t_elements = root.findall('.//a:t', namespaces=nsmap)
         return "".join([t.text for t in t_elements])
 
-if __name__ == "__main__":
-    shapes_path = "components/shapes/shapes_copy.json"
-    manager = ComponentsManager(str(shapes_path))
-    
-    layout = manager.get_layout_type("two_points")
-    if layout:
-        print(f"Available styles for two_points: {layout.get_style_names()}")
-    random_style = manager.get_random_style("two_points")
-    if random_style:
-        print(f"Randomly selected style: {random_style.name}")
-        
-        for shape_name, shape in random_style.shapes.items():
-            print(f"  Shape: {shape_name}, Content type: {shape.content_type}") 
-    
+components_manager = ComponentsManager(COMPONENTS_PATH)
