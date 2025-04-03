@@ -14,6 +14,7 @@ from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 
 from exception.custom_exception import PPTGenError
+from core.pptgen.components import Location
 
 FONT_SIZE_CASE = {
     PP_PLACEHOLDER.TITLE: 54,
@@ -28,6 +29,31 @@ FONT_SIZE_CASE = {
 # scale factor for emu to pt
 SCALE_FACTOR = 12700
 SCALE_FACTOR_CH = 16000
+
+IMAGE_EXTENSIONS: set[str] = {
+    "bmp",
+    "jpg",
+    "jpeg",
+    "pgm",
+    "png",
+    "ppm",
+    "tif",
+    "tiff",
+    "webp",
+}
+
+def is_image_path(file: str) -> bool:
+    """
+    Check if a file path is an image based on its extension.
+
+    Args:
+        file (str): The file path to check.
+
+    Returns:
+        bool: True if the file is an image, False otherwise.
+    """
+    return file.split(".")[-1].lower() in IMAGE_EXTENSIONS
+
 
 class CatalogLayout(Enum):
     """
@@ -212,7 +238,13 @@ def modify_shape_xml(xml_str: str, shape_id: int | str, shape_name: str, text_co
                 p_element.replace(r_element, new_r)
     return etree.tostring(root, encoding='unicode', pretty_print=True)
 
-def add_shape_by_xml(slide: Slide, shape_xml: str, shape_id: int | str, shape_name: str, text_content: str):
+def add_shape_by_xml(slide: Slide, 
+                     *,
+                     shape_xml: str, 
+                     shape_id: int | str, 
+                     shape_name: str, 
+                     text_content: str = "",
+                     location: Optional[Location] = None) -> Shape:
     """
     Add a shape by XML string.
 
@@ -222,14 +254,20 @@ def add_shape_by_xml(slide: Slide, shape_xml: str, shape_id: int | str, shape_na
         shape_name (str): The name of the shape.
         text_content (str): The text content of the shape.
         shape_xml (str): The XML string of the shape.
-
+        location (Optional[Location]): The location of the shape.
     Returns:
         Shape: The added shape.
     """ 
     shape_xml = modify_shape_xml(shape_xml, shape_id, shape_name, text_content)
 
     new_shape = slide.shapes._shape_factory(
-    slide.shapes._spTree.insert_element_before(parse_xml(shape_xml), 'p:extLst'))
+        slide.shapes._spTree.insert_element_before(parse_xml(shape_xml), 'p:extLst'))
+    if location is not None:
+        new_shape.left = location.x
+        new_shape.top = location.y
+        new_shape.width = location.width
+        new_shape.height = location.height
+
     return new_shape
 
 def clone_para(paragraph_id: int, shape: BaseShape):
@@ -280,30 +318,3 @@ def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
 
     return etree.tostring(root, encoding="unicode", pretty_print=True)
 
-
-def remove_custDataLst(xml_str: str) -> str:
-    """
-    Remove the <p:custDataLst> part in the XML and return the processed XML string.
-    
-    Args:
-        xml_str (str): The input XML string, containing the <p:custDataLst> part.
-        
-    Returns:
-        str: The processed XML string, without the <p:custDataLst> part.
-    """
-    root = etree.fromstring(xml_str)
-    ns = root.nsmap
-    
-    cust_data_list = root.find(".//p:custDataLst", namespaces=ns)
-    
-    if cust_data_list is not None:
-        parent = cust_data_list.getparent()
-        if parent is not None:
-            parent.remove(cust_data_list)
-    
-    return etree.tostring(
-        root,
-        encoding="unicode",
-        pretty_print=True,
-        xml_declaration=False,
-    )
