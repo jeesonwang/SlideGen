@@ -3,6 +3,7 @@ import io
 import copy
 from typing import cast
 import random
+from enum import Enum
 
 from pptx.presentation import Presentation
 from pptx.slide import Slide
@@ -16,9 +17,6 @@ from loguru import logger
 
 from core.docparse.markdown_parser import Element, Paragraph, Picture, Heading
 from core.pptgen.utils import (
-    CatalogLayout,
-    CatalogItem,
-    CatalogList,
     runs_merge,
     convert_paragraph_xml,
     add_para_by_xml,
@@ -134,6 +132,37 @@ class CoverPage(Page):
                 CoverPage._set_text(placeholder, main_title)
                 placeholder.text_frame.word_wrap = False
                 break
+
+class CatalogLayout(Enum):
+    """
+    Catalog layout enum
+    """
+    VERTICAL = "vertical"
+    HORIZONTAL = "horizontal"
+    UNDEFINED = "undefined"
+
+class CatalogItem:
+    """
+    Catalog item including number shape, text shape and background shape.
+    """
+    def __init__(self, number_shape: dict, text_shape: dict, background_shape: dict | None = None):
+        self.number_shape = number_shape
+        self.text_shape = text_shape
+        self.background_shape = background_shape
+
+    def asdict(self):
+        return {
+            "number_shape": self.number_shape,
+            "text_shape": self.text_shape,
+            "background_shape": self.background_shape
+        }
+
+class CatalogList(list):
+    """
+    Catalog list including a list of `CatalogItem`.
+    """
+    def asdict(self):
+        return [item.asdict() for item in self]
 
 class CatalogPage(Page):
     """Presentation catalog page"""

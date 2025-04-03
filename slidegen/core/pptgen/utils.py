@@ -1,5 +1,4 @@
 import re
-from enum import Enum
 from typing import Any, Optional
 from types import SimpleNamespace
 from copy import deepcopy
@@ -53,39 +52,6 @@ def is_image_path(file: str) -> bool:
         bool: True if the file is an image, False otherwise.
     """
     return file.split(".")[-1].lower() in IMAGE_EXTENSIONS
-
-
-class CatalogLayout(Enum):
-    """
-    Catalog layout enum
-    """
-    VERTICAL = "vertical"
-    HORIZONTAL = "horizontal"
-    UNDEFINED = "undefined"
-
-
-class CatalogItem:
-    """
-    Catalog item including number shape, text shape and background shape.
-    """
-    def __init__(self, number_shape: dict, text_shape: dict, background_shape: dict | None = None):
-        self.number_shape = number_shape
-        self.text_shape = text_shape
-        self.background_shape = background_shape
-
-    def asdict(self):
-        return {
-            "number_shape": self.number_shape,
-            "text_shape": self.text_shape,
-            "background_shape": self.background_shape
-        }
-
-class CatalogList(list):
-    """
-    Catalog list including a list of `CatalogItem`.
-    """
-    def asdict(self):
-        return [item.asdict() for item in self]
 
 def is_english(texts):
     eng = 0
@@ -317,4 +283,3 @@ def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
             p_element.insert(0, r_element)
 
     return etree.tostring(root, encoding="unicode", pretty_print=True)
-
