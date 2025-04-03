@@ -125,8 +125,6 @@ def runs_merge(paragraph: _Paragraph) -> Optional[_Run]:
         Optional[_Run]: The merged run, or None if there are no runs.
     """
     runs = paragraph.runs
-
-    # Handle field codes
     if len(runs) == 0:
         runs = tuple(
             _Run(r, paragraph)
@@ -137,11 +135,8 @@ def runs_merge(paragraph: _Paragraph) -> Optional[_Run]:
     if len(runs) == 0:
         return None
 
-    # Find the run with the most text
     run = max(runs, key=lambda x: len(x.text))
     run.text = paragraph.text
-
-    # Remove other runs
     for r in runs:
         if r != run:
             r._r.getparent().remove(r._r)
@@ -217,13 +212,13 @@ def modify_shape_xml(xml_str: str, shape_id: int | str, shape_name: str, text_co
                 p_element.replace(r_element, new_r)
     return etree.tostring(root, encoding='unicode', pretty_print=True)
 
-def add_shape_by_xml(slide: Slide, shape_id: int, shape_name: str, text_content: str, shape_xml: str):
+def add_shape_by_xml(slide: Slide, shape_xml: str, shape_id: int | str, shape_name: str, text_content: str):
     """
     Add a shape by XML string.
 
     Args:
         slide (Slide): The slide to add the shape to.
-        shape_id (int): The ID of the shape.
+        shape_id (int | str): The ID of the shape.
         shape_name (str): The name of the shape.
         text_content (str): The text content of the shape.
         shape_xml (str): The XML string of the shape.
