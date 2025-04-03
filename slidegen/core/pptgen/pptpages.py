@@ -6,7 +6,6 @@ import random
 
 from pptx.presentation import Presentation
 from pptx.slide import Slide
-from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pptx.oxml.shapes.groupshape import CT_GroupShape
