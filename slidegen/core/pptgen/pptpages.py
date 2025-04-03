@@ -2,16 +2,18 @@ import os
 import io
 import copy
 from typing import cast
+import random
 
 from pptx.presentation import Presentation
 from pptx.slide import Slide
 from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
+from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE, PP_PLACEHOLDER
-from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.oxml.shapes.groupshape import CT_GroupShape
 from pptx.shapes.base import BaseShape
 from pptx.shapes.autoshape import Shape
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from loguru import logger
 
 from core.docparse.markdown_parser import Element, Paragraph, Picture, Heading
 from core.pptgen.utils import (
@@ -20,10 +22,14 @@ from core.pptgen.utils import (
     CatalogList,
     runs_merge,
     convert_paragraph_xml,
-    add_para_by_xml
+    add_para_by_xml,
+    add_shape_by_xml,
+    is_image_path
 )
-from exception import PPTTemplateError, PPTGenError
 
+from exception import PPTTemplateError, PPTGenError
+from core.pptgen.components import components_manager, ContentType, ChapterLayout
+from config.conf import COMPONENTS_BASE_PATH
 
 class Page:
     """PPT pages base class"""
@@ -93,7 +99,7 @@ class Page:
         
         # Perform a deep copy of the shapes from the template
         for shp in template.shapes:
-            if "Picture" in shp.name:
+            if shp.shape_type == MSO_SHAPE_TYPE.PICTURE:
                 img = io.BytesIO(shp.image.blob)
                 copied_slide.shapes.add_picture(image_file = img, left = shp.left, top = shp.top,
                                                 width = shp.width, height = shp.height)
@@ -115,7 +121,7 @@ class CoverPage(Page):
     """Presentation cover page"""
     
     @staticmethod
-    def generate_slide(prs: Presentation, content: Heading, cover_slide_index: int):
+    def generate_slide(prs: Presentation, content: Heading, cover_slide_index: int = 0):
         cover_slide = prs.slides[cover_slide_index]
 
         assert content.level == 1, "Cover page must have a level 1 heading"
@@ -327,8 +333,8 @@ class ChapterHomePage(Page):
     """Chapter home page"""
 
     @staticmethod
-    def generate_slide(prs: Presentation, content: Heading, chapter_slide_index: int):
-        chapter_home_slide = prs.slides[chapter_slide_index]
+    def generate_slide(prs: Presentation, content: Heading, *, chapter_home_page_index: int = 2):
+        chapter_home_slide = prs.slides[chapter_home_page_index]
         title = content.element_text
         for placeholder in chapter_home_slide.shapes.placeholders:
             if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
@@ -336,9 +342,115 @@ class ChapterHomePage(Page):
                 break
 
 class ChapterContentPage(Page):
-    def generate_slide(self, prs: Presentation, content):
-        pass
+    """
+    Chapter content page
 
+    Divide the chapter content slides into one-point, two-point, three-point, and four-point slides.
+    """
+    @staticmethod
+    def _get_slide_type(content: Heading) -> int:
+        """
+        Get the slide type of the chapter content page
+        """
+        return len(content)
+
+    @staticmethod
+    def _shape_alignment(shape: Shape):
+        """Set the alignment of the shape. Uniformly justify the text in the shape"""
+        if shape.has_text_frame:
+            tf = shape.text_frame
+            tf.vertical_anchor = MSO_ANCHOR.TOP
+            for paragraph in tf.paragraphs:
+                paragraph.alignment = PP_ALIGN.JUSTIFY
+
+    @staticmethod
+    def generate_slide(prs: Presentation,
+                        content: Heading, 
+                        *, 
+                        chapter_slide_index: int = 3,
+                        slide_index: int = 3):
+        """
+        Generate the chapter content page
+
+        Args:
+            prs: Presentation object
+            content: Heading object
+            chapter_slide_index: index of the chapter slide
+            slide_index: index of the slide to be generated
+        """
+        assert content.level == 2, f"{ChapterContentPage.__name__}: Chapter content page must have a level 2 heading"
+
+        slide_type = ChapterContentPage._get_slide_type(content)
+        if slide_type > 4:
+            raise PPTGenError(f"{ChapterContentPage.__name__}: Invalid slide type: {slide_type}")
+        titles = [child.element_text for child in content.children]
+        section_texts = [child.text for child in content.children]
+
+        chapter_slide = prs.slides[chapter_slide_index]
+        new_slide = prs.slides.add_slide(chapter_slide.slide_layout)
+        # set the title of the new slide
+        for placeholder in new_slide.shapes.placeholders:
+            if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
+                placeholder.text = content.element_text
+                placeholder.text_frame.word_wrap = False
+                break
+
+        index = 0
+        chapter_layout = ChapterLayout(slide_type)
+        style = components_manager.get_random_style(chapter_layout)
+        logger.debug(f"{ChapterContentPage.__name__}: {chapter_layout} {style.name}")
+
+        for shape_name, shape in style.shapes.items():
+            # locs must be in order
+            locs = shape.location
+            for idx, loc in enumerate(locs):
+                if shape.content_type == ContentType.CONTENT:
+                    if len(section_texts) != len(locs):
+                        raise PPTGenError(f"{ChapterContentPage.__name__}: \
+                                          Text content must be equal to the number of locations: {len(section_texts)} != {len(locs)}")
+                    added_shape = add_shape_by_xml(slide=new_slide, shape_xml=shape.xml,
+                                                    shape_id=index, shape_name=shape_name, 
+                                                    text_content=section_texts[idx], location=loc)
+                    ChapterContentPage._shape_alignment(added_shape)
+                elif shape.content_type == ContentType.TITLE:
+                    if len(titles) != len(locs):
+                        raise PPTGenError(f"{ChapterContentPage.__name__}: \
+                                          Title must be equal to the number of locations: {len(titles)} != {len(locs)}")
+                    added_shape = add_shape_by_xml(slide=new_slide, shape_xml=shape.xml,
+                                                    shape_id=index, shape_name=shape_name, 
+                                                    text_content=titles[idx], location=loc)
+                    ChapterContentPage._shape_alignment(added_shape)
+                elif shape.content_type == ContentType.PICTURE:
+                    # picture is only in the first location
+                    if len(locs) != 1:
+                        raise PPTGenError(f"{ChapterContentPage.__name__}: \
+                                          Picture must have only one location: {len(locs)} != 1")
+                    if is_image_path(shape.path):
+                        image_path = shape.path
+                    elif shape.path.endswith('opaque'):
+                        # random choose a picture from the opaque folder
+                        picture_dir = os.path.join(COMPONENTS_BASE_PATH, 'pictures/opaque')
+                        image_path = os.path.join(picture_dir, 
+                                                  random.choice(os.listdir(picture_dir)))
+                    elif shape.path.endswith('transparent'):
+                        # random choose a picture from the transparent folder
+                        picture_dir = os.path.join(COMPONENTS_BASE_PATH, 'pictures/transparent')
+                        image_path = os.path.join(picture_dir, 
+                                                  random.choice(os.listdir(picture_dir)))
+                    else:
+                        raise PPTGenError(f"{ChapterContentPage.__name__}: \
+                                          Invalid image path: {shape.path} in {style.name}")
+                    added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
+                elif shape.content_type == ContentType.NUMBER:
+                    added_shape = add_shape_by_xml(slide=new_slide, shape_xml=shape.xml,
+                                                    shape_id=index, shape_name=shape_name, 
+                                                    text_content=str(idx+1).zfill(2), location=loc)
+                else:
+                    added_shape = add_shape_by_xml(slide=new_slide, shape_xml=shape.xml,
+                                                    shape_id=index, shape_name=shape_name, 
+                                                    location=loc)
+            index += 1
+        ChapterContentPage.move_slide(prs, new_slide, slide_index)
 
 class EndPage(Page):
     def generate_slide(self, prs: Presentation, content):

@@ -39,7 +39,7 @@ def remove_custDataLst(xml_str: str) -> str:
     )
 
 class ContentType(Enum):
-    TEXT = "text"
+    CONTENT = "content"
     PICTURE = "picture"
     NUMBER = "number"
     TITLE = "title"
