@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Union, Any
 import json
 from dataclasses import dataclass
+from enum import Enum, IntEnum
 from pathlib import Path
 
 from lxml import etree
@@ -9,7 +10,61 @@ from pptx.slide import Slide
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from config.conf import COMPONENTS_PATH
-from core.pptgen.utils import remove_custDataLst
+
+def remove_custDataLst(xml_str: str) -> str:
+    """
+    Remove the <p:custDataLst> part in the XML and return the processed XML string.
+    
+    Args:
+        xml_str (str): The input XML string, containing the <p:custDataLst> part.
+        
+    Returns:
+        str: The processed XML string, without the <p:custDataLst> part.
+    """
+    root = etree.fromstring(xml_str)
+    ns = root.nsmap
+    
+    cust_data_list = root.find(".//p:custDataLst", namespaces=ns)
+    
+    if cust_data_list is not None:
+        parent = cust_data_list.getparent()
+        if parent is not None:
+            parent.remove(cust_data_list)
+    
+    return etree.tostring(
+        root,
+        encoding="unicode",
+        pretty_print=True,
+        xml_declaration=False,
+    )
+
+class ContentType(Enum):
+    TEXT = "text"
+    PICTURE = "picture"
+    NUMBER = "number"
+    TITLE = "title"
+    NONE = None
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.value == other
+        return super().__eq__(other)
+
+class ChapterLayout(IntEnum):
+    """Chapter layout type"""
+    ONE_POINT = (1, "one_point")
+    TWO_POINTS = (2, "two_points")
+    THREE_POINTS = (3, "three_points")
+    FOUR_POINTS = (4, "four_points")
+
+    def __new__(cls, number, str_value):
+        obj = int.__new__(cls, number)
+        obj._value_ = number
+        obj.str_value = str_value
+        return obj
+
+    def __str__(self):
+        return f"{self.name} ({self.value})"
 
 @dataclass
 class Location:
@@ -178,19 +233,31 @@ class ComponentsManager:
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
     
-    def get_layout_type(self, layout_name: str) -> Optional[LayoutType]:
+    def get_layout_type(self, layout_name: ChapterLayout) -> Optional[LayoutType]:
         """Get a layout type by its name
         
         example:
         ```
         shapes_manager = ShapesManager(json_path)
-        layout = shapes_manager.get_layout_type("two_points")
+        layout = shapes_manager.get_layout_type(ChapterLayout.TWO_POINTS)
         ```
         """
-        return self.layout_types.get(layout_name)
+        return self.layout_types.get(layout_name.str_value)
     
-    def get_random_style(self, layout_name: str) -> Optional[Style]:
+    def get_random_style(self, layout_name: ChapterLayout) -> Optional[Style]:
         """Get a random style from a specified layout type
+        
+        Args:
+            layout_name (str): The name of the layout type to get a random style from.
+        
+        Returns:
+            Optional[Style]: A random style from the specified layout type, or None if the layout type does not exist or has no styles.
+        
+        example:
+        ```
+        shapes_manager = ShapesManager(json_path)
+        style = shapes_manager.get_random_style(ChapterLayout.TWO_POINTS)
+        ```
         """
         import random
         
