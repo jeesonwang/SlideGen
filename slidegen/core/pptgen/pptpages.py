@@ -428,7 +428,10 @@ class ChapterContentPage(Page):
         style = components_manager.get_random_style(chapter_layout)
         logger.debug(f"{ChapterContentPage.__name__}: {chapter_layout} {style.name}")
 
-        for shape_name, shape in style.shapes.items():
+        # Sort by zorder
+        sorted_shapes = sorted(style.shapes.items(), key=lambda x: x[1].get("zorder", 0))
+        
+        for shape_name, shape in sorted_shapes:
             # locs must be in order
             locs = shape.location
             for idx, loc in enumerate(locs):
