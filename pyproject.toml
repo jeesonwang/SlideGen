@@ -1,0 +1,38 @@
+[project]
+name = "slidegen"
+version = "0.1.0"
+description = "PPT Agent"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn>=0.30.1",
+    "pydantic>=2.8.0",
+    "python-dotenv>=1.0.1",
+    "SQLAlchemy>=2.0.31",
+    "aiomysql>=0.2.0",
+    "PyMySQL>=1.1.1",
+    "celery>=5.4.0",
+    "redis>=5.0.7",
+    "python-multipart>=0.0.9",
+    "Jinja2>=3.1.4",
+    "httpx>=0.27.0",
+    "loguru>=0.7.2",
+    "openpyxl>=3.1.5",
+    "xlrd>=2.0.1",
+    "puremagic",
+    "python-pptx",
+    "types-pytz",
+    "mammoth",
+    "bs4",
+    "markdownify>=0.14.1",
+    "pandas",
+]
+
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=0.26.0",
+    "watchfiles>=0.22.0",
+    "pytest>=7.0.0",
+    "ruff>=0.11.4",
+]
