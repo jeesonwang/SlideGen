@@ -104,3 +104,8 @@ exchange
 driver
 .DS_Store
 .env
+
+# pytest
+.pytest_cache/
+# ruff
+.ruff_cache/
