@@ -10,6 +10,9 @@ uv venv -p 3.11
 
 # 安装依赖
 uv sync
+
+# 运行安装 git hooks
+pre-commit install
 ```
 
 ### slidegen 文件夹结构
@@ -40,4 +43,3 @@ slidegen/
 └── view/
     存放视图相关代码。
 ```
-
