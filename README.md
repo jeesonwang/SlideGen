@@ -3,6 +3,15 @@
 ## 说明
 Python: 3.11.8
 
+### 安装依赖
+```bash
+# uv 安装 https://docs.astral.sh/uv/
+uv venv -p 3.11
+
+# 安装依赖
+uv sync
+```
+
 ### slidegen 文件夹结构
 
 ```
