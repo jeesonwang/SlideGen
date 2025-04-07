@@ -1,5 +1,6 @@
 import re
-from typing import Iterable, Any, cast, Optional
+from typing import Iterable, Any, Optional
+import os
 
 from .elements import (
     Element,
@@ -22,6 +23,10 @@ class MarkdownDocument(Element):
             source = source.read()
         elif isinstance(source, bytes):
             source = source.decode()
+        elif isinstance(source, str):
+            if os.path.isfile(source) and source.endswith('.md'):
+                with open(source, 'r', encoding='utf-8') as f:
+                    source = f.read()
         if source:
             self._parse(source)
 
