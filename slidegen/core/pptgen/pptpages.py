@@ -264,6 +264,7 @@ class CatalogPage(Page):
             if len(text) > 3:
                 continue
             if text.isdigit() or (text.endswith(".") and text[:-1].isdigit()):
+                # TODO: Optimize judgment conditions
                 if int(text.replace(".", "")) > 49:
                     continue
                 number_shapes.append(shape)
