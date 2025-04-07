@@ -7,15 +7,14 @@ from enum import Enum
 
 from pptx.presentation import Presentation
 from pptx.slide import Slide
-from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
-from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE, PP_PLACEHOLDER
+from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pptx.oxml.shapes.groupshape import CT_GroupShape
 from pptx.shapes.base import BaseShape
 from pptx.shapes.autoshape import Shape
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from loguru import logger
 
-from core.docparse.markdown_parser import Element, Paragraph, Picture, Heading
+from core.docparse.markdown_parser import Heading
 from core.pptgen.utils import (
     runs_merge,
     convert_paragraph_xml,
