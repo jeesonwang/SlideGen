@@ -601,8 +601,8 @@ class ChapterContentPage(Page):
 class EndPage(Page):
     """End page"""
 
+    @staticmethod
     def generate_slide(
-        self,
         prs: Presentation,
         content: Heading | None = None,
         *,
