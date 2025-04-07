@@ -366,7 +366,7 @@ class CatalogPage(Page):
         *,
         catalog_page_index: int = 1,
         begin_number: int = 1,
-    ):
+    ) -> int:
         """
         Generate the catalog page
 
@@ -375,6 +375,8 @@ class CatalogPage(Page):
             content: list of Heading objects
             catalog_page_index: index of the catalog page
             begin_number: starting number of the catalog page
+        Returns:
+            index of the catalog page
         """
         if not content:
             raise PPTGenError("Catalog page must have content.")
@@ -425,6 +427,7 @@ class CatalogPage(Page):
                 begin_number=begin_number,
             )
 
+        return catalog_page_index
 
 class ChapterHomePage(Page):
     """Chapter home page"""
@@ -433,6 +436,9 @@ class ChapterHomePage(Page):
     def generate_slide(
         prs: Presentation, content: Heading, *, chapter_home_page_index: int = 2
     ):
+        assert content.level == 2, (
+            f"{ChapterHomePage.__name__}: Chapter home page must input a level 2 heading"
+        )
         chapter_home_slide = prs.slides[chapter_home_page_index]
         title = content.element_text
         title_found = False
@@ -484,7 +490,7 @@ class ChapterContentPage(Page):
         Args:
             prs: Presentation object
             content: Heading object
-            chapter_slide_index: index of the chapter slide
+            chapter_slide_index: index of the template chapter content slide
             slide_index: index of the slide to be generated
         """
         assert content.level == 2, (
@@ -515,7 +521,7 @@ class ChapterContentPage(Page):
 
         # Sort by zorder
         sorted_shapes = sorted(
-            style.shapes.items(), key=lambda x: x[1].get("zorder", 0)
+            style.shapes.items(), key=lambda x: x[1].zorder
         )
 
         for shape_name, shape in sorted_shapes:
