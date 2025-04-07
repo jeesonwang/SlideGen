@@ -123,7 +123,9 @@ class CoverPage(Page):
     """Presentation cover page"""
 
     @staticmethod
-    def generate_slide(prs: Presentation, content: Heading, cover_slide_index: int = 0):
+    def generate_slide(
+        prs: Presentation, content: Heading, *, cover_slide_index: int = 0
+    ):
         cover_slide = prs.slides[cover_slide_index]
 
         assert content.level == 1, "Cover page must have a level 1 heading"
@@ -138,7 +140,10 @@ class CoverPage(Page):
                 placeholder.text_frame.word_wrap = False
                 break
         if not title_found:
-            raise PPTTemplateError(f"{CoverPage.__name__}: No title placeholder found in cover slide")
+            raise PPTTemplateError(
+                f"{CoverPage.__name__}: No title placeholder found in cover slide"
+            )
+
 
 class CatalogLayout(Enum):
     """
@@ -429,7 +434,9 @@ class ChapterHomePage(Page):
                 title_found = True
                 break
         if not title_found:
-            raise PPTTemplateError(f"{ChapterHomePage.__name__}: No title placeholder found in chapter home slide")
+            raise PPTTemplateError(
+                f"{ChapterHomePage.__name__}: No title placeholder found in chapter home slide"
+            )
 
 
 class ChapterContentPage(Page):
@@ -612,4 +619,6 @@ class EndPage(Page):
                 title_found = True
                 break
         if not title_found:
-            raise PPTTemplateError(f"{EndPage.__name__}: No title placeholder found in end slide")
+            raise PPTTemplateError(
+                f"{EndPage.__name__}: No title placeholder found in end slide"
+            )
