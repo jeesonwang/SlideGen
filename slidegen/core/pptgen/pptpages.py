@@ -126,8 +126,15 @@ class CoverPage(Page):
     def generate_slide(
         prs: Presentation, content: Heading, *, cover_slide_index: int = 0
     ):
-        cover_slide = prs.slides[cover_slide_index]
+        """
+        Generate the cover page
 
+        Args:
+            prs: Presentation object
+            content: Heading object, the main heading of the markdown document(level 1)
+            cover_slide_index: index of the cover slide
+        """
+        cover_slide = prs.slides[cover_slide_index]
         assert content.level == 1, "Cover page must have a level 1 heading"
         main_title = content.element_text
         if not main_title.strip():
