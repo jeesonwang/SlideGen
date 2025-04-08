@@ -35,6 +35,9 @@ class Page:
     def _set_text(shape: BaseShape, text: str):
         """Set the text of the shape, keep the original paragraph style."""
         assert shape.has_text_frame, "Shape must have a text frame"
+        if shape.is_placeholder:
+            shape.text = text
+            return
         tf = shape.text_frame
         # if the shape has text, merge the runs and set the run text
         if shape.text:
@@ -88,6 +91,15 @@ class Page:
 
     @staticmethod
     def duplicate_slide(pres: Presentation, index: int) -> Slide:
+        """Duplicate the slide at the given index
+
+        Args:
+            pres: Presentation object
+            index: Index of the slide to be duplicated
+
+        Returns:
+            Copied slide
+        """
         template = pres.slides[index]
         copied_slide = pres.slides.add_slide(template.slide_layout)
         # Delete the existing shapes that are part of the layout
@@ -429,28 +441,96 @@ class CatalogPage(Page):
 
         return catalog_page_index
 
+
 class ChapterHomePage(Page):
     """Chapter home page"""
 
+    selected_style: int | None = None
+
     @staticmethod
     def generate_slide(
-        prs: Presentation, content: Heading, *, chapter_home_page_index: int = 2
+        prs: Presentation,
+        content: Heading,
+        *,
+        chapter_home_page_index: int = 2,
+        chapter_number: int = 1,
+        slide_index: int = 2,
     ):
+        """
+        Generate the chapter home page
+
+        Args:
+            prs: Presentation object
+            content: Heading object
+            chapter_home_page_index: index of the chapter home page
+            chapter_number: current chapter number, begin from 1
+        """
         assert content.level == 2, (
             f"{ChapterHomePage.__name__}: Chapter home page must input a level 2 heading"
         )
-        chapter_home_slide = prs.slides[chapter_home_page_index]
+        template_slide = prs.slides[chapter_home_page_index]
+        chapter_home_slide = prs.slides.add_slide(template_slide.slide_layout)
+
         title = content.element_text
-        title_found = False
+        title_placeholder = None
+
         for placeholder in chapter_home_slide.shapes.placeholders:
             if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
                 ChapterHomePage._set_text(placeholder, title)
-                title_found = True
+                tf = placeholder.text_frame
+                tf.word_wrap = False
+                title_placeholder = placeholder
                 break
-        if not title_found:
+
+        if not title_placeholder:
             raise PPTTemplateError(
                 f"{ChapterHomePage.__name__}: No title placeholder found in chapter home slide"
             )
+        chapter_number_shape = None
+        min_distance = float("inf")
+        for shape in chapter_home_slide.shapes:
+            if shape == title_placeholder:
+                continue
+            if shape.has_text_frame:
+                if shape.top < title_placeholder.top:
+                    distance = title_placeholder.top - shape.top
+                    if distance < min_distance:
+                        shape_text = shape.text.strip()
+                        if (
+                            (shape_text.startswith("0") and shape_text[1:].isdigit())
+                            or shape_text.lower().startswith("part")
+                            or (shape_text.endswith(".") and shape_text[:-1].isdigit())
+                        ):
+                            chapter_number_shape = shape
+                            break
+                        min_distance = distance
+                        chapter_number_shape = shape
+        if chapter_number_shape:
+            chapter_index = ChapterHomePage.convert_chapter_number(chapter_number)
+            ChapterHomePage._set_text(chapter_number_shape, chapter_index)
+        ChapterHomePage.move_slide(prs, chapter_home_slide, slide_index)
+
+    @staticmethod
+    def convert_chapter_number(chapter_number: int) -> str:
+        """Randomly select a style for the chapter number"""
+        import inflect
+
+        # If the style has been selected, use it
+        if ChapterHomePage.selected_style is not None:
+            style_type = ChapterHomePage.selected_style
+        else:
+            style_type = random.randint(1, 3)
+            ChapterHomePage.selected_style = style_type
+
+        p = inflect.engine()
+        if style_type == 1:
+            return str(chapter_number).zfill(2)  # 01, 02, 03, ...
+        elif style_type == 2:
+            return (
+                f"PART {str(chapter_number).zfill(2)}"  # PART 01, PART 02, PART 03, ...
+            )
+        else:
+            return f"PART {p.number_to_words(chapter_number).upper()}"  # PART ONE, PART TWO, PART THREE, ...
 
 
 class ChapterContentPage(Page):
@@ -520,9 +600,7 @@ class ChapterContentPage(Page):
         logger.debug(f"{ChapterContentPage.__name__}: {chapter_layout} {style.name}")
 
         # Sort by zorder
-        sorted_shapes = sorted(
-            style.shapes.items(), key=lambda x: x[1].zorder
-        )
+        sorted_shapes = sorted(style.shapes.items(), key=lambda x: x[1].zorder)
 
         for shape_name, shape in sorted_shapes:
             # locs must be in order
@@ -634,5 +712,5 @@ class EndPage(Page):
                 break
         if not title_found:
             raise PPTTemplateError(
-                f"{EndPage.__name__}: No title placeholder found in end slide"
+                f"{EndPage.__name__}: No title placeholder found in end slide, end slide index: {end_page_index}"
             )
