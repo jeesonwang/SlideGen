@@ -30,7 +30,7 @@ class TestSlideGen:
     @pytest.fixture
     def template_path(self):
         """返回测试PPT模板路径"""
-        return os.path.join(os.path.dirname(__file__), "data", "紫藤萝瀑布教学课件.pptx")
+        return os.path.join(os.path.dirname(__file__), "data", "DeepSeek对中国AI产业的影响.pptx")
     
     @pytest.fixture
     def presentation(self, template_path):
@@ -83,7 +83,7 @@ class TestSlideGen:
     def test_chapter_home_page_generation(self, presentation, heading_list):
         """测试PPT章节首页生成功能"""
         title = Heading(level=2, text="Hello World! This is a test title.")
-        ChapterHomePage.generate_slide(presentation, title, chapter_home_page_index=3)
+        ChapterHomePage.generate_slide(presentation, title, chapter_home_page_index=2, chapter_number=1)
         temp_output = os.path.join(os.path.dirname(__file__), "test_chapter_home.pptx")
         presentation.save(temp_output)
         assert os.path.exists(temp_output)
@@ -92,7 +92,7 @@ class TestSlideGen:
         """测试PPT章节内容页生成功能"""
         # 准备章节内容
         content = heading_list[0]
-        ChapterContentPage.generate_slide(presentation, content, chapter_slide_index=4)
+        ChapterContentPage.generate_slide(presentation, content, chapter_slide_index=4, slide_index=4)
         temp_output = os.path.join(os.path.dirname(__file__), "test_chapter_content.pptx")
         presentation.save(temp_output)
         assert os.path.exists(temp_output)
