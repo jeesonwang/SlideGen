@@ -136,7 +136,7 @@ class CoverPage(Page):
 
     @staticmethod
     def generate_slide(
-        prs: Presentation, content: Heading, *, cover_slide_index: int = 0
+        prs: Presentation, content: Heading, *, cover_page_index: int = 0
     ):
         """
         Generate the cover page
@@ -144,16 +144,16 @@ class CoverPage(Page):
         Args:
             prs: Presentation object
             content: Heading object, the main heading of the markdown document(level 1)
-            cover_slide_index: index of the cover slide
+            cover_page_index: index of the cover page
         """
-        cover_slide = prs.slides[cover_slide_index]
+        cover_page = prs.slides[cover_page_index]
         assert content.level == 1, "Cover page must have a level 1 heading"
         main_title = content.element_text
         if not main_title.strip():
             main_title = "Presentation Title"
         title_found = False
         # TODO: add subtitle
-        for placeholder in cover_slide.shapes.placeholders:
+        for placeholder in cover_page.shapes.placeholders:
             if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
                 CoverPage._set_text(placeholder, main_title)
                 placeholder.text_frame.word_wrap = False
@@ -562,7 +562,7 @@ class ChapterContentPage(Page):
         prs: Presentation,
         content: Heading,
         *,
-        chapter_slide_index: int = 3,
+        chapter_page_index: int = 3,
         slide_index: int = 3,
     ):
         """
@@ -571,7 +571,7 @@ class ChapterContentPage(Page):
         Args:
             prs: Presentation object
             content: Heading object
-            chapter_slide_index: index of the template chapter content slide
+            chapter_page_index: index of the template chapter content slide
             slide_index: index of the slide to be generated
         """
         assert content.level == 2, (
@@ -586,8 +586,8 @@ class ChapterContentPage(Page):
         titles = [child.element_text for child in content.children]
         section_texts = [child.text for child in content.children]
 
-        chapter_slide = prs.slides[chapter_slide_index]
-        new_slide = prs.slides.add_slide(chapter_slide.slide_layout)
+        chapter_page = prs.slides[chapter_page_index]
+        new_slide = prs.slides.add_slide(chapter_page.slide_layout)
         # set the title of the new slide
         for placeholder in new_slide.shapes.placeholders:
             if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
