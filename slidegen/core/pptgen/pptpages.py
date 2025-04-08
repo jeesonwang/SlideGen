@@ -464,6 +464,7 @@ class ChapterHomePage(Page):
             content: Heading object
             chapter_home_page_index: index of the chapter home page
             chapter_number: current chapter number, begin from 1
+            slide_index: index of the slide to be generated
         """
         assert content.level == 2, (
             f"{ChapterHomePage.__name__}: Chapter home page must input a level 2 heading"
@@ -699,10 +700,12 @@ class EndPage(Page):
         content: Heading | None = None,
         *,
         end_page_index: int = 4,
+        slide_index: int = 4,
     ):
         if content is None:
             content = Heading(text="Thank you!", level=2)
-        end_slide = prs.slides[end_page_index]
+        template_slide = prs.slides[end_page_index]
+        end_slide = prs.slides.add_slide(template_slide.slide_layout)
         title_found = False
         for placeholder in end_slide.shapes.placeholders:
             if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
@@ -714,3 +717,4 @@ class EndPage(Page):
             raise PPTTemplateError(
                 f"{EndPage.__name__}: No title placeholder found in end slide, end slide index: {end_page_index}"
             )
+        EndPage.move_slide(prs, end_slide, slide_index)
