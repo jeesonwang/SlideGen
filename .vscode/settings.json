@@ -3,15 +3,12 @@
   "editor.defaultFormatter": "charliermarsh.ruff",
   // workbench
   "workbench.list.smoothScrolling": true,
-  "workbench.startupEditor": "newUntitledFile",
   "workbench.tree.indent": 10,
   "workbench.editor.highlightModifiedTabs": true,
   "workbench.editor.closeOnFileDelete": true,
   "workbench.editor.limit.enabled": true,
   "workbench.editor.limit.perEditorGroup": true,
   "workbench.editor.limit.value": 5,
-  // 终端字体
-  "terminal.integrated.fontFamily": "Hack Nerd Font",
   // editor
   "editor.tabSize": 4,
   "editor.detectIndentation": false,
@@ -38,7 +35,6 @@
     "source.fixAll.stylelint": "explicit",
     "source.organizeImports": "never"
   },
-  "cSpell.words": ["ondelete", "wechat"],
   // mypy
   "mypy.enabled": true,
   "mypy.runUsingActiveInterpreter": true,
@@ -56,5 +52,10 @@
       "source.fixAll.ruff": "explicit", // 保存时自动修复可修复的 lint 错误
       "source.organizeImports.ruff": "explicit" // 保存时自动排序 import 语句
     }
-  }
+},
+"python.testing.pytestArgs": [
+    "test"
+],
+"python.testing.unittestEnabled": false,
+"python.testing.pytestEnabled": true
 }
