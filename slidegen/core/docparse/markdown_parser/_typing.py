@@ -1,31 +1,13 @@
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    IO,
-    Iterable,
-    Mapping,
-    Optional,
-    TYPE_CHECKING,
-    Union,
-    List
-)
+from typing import IO, TYPE_CHECKING, Union
 
-from typing_extensions import TypeAlias
+from typing import TypeAlias
 
 if TYPE_CHECKING:
-    from .elements import (
-        Element,
-        Paragraph,
-        Heading,
-        Table,
-        CodeBlock,
-        Picture
-    )
+    from .elements import Element, Paragraph, Heading, Table, CodeBlock, Picture
 
-_IncomingSource: TypeAlias = Union[str, bytes, IO[str], IO[bytes]]
+_IncomingSource: TypeAlias = str | bytes | IO[str] | IO[bytes]
 _MarkdownNode: TypeAlias = Union["Element", "Paragraph", "Heading", "Table", "CodeBlock", "Picture"]
-_AtMostOneNode: TypeAlias = Optional[_MarkdownNode]
+_AtMostOneNode: TypeAlias = _MarkdownNode | None
 
 _OutElement: TypeAlias = Union["Element", "Paragraph", "Heading", "Table", "CodeBlock", "Picture"]
 _InsertableElement: TypeAlias = Union["Element", str]

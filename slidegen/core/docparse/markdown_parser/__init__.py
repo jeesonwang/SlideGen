@@ -1,5 +1,6 @@
 import re
-from typing import Iterable, Any, Optional
+from typing import Any
+from collections.abc import Iterable
 import os
 
 from .elements import Element, Paragraph, Heading, Table, CodeBlock, Picture
@@ -11,7 +12,7 @@ class MarkdownDocument(Element):
 
     def __init__(self, source: _IncomingSource, **kwargs: Any):
         super().__init__(**kwargs)
-        self.main: Optional[Heading] = None
+        self.main: Heading | None = None
 
         if hasattr(source, "read"):  # It's a file-type object.
             source = source.read()
@@ -19,7 +20,7 @@ class MarkdownDocument(Element):
             source = source.decode()
         elif isinstance(source, str):
             if os.path.isfile(source) and source.endswith(".md"):
-                with open(source, "r", encoding="utf-8") as f:
+                with open(source, encoding="utf-8") as f:
                     source = f.read()
         if source:
             self._parse(source)
@@ -73,11 +74,9 @@ class MarkdownParser:
             if self.in_table_block:
                 self.process_table_row(line, next_line)
             else:
-                self.process_line(
-                    line.rstrip() if not self.in_code_block else line, next_line
-                )
+                self.process_line(line.rstrip() if not self.in_code_block else line, next_line)
 
-    def process_line(self, line: str, next_line: Optional[str] = None) -> None:
+    def process_line(self, line: str, next_line: str | None = None) -> None:
         if self.in_code_block:
             if line.startswith("```"):
                 self.end_code_block()
@@ -98,9 +97,7 @@ class MarkdownParser:
             if handler(line, next_line):
                 return
 
-    def process_code_block_start(
-        self, line: str, next_line: Optional[str] = None
-    ) -> bool:
+    def process_code_block_start(self, line: str, next_line: str | None = None) -> bool:
         match = re.search(r"^\s*```(\w+)?", line)
         if match:
             self.in_code_block = True
@@ -116,7 +113,7 @@ class MarkdownParser:
         self.in_code_block = False
         self.code_language = None
 
-    def process_heading(self, line: str, next_line: Optional[str] = None) -> bool:
+    def process_heading(self, line: str, next_line: str | None = None) -> bool:
         is_heading = False
         for level in range(1, 3):
             is_heading = self._parse_heading_var_one(level, line, next_line)
@@ -132,7 +129,7 @@ class MarkdownParser:
                 break
         return is_heading
 
-    def process_list(self, line: str, next_line: Optional[str] = None) -> bool:
+    def process_list(self, line: str, next_line: str | None = None) -> bool:
         stripped_line = line.lstrip()
 
         list_match = re.match(r"^([\*\-\+])\s+(.*)", stripped_line)
@@ -154,7 +151,7 @@ class MarkdownParser:
         item = Paragraph(text)
         self.previous_heading.append(item)
 
-    def process_table(self, line: str, next_line: Optional[str] = None) -> bool:
+    def process_table(self, line: str, next_line: str | None = None) -> bool:
         if self.is_markdown_table_start(line, next_line):
             self.in_table_block = True
             self.table_type = "markdown"
@@ -168,7 +165,7 @@ class MarkdownParser:
             return True
         return False
 
-    def is_markdown_table_start(self, line: str, next_line: Optional[str]) -> bool:
+    def is_markdown_table_start(self, line: str, next_line: str | None) -> bool:
         if not line.strip().startswith("|") or not line.strip().endswith("|"):
             return False
         if not next_line:
@@ -182,7 +179,7 @@ class MarkdownParser:
                 return False
         return True
 
-    def process_table_row(self, line: str, next_line: Optional[str]) -> bool:
+    def process_table_row(self, line: str, next_line: str | None) -> bool:
         if self.table_type == "markdown":
             stripped = line.strip()
             if not stripped or not stripped.startswith("|"):
@@ -253,7 +250,7 @@ class MarkdownParser:
         table.col_number = len(headers)
         self.previous_heading.append(table)
 
-    def process_image(self, line: str, next_line: Optional[str] = None) -> bool:
+    def process_image(self, line: str, next_line: str | None = None) -> bool:
         match = re.match(r"!\[(.*?)\]\((.*?)\s*(?:\"(.*?)\")?\)", line)
         if match:
             alt = match.group(1)
@@ -264,7 +261,7 @@ class MarkdownParser:
             return True
         return False
 
-    def process_paragraph(self, line: str, next_line: Optional[str] = None) -> bool:
+    def process_paragraph(self, line: str, next_line: str | None = None) -> bool:
         if not line.strip():
             return False
         paragraph = Paragraph(line)
@@ -289,9 +286,7 @@ class MarkdownParser:
         if result is None:
             return False
 
-        return self._parse_heading_action(
-            level=level, text=string.strip(), text_source=f"{string}\n{next_string}"
-        )
+        return self._parse_heading_action(level=level, text=string.strip(), text_source=f"{string}\n{next_string}")
 
     def _parse_heading_var_two(self, level, string):
         regex = r"^(\s?#{%s}\s+)(.*)$" % level
@@ -300,9 +295,7 @@ class MarkdownParser:
         if result is None:
             return False
 
-        return self._parse_heading_action(
-            level=level, text=result[2], text_source=result[1] + result[2]
-        )
+        return self._parse_heading_action(level=level, text=result[2], text_source=result[1] + result[2])
 
     def _parse_heading_action(self, level, text, text_source):
         cur_heading = Heading(level, text)

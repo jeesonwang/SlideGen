@@ -137,9 +137,7 @@ class CoverPage(Page):
     """Presentation cover page"""
 
     @staticmethod
-    def generate_slide(
-        prs: Presentation, content: Heading, *, cover_page_index: int = 0
-    ):
+    def generate_slide(prs: Presentation, content: Heading, *, cover_page_index: int = 0):
         """
         Generate the cover page
 
@@ -163,9 +161,7 @@ class CoverPage(Page):
                 title_found = True
                 break
         if not title_found:
-            raise PPTTemplateError(
-                f"{CoverPage.__name__}: No title placeholder found in cover slide"
-            )
+            raise PPTTemplateError(f"{CoverPage.__name__}: No title placeholder found in cover slide")
 
 
 class CatalogLayout(Enum):
@@ -183,9 +179,7 @@ class CatalogItem:
     Catalog item including number shape, text shape and background shape.
     """
 
-    def __init__(
-        self, number_shape: dict, text_shape: dict, background_shape: dict | None = None
-    ):
+    def __init__(self, number_shape: dict, text_shape: dict, background_shape: dict | None = None):
         self.number_shape = number_shape
         self.text_shape = text_shape
         self.background_shape = background_shape
@@ -216,36 +210,23 @@ class CatalogPage(Page):
     @staticmethod
     def _calculate_distance(shape1: dict, shape2: dict) -> float:
         """Calculate the distance between two shapes"""
-        return (
-            (shape1["left"] - shape2["left"]) ** 2
-            + (shape1["top"] - shape2["top"]) ** 2
-        ) ** 0.5
+        return ((shape1["left"] - shape2["left"]) ** 2 + (shape1["top"] - shape2["top"]) ** 2) ** 0.5
 
     @staticmethod
     def _layout_direction(number_shapes: list[dict]) -> str:
         """Judge the layout direction of the catalog page"""
         if len(number_shapes) < 2:
-            raise PPTTemplateError(
-                "To judge the layout direction, catalog page must have at least two chapter numbers"
-            )
+            raise PPTTemplateError("To judge the layout direction, catalog page must have at least two chapter numbers")
 
         sorted_numbers = sorted(number_shapes, key=lambda x: (x["left"], x["top"]))
         horizontal_diffs = []
         vertical_diffs = []
 
         for i in range(len(sorted_numbers) - 1):
-            horizontal_diffs.append(
-                abs(sorted_numbers[i + 1]["left"] - sorted_numbers[i]["left"])
-            )
-            vertical_diffs.append(
-                abs(sorted_numbers[i + 1]["top"] - sorted_numbers[i]["top"])
-            )
-        avg_horizontal_diff = (
-            sum(horizontal_diffs) / len(horizontal_diffs) if horizontal_diffs else 0
-        )
-        avg_vertical_diff = (
-            sum(vertical_diffs) / len(vertical_diffs) if vertical_diffs else 0
-        )
+            horizontal_diffs.append(abs(sorted_numbers[i + 1]["left"] - sorted_numbers[i]["left"]))
+            vertical_diffs.append(abs(sorted_numbers[i + 1]["top"] - sorted_numbers[i]["top"]))
+        avg_horizontal_diff = sum(horizontal_diffs) / len(horizontal_diffs) if horizontal_diffs else 0
+        avg_vertical_diff = sum(vertical_diffs) / len(vertical_diffs) if vertical_diffs else 0
 
         if avg_horizontal_diff > avg_vertical_diff:
             return CatalogLayout.HORIZONTAL
@@ -291,17 +272,13 @@ class CatalogPage(Page):
 
         match len(number_shapes):
             case 0:
-                raise PPTTemplateError(
-                    "Catalog page must have at least one chapter numbers"
-                )
+                raise PPTTemplateError("Catalog page must have at least one chapter numbers")
             case 1:
                 layout_direction = CatalogLayout.UNDEFINED
             case _:
                 layout_direction = CatalogPage._layout_direction(number_shapes)
 
-        except_number_shapes = [
-            shape for shape in text_shapes if shape not in number_shapes
-        ]
+        except_number_shapes = [shape for shape in text_shapes if shape not in number_shapes]
         catalog_list = CatalogList()
         # Find the closest text shape for each number shape
         for number_shape in number_shapes:
@@ -312,9 +289,7 @@ class CatalogPage(Page):
                 if layout_direction == CatalogLayout.HORIZONTAL:
                     # For horizontal layout, find the text shape below the number shape
                     if text_shape["top"] > number_shape["top"]:
-                        distance = CatalogPage._calculate_distance(
-                            number_shape, text_shape
-                        )
+                        distance = CatalogPage._calculate_distance(number_shape, text_shape)
                         horizontal_overlap = min(
                             number_shape["left"] + number_shape["width"],
                             text_shape["left"] + text_shape["width"],
@@ -325,9 +300,7 @@ class CatalogPage(Page):
                 elif layout_direction == CatalogLayout.VERTICAL:
                     # For vertical layout, find the text shape to the right of the number shape
                     if text_shape["left"] > number_shape["left"]:
-                        distance = CatalogPage._calculate_distance(
-                            number_shape, text_shape
-                        )
+                        distance = CatalogPage._calculate_distance(number_shape, text_shape)
                         vertical_overlap = min(
                             number_shape["top"] + number_shape["height"],
                             text_shape["top"] + text_shape["height"],
@@ -363,15 +336,10 @@ class CatalogPage(Page):
                     distance = CatalogPage._calculate_distance(number_shape, shape)
                     if distance < min_distance:
                         min_distance = distance
-                        if (
-                            min_distance
-                            < shape["height"] * CatalogPage.vertical_tolerance
-                        ):
+                        if min_distance < shape["height"] * CatalogPage.vertical_tolerance:
                             closest_background_shape = shape
                 if closest_background_shape:
-                    cast(
-                        CatalogItem, catalog_list[i]
-                    ).background_shape = closest_background_shape
+                    cast(CatalogItem, catalog_list[i]).background_shape = closest_background_shape
 
         return catalog_list
 
@@ -470,9 +438,7 @@ class ChapterHomePage(Page):
             chapter_number: current chapter number, begin from 1
             slide_index: index of the slide to be generated
         """
-        assert content.level == 2, (
-            f"{ChapterHomePage.__name__}: Chapter home page must input a level 2 heading"
-        )
+        assert content.level == 2, f"{ChapterHomePage.__name__}: Chapter home page must input a level 2 heading"
         template_slide = prs.slides[chapter_home_page_index]
         chapter_home_slide = prs.slides.add_slide(template_slide.slide_layout)
 
@@ -488,9 +454,7 @@ class ChapterHomePage(Page):
                 break
 
         if not title_placeholder:
-            raise PPTTemplateError(
-                f"{ChapterHomePage.__name__}: No title placeholder found in chapter home slide"
-            )
+            raise PPTTemplateError(f"{ChapterHomePage.__name__}: No title placeholder found in chapter home slide")
         chapter_number_shape = None
         min_distance = float("inf")
         for shape in chapter_home_slide.shapes:
@@ -531,9 +495,7 @@ class ChapterHomePage(Page):
         if style_type == 1:
             return str(chapter_number).zfill(2)  # 01, 02, 03, ...
         elif style_type == 2:
-            return (
-                f"PART {str(chapter_number).zfill(2)}"  # PART 01, PART 02, PART 03, ...
-            )
+            return f"PART {str(chapter_number).zfill(2)}"  # PART 01, PART 02, PART 03, ...
         else:
             return f"PART {p.number_to_words(chapter_number).upper()}"  # PART ONE, PART TWO, PART THREE, ...
 
@@ -581,15 +543,11 @@ class ChapterContentPage(Page):
             chapter_page_index: index of the template chapter content slide
             slide_index: index of the slide to be generated
         """
-        assert content.level == 2, (
-            f"{ChapterContentPage.__name__}: Chapter content page must have a level 2 heading"
-        )
+        assert content.level == 2, f"{ChapterContentPage.__name__}: Chapter content page must have a level 2 heading"
 
         slide_type = ChapterContentPage._get_slide_type(content)
         if slide_type > 4:
-            raise PPTGenError(
-                f"{ChapterContentPage.__name__}: Invalid slide type: {slide_type}"
-            )
+            raise PPTGenError(f"{ChapterContentPage.__name__}: Invalid slide type: {slide_type}")
         titles = [child.element_text for child in content.children]
         section_texts = [child.text for child in content.children]
 
@@ -650,30 +608,30 @@ class ChapterContentPage(Page):
                         image_path = shape.path
                     elif shape.path.endswith("opaque"):
                         # random choose a picture from the opaque folder
-                        picture_dir = os.path.join(
-                            COMPONENTS_BASE_PATH, "pictures/opaque"
-                        )
-                        available_pictures = [p for p in os.listdir(picture_dir) 
-                                            if p not in ChapterContentPage.used_pictures["opaque"]]
+                        picture_dir = os.path.join(COMPONENTS_BASE_PATH, "pictures/opaque")
+                        available_pictures = [
+                            p for p in os.listdir(picture_dir) if p not in ChapterContentPage.used_pictures["opaque"]
+                        ]
                         # if all pictures have been used, reset the used list
                         if not available_pictures:
                             ChapterContentPage.used_pictures["opaque"] = set()
                             available_pictures = os.listdir(picture_dir)
-                        
+
                         chosen_picture = random.choice(available_pictures)
                         ChapterContentPage.used_pictures["opaque"].add(chosen_picture)
                         image_path = os.path.join(picture_dir, chosen_picture)
                     elif shape.path.endswith("transparent"):
                         # random choose a picture from the transparent folder
-                        picture_dir = os.path.join(
-                            COMPONENTS_BASE_PATH, "pictures/transparent"
-                        )
-                        available_pictures = [p for p in os.listdir(picture_dir) 
-                                            if p not in ChapterContentPage.used_pictures["transparent"]]
+                        picture_dir = os.path.join(COMPONENTS_BASE_PATH, "pictures/transparent")
+                        available_pictures = [
+                            p
+                            for p in os.listdir(picture_dir)
+                            if p not in ChapterContentPage.used_pictures["transparent"]
+                        ]
                         if not available_pictures:
                             ChapterContentPage.used_pictures["transparent"] = set()
                             available_pictures = os.listdir(picture_dir)
-                        
+
                         chosen_picture = random.choice(available_pictures)
                         ChapterContentPage.used_pictures["transparent"].add(chosen_picture)
                         image_path = os.path.join(picture_dir, chosen_picture)
@@ -682,9 +640,7 @@ class ChapterContentPage(Page):
                             f"{ChapterContentPage.__name__}: \
                                           Invalid image path: {shape.path} in {style.name}"
                         )
-                    added_shape = new_slide.shapes.add_picture(
-                        image_path, loc.x, loc.y, loc.width, loc.height
-                    )
+                    added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
                 elif shape.content_type == ContentType.NUMBER:
                     added_shape = add_shape_by_xml(
                         slide=new_slide,
@@ -704,6 +660,7 @@ class ChapterContentPage(Page):
                     )
             index += 1
         ChapterContentPage.move_slide(prs, new_slide, slide_index)
+
 
 class EndPage(Page):
     """End page"""

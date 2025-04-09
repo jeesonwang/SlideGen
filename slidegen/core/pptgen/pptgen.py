@@ -23,26 +23,22 @@ class PPTGen:
         self.slide_index = 0
         self.chapter_index = 1
 
-    def generate(self, 
-                template_prs: Presentation,
-                markdown_document: MarkdownDocument,
-                cover_page_index: int = 0,
-                catalog_page_index: int = 1):
+    def generate(
+        self,
+        template_prs: Presentation,
+        markdown_document: MarkdownDocument,
+        cover_page_index: int = 0,
+        catalog_page_index: int = 1,
+    ):
         """generate the complete PPT presentation"""
 
-        headings = [
-            h for h in markdown_document.descendants if hasattr(h, "level") and h.level == 1
-        ]
+        headings = [h for h in markdown_document.descendants if hasattr(h, "level") and h.level == 1]
 
         if not headings:
-            raise MarkdownDocumentError(
-                "Markdown document must have at least one level 1 heading"
-            )
+            raise MarkdownDocumentError("Markdown document must have at least one level 1 heading")
 
         main_heading = markdown_document.main
-        CoverPage.generate_slide(
-            template_prs, main_heading, cover_page_index=cover_page_index
-        )
+        CoverPage.generate_slide(template_prs, main_heading, cover_page_index=cover_page_index)
 
         # obtain all level 2 headings as chapters
         chapters = []
@@ -51,13 +47,9 @@ class PPTGen:
                 chapters.append(h)
 
         if not chapters:
-            raise MarkdownDocumentError(
-                "Markdown document must have at least one level 2 heading"
-            )
+            raise MarkdownDocumentError("Markdown document must have at least one level 2 heading")
 
-        catalog_last_index = CatalogPage.generate_slide(
-            template_prs, chapters, catalog_page_index=catalog_page_index
-        )
+        catalog_last_index = CatalogPage.generate_slide(template_prs, chapters, catalog_page_index=catalog_page_index)
 
         chapter_home_page_index = catalog_last_index + 1
         chapter_content_page_index = chapter_home_page_index + 1
@@ -82,13 +74,10 @@ class PPTGen:
             )
             current_slide_index += 1
 
-        EndPage.generate_slide(
-            template_prs, end_page_index=end_page_index, slide_index=current_slide_index
-        )
+        EndPage.generate_slide(template_prs, end_page_index=end_page_index, slide_index=current_slide_index)
 
         self._cleanup_template_slides(
-            template_prs,
-            [chapter_home_page_index, chapter_content_page_index, end_page_index]
+            template_prs, [chapter_home_page_index, chapter_content_page_index, end_page_index]
         )
 
         return template_prs

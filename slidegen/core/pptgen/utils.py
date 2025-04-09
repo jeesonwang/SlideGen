@@ -1,5 +1,5 @@
 import re
-from typing import Any, Optional
+from typing import Any
 from types import SimpleNamespace
 from copy import deepcopy
 
@@ -22,7 +22,7 @@ FONT_SIZE_CASE = {
     PP_PLACEHOLDER.FOOTER: 24,
     PP_PLACEHOLDER.HEADER: 32,
     PP_PLACEHOLDER.CHART: 12,
-    PP_PLACEHOLDER.MIXED: 18
+    PP_PLACEHOLDER.MIXED: 18,
 }
 
 # scale factor for emu to pt
@@ -41,6 +41,7 @@ IMAGE_EXTENSIONS: set[str] = {
     "webp",
 }
 
+
 def is_image_path(file: str) -> bool:
     """
     Check if a file path is an image based on its extension.
@@ -53,6 +54,7 @@ def is_image_path(file: str) -> bool:
     """
     return file.split(".")[-1].lower() in IMAGE_EXTENSIONS
 
+
 def is_english(texts):
     eng = 0
     if not texts:
@@ -64,16 +66,18 @@ def is_english(texts):
         return True
     return False
 
+
 def is_chinese(text):
     if not text:
         return False
     chinese = 0
     for ch in text:
-        if '\u4e00' <= ch <= '\u9fff':
+        if "\u4e00" <= ch <= "\u9fff":
             chinese += 1
     if chinese / len(text) > 0.2:
         return True
     return False
+
 
 def get_font_style(font: dict[str, Any]) -> str:
     """
@@ -106,7 +110,7 @@ def get_font_style(font: dict[str, Any]) -> str:
     return "; ".join(styles)
 
 
-def runs_merge(paragraph: _Paragraph) -> Optional[_Run]:
+def runs_merge(paragraph: _Paragraph) -> _Run | None:
     """
     Merge all runs in a paragraph into a single run.
 
@@ -118,10 +122,7 @@ def runs_merge(paragraph: _Paragraph) -> Optional[_Run]:
     """
     runs = paragraph.runs
     if len(runs) == 0:
-        runs = tuple(
-            _Run(r, paragraph)
-            for r in parse_xml(paragraph._element.xml.replace("fld", "r")).r_lst
-        )
+        runs = tuple(_Run(r, paragraph) for r in parse_xml(paragraph._element.xml.replace("fld", "r")).r_lst)
     if len(runs) == 1:
         return runs[0]
     if len(runs) == 0:
@@ -142,6 +143,7 @@ def del_para(paragraph_id: int, shape: BaseShape):
     para = shape.text_frame.paragraphs[paragraph_id]
     para._element.getparent().remove(para._element)
 
+
 def add_para_by_xml(shape: Shape, xml: str):
     """
     Add a paragraph in a text frame by XML string.
@@ -156,63 +158,68 @@ def add_para_by_xml(shape: Shape, xml: str):
         del_para(1, shape)
     return shape
 
+
 def get_theme_colors(presentation):
     theme_part = presentation.slide_master.part.part_related_by(RT.THEME)
     theme = parse_xml(theme_part.blob)
-    color_elements = theme.xpath('a:themeElements/a:clrScheme/*')
+    color_elements = theme.xpath("a:themeElements/a:clrScheme/*")
     result = {}
     for element in color_elements:
-        namespaces = {'a': 'http://schemas.openxmlformats.org/drawingml/2006/main'}
+        namespaces = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
         root = etree.fromstring(etree.tostring(element))
-        theme_name = element.tag.replace('{http://schemas.openxmlformats.org/drawingml/2006/main}', '')
-        result[theme_name] = root.xpath('//a:srgbClr/@val', namespaces=namespaces)[0]
+        theme_name = element.tag.replace("{http://schemas.openxmlformats.org/drawingml/2006/main}", "")
+        result[theme_name] = root.xpath("//a:srgbClr/@val", namespaces=namespaces)[0]
     return result
+
 
 def modify_shape_xml(xml_str: str, shape_id: int | str, shape_name: str, text_content: str) -> str:
     """
     Modify the XML of a PPTX shape: update the shape ID, name, and text content.
-    
+
     Args:
         xml_str (str): The input XML string.
         shape_id (int | str): The new shape ID.
         shape_name (str): The new shape name.
         text_content (str): The new text content.
-    
+
     Returns:
         str: The modified XML string.
     """
     root = etree.fromstring(xml_str)
     nsmap = root.nsmap
-    
-    cNvPr = root.find('.//p:cNvPr', namespaces=nsmap)
+
+    cNvPr = root.find(".//p:cNvPr", namespaces=nsmap)
     if cNvPr is not None:
-        cNvPr.set('id', str(shape_id))
-        cNvPr.set('name', shape_name)
-    
-    t_element = root.find('.//a:t', namespaces=nsmap)
+        cNvPr.set("id", str(shape_id))
+        cNvPr.set("name", shape_name)
+
+    t_element = root.find(".//a:t", namespaces=nsmap)
     if t_element is not None:
         # Keep the original rPr format
         r_element = t_element.getparent()
         if r_element is not None:
-            r_pr = r_element.find('.//a:rPr', namespaces=nsmap)
+            r_pr = r_element.find(".//a:rPr", namespaces=nsmap)
             if r_pr is not None:
                 new_r = etree.Element(f"{{{nsmap['a']}}}r")
                 new_r.append(deepcopy(r_pr))
                 new_t = etree.Element(f"{{{nsmap['a']}}}t")
                 new_t.text = text_content
                 new_r.append(new_t)
-                
+
                 p_element = r_element.getparent()
                 p_element.replace(r_element, new_r)
-    return etree.tostring(root, encoding='unicode', pretty_print=True)
+    return etree.tostring(root, encoding="unicode", pretty_print=True)
 
-def add_shape_by_xml(slide: Slide, 
-                     *,
-                     shape_xml: str, 
-                     shape_id: int | str, 
-                     shape_name: str, 
-                     text_content: str = "",
-                     location: Optional[Location] = None) -> Shape:
+
+def add_shape_by_xml(
+    slide: Slide,
+    *,
+    shape_xml: str,
+    shape_id: int | str,
+    shape_name: str,
+    text_content: str = "",
+    location: Location | None = None,
+) -> Shape:
     """
     Add a shape by XML string.
 
@@ -225,11 +232,12 @@ def add_shape_by_xml(slide: Slide,
         location (Optional[Location]): The location of the shape.
     Returns:
         Shape: The added shape.
-    """ 
+    """
     shape_xml = modify_shape_xml(shape_xml, shape_id, shape_name, text_content)
 
     new_shape = slide.shapes._shape_factory(
-        slide.shapes._spTree.insert_element_before(parse_xml(shape_xml), 'p:extLst'))
+        slide.shapes._spTree.insert_element_before(parse_xml(shape_xml), "p:extLst")
+    )
     if location is not None:
         new_shape.left = location.x
         new_shape.top = location.y
@@ -238,12 +246,14 @@ def add_shape_by_xml(slide: Slide,
 
     return new_shape
 
+
 def clone_para(paragraph_id: int, shape: BaseShape):
     """
     Clone a paragraph in a shape.
     """
     para = shape.text_frame.paragraphs[paragraph_id]
     shape.text_frame.paragraphs[-1]._element.addnext(parse_xml(para._element.xml))
+
 
 def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
     """
@@ -256,14 +266,14 @@ def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
         str: The converted paragraph xml.
     """
     root = etree.fromstring(paragraph_xml)
-    drawingml_ns = root.nsmap.get('a')
+    drawingml_ns = root.nsmap.get("a")
     if root.tag == f"{{{drawingml_ns}}}p":
         p_element = root
     else:
         p_element = root.find(".//a:p", namespaces=root.nsmap)
     if p_element is None:
         return etree.tostring(root, encoding="unicode", pretty_print=True)
-    
+
     end_para_rpr = p_element.find(".//a:endParaRPr", namespaces=root.nsmap)
     if end_para_rpr is not None:
         r_pr = etree.Element(f"{{{drawingml_ns}}}rPr")

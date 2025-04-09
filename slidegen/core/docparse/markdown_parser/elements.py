@@ -1,28 +1,23 @@
 from typing import (
-    Optional, 
-    Dict, 
-    Any, 
-    Self, 
-    Iterator, 
-    Iterable, 
-    Type, 
-    Optional, 
+    Any,
+    Self,
+    Optional,
     cast,
-    List as ListType,
 )
+from collections.abc import Iterator, Iterable
 import re
 
 from ._typing import _AtMostOneNode, _InsertableElement, _OutElement
 
-class Element:
 
+class Element:
     parent: Optional["Element"]
     next_element: _AtMostOneNode
     previous_element: _AtMostOneNode
     next_sibling: _AtMostOneNode
     previous_sibling: _AtMostOneNode
-    
-    contents: ListType[Type["Element"]]
+
+    contents: list[type["Element"]]
     _decomposed: bool = False
 
     def __init__(self, **kwargs: Any) -> None:
@@ -74,18 +69,14 @@ class Element:
         if self.next_sibling is not None:
             self.next_sibling.previous_sibling = self
 
-        if (
-            previous_sibling is None
-            and self.parent is not None
-            and self.parent.contents
-        ):
+        if previous_sibling is None and self.parent is not None and self.parent.contents:
             previous_sibling = self.parent.contents[-1]
 
         self.previous_sibling = previous_sibling
         if self.previous_sibling is not None:
             self.previous_sibling.next_sibling = self
 
-    def __deepcopy__(self, memo: Dict[Any, Any], recursive: bool = False) -> Self:
+    def __deepcopy__(self, memo: dict[Any, Any], recursive: bool = False) -> Self:
         raise NotImplementedError()
 
     def __copy__(self) -> Self:
@@ -93,14 +84,10 @@ class Element:
         only one Element can occupy a given place in a parse tree.
         """
         return self.__deepcopy__({})
-    
+
     default: Iterable[type["Element"]] = tuple()
 
-    def _all_strings(
-        self, 
-        strip: bool = False,
-        types: Iterable[Type["Element"]] = default
-    ) -> Iterator[str]:
+    def _all_strings(self, strip: bool = False, types: Iterable[type["Element"]] = default) -> Iterator[str]:
         """
         Yield all strings of certain classes, possibly stripping them.
 
@@ -124,7 +111,7 @@ class Element:
         self,
         separator: str = "\n",
         strip: bool = False,
-        types: Iterable[Type["Element"]] = default,
+        types: Iterable[type["Element"]] = default,
     ) -> str:
         """Get all child strings of this Element, concatenated using the
         given separator.
@@ -154,12 +141,12 @@ class Element:
             if child is element:
                 return i
         raise ValueError("Element.index: child not in this Element.")
-    
+
     @property
     def is_empty_element(self) -> bool:
         return len(self.contents) == 0
-    
-    def extract(self, _self_index: Optional[int] = None) -> Self:
+
+    def extract(self, _self_index: int | None = None) -> Self:
         """Destructively rips this element out of the tree.
 
         :param _self_index: The location of this element in its parent's
@@ -187,15 +174,9 @@ class Element:
         last_child.next_element = None
 
         self.parent = None
-        if (
-            self.previous_sibling is not None
-            and self.previous_sibling is not self.next_sibling
-        ):
+        if self.previous_sibling is not None and self.previous_sibling is not self.next_sibling:
             self.previous_sibling.next_sibling = self.next_sibling
-        if (
-            self.next_sibling is not None
-            and self.next_sibling is not self.previous_sibling
-        ):
+        if self.next_sibling is not None and self.next_sibling is not self.previous_sibling:
             self.next_sibling.previous_sibling = self.previous_sibling
         self.previous_sibling = self.next_sibling = None
         return self
@@ -236,9 +217,7 @@ class Element:
             else:
                 element.extract()
 
-    def _last_descendant(
-        self, is_initialized: bool = True, accept_self: bool = True
-    ) -> _AtMostOneNode:
+    def _last_descendant(self, is_initialized: bool = True, accept_self: bool = True) -> _AtMostOneNode:
         """Finds the last element beneath this object to be parsed.
 
         :param is_initialized: Is ``self`` initialized?
@@ -256,7 +235,7 @@ class Element:
             last_child = None
         return last_child
 
-    def insert(self, position: int, *new_children: _InsertableElement) -> ListType[_OutElement]:
+    def insert(self, position: int, *new_children: _InsertableElement) -> list[_OutElement]:
         """Insert one or more new Elements as a child of this `Element`.
 
         This works similarly to :py:meth:`list.insert`, except you can insert
@@ -268,21 +247,22 @@ class Element:
 
         :return The newly inserted Elements.
         """
-        inserted: ListType[Type[Element]] = []
+        inserted: list[type[Element]] = []
         for new_child in new_children:
             inserted.extend(self._insert(position, new_child))
             position += 1
         return inserted
 
-    def _insert(self, position: int, new_child: _InsertableElement) -> ListType["Element"]:
+    def _insert(self, position: int, new_child: _InsertableElement) -> list["Element"]:
         if new_child is None:
             raise ValueError("Cannot insert None into a Element.")
         if new_child is self:
             raise ValueError("Cannot insert a Element into itself.")
         if isinstance(new_child, str):
             raise TypeError("Cannot insert a string into a Element. Please convert to an Element first.")
-        
+
         from . import MarkdownDocument
+
         if isinstance(new_child, MarkdownDocument):
             return self.insert(position, *list(new_child.contents))
         position = min(position, len(self.contents))
@@ -308,16 +288,14 @@ class Element:
         if new_child.previous_element is not None:
             new_child.previous_element.next_element = new_child
 
-        new_childs_last_element = new_child._last_descendant(
-            is_initialized=False, accept_self=True
-        )
-        
+        new_childs_last_element = new_child._last_descendant(is_initialized=False, accept_self=True)
+
         new_childs_last_element = cast(Element, new_childs_last_element)
 
         if position >= len(self.contents):
             new_child.next_sibling = None
 
-            parent: Optional[Element] = self
+            parent: Element | None = self
             parents_next_sibling = None
             while parents_next_sibling is None and parent is not None:
                 parents_next_sibling = parent.next_sibling
@@ -338,13 +316,11 @@ class Element:
             new_childs_last_element.next_element = next_child
 
         if new_childs_last_element.next_element is not None:
-            new_childs_last_element.next_element.previous_element = (
-                new_childs_last_element
-            )
+            new_childs_last_element.next_element.previous_element = new_childs_last_element
         self.contents.insert(position, new_child)
 
         return [new_child]
-    
+
     def append(self, element: _InsertableElement) -> "Element":
         """
         Appends the given `Element` to the contents of this `Element`.
@@ -354,7 +330,7 @@ class Element:
         :return The newly appended Element.
         """
         return self.insert(len(self.contents), element)[0]
-    
+
     def __iter__(self) -> Iterator[_OutElement]:
         "Iterating over a Element iterates over its contents."
         return iter(self.contents)
@@ -362,15 +338,15 @@ class Element:
     def __len__(self) -> int:
         "The length of a Element is the length of its list of contents."
         return len(self.contents)
-    
+
     def __contains__(self, x: Any) -> bool:
         return x in self.contents
-    
+
     def __getitem__(self, key: int) -> _OutElement:
         """tag[key] returns the value of the 'key' attribute for the Tag,
         and throws an exception if it's not there."""
         return self.contents[key]
-    
+
     @property
     def next_elements(self) -> Iterator[_OutElement]:
         """
@@ -381,13 +357,14 @@ class Element:
             successor = i.next_element
             yield i
             i = successor
+
     @property
     def self_and_next_elements(self) -> Iterator[_OutElement]:
         """
         This Element, then all Elements that were parsed after it.
         """
         return self._self_and(self.next_elements)
-    
+
     @property
     def next_siblings(self) -> Iterator[_OutElement]:
         """
@@ -399,6 +376,7 @@ class Element:
             successor = i.next_sibling
             yield i
             i = successor
+
     @property
     def previous_elements(self) -> Iterator[_OutElement]:
         """
@@ -425,7 +403,7 @@ class Element:
             successor = i.previous_sibling
             yield i
             i = successor
-    
+
     @property
     def parents(self) -> Iterator[_OutElement]:
         """
@@ -448,7 +426,7 @@ class Element:
         """
         return self._self_and(self.parents)
 
-    def _self_and(self, other_generator:Iterator[_OutElement]) -> Iterator[_OutElement]:
+    def _self_and(self, other_generator: Iterator[_OutElement]) -> Iterator[_OutElement]:
         """
         Modify a generator by yielding this element, then everything
         yielded by the other generator.
@@ -463,14 +441,14 @@ class Element:
         Check whether a Element has been decomposed.
         """
         return getattr(self, "_decomposed", False) or False
-    
+
     @property
     def children(self) -> Iterator[_OutElement]:
         """
         Iterate over all direct children of this `Element`.
         """
         return (x for x in self.contents)
-    
+
     @property
     def self_and_descendants(self) -> Iterator[_OutElement]:
         """
@@ -497,12 +475,12 @@ class Element:
             successor = current.next_element
             yield current
             current = successor
-    
+
 
 class Heading(Element):
     """Represents a heading element in a Markdown document."""
 
-    _element_text_source: Optional[str] = None
+    _element_text_source: str | None = None
 
     def __init__(self, level: int, text: str, **kwargs: Any):
         """Initializes a Heading object.
@@ -513,8 +491,8 @@ class Heading(Element):
         super().__init__(**kwargs)
         self.level = level
         self._text = text
-    
-    def _all_strings(self, strip = False, types = tuple()):
+
+    def _all_strings(self, strip=False, types=tuple()):
         for descendant in self.descendants:
             if not types or isinstance(descendant, types):
                 text = descendant.element_text
@@ -528,15 +506,15 @@ class Heading(Element):
         if self._element_text_source is None:
             return "#" * self.level + self.element_text
         return self._element_text_source
-    
+
     @element_text_source.setter
     def element_text_source(self, text: str):
         self._element_text_source = text
-    
+
     @property
     def element_text(self) -> str:
         return self._text
-    
+
     @element_text.setter
     def element_text(self, text: str):
         self._text = text
@@ -547,9 +525,9 @@ class Heading(Element):
 
 class Paragraph(Element):
     """Represents a paragraph element in a Markdown document."""
-    
-    ORDERED_PATTERN = r'^[\s]*[-*+]\s+'
-    UNORDERED_PATTERN = r'^[\s]*\d+\.\s+'
+
+    ORDERED_PATTERN = r"^[\s]*[-*+]\s+"
+    UNORDERED_PATTERN = r"^[\s]*\d+\.\s+"
 
     def __init__(self, text: str, **kwargs: Any):
         """Initializes a Paragraph object.
@@ -558,12 +536,12 @@ class Paragraph(Element):
         """
         super().__init__(**kwargs)
         self._text = text
-    
+
     @property
     def element_text(self) -> str:
         # strip markdown syntax
-        _text = re.sub(self.ORDERED_PATTERN, '', self._text)
-        _text = re.sub(self.UNORDERED_PATTERN, '', _text).strip()
+        _text = re.sub(self.ORDERED_PATTERN, "", self._text)
+        _text = re.sub(self.UNORDERED_PATTERN, "", _text).strip()
         return _text
 
     @element_text.setter
@@ -573,12 +551,12 @@ class Paragraph(Element):
     @property
     def element_text_source(self) -> str:
         return self._text
-    
+
     @element_text_source.setter
     def element_text_source(self, text: str):
         self._text = text
-    
-    def _all_strings(self, strip = False, types = tuple()):
+
+    def _all_strings(self, strip=False, types=tuple()):
         if types:
             raise ValueError("Paragraph does not support types")
         if strip:
@@ -589,11 +567,12 @@ class Paragraph(Element):
 
     def __repr__(self) -> str:
         return f"<Paragraph text='{self._text}'>"
-    
+
+
 class CodeBlock(Element):
     """Represents a code block element in a Markdown document."""
 
-    def __init__(self, code: str, language: Optional[str] = None, **kwargs: Any):
+    def __init__(self, code: str, language: str | None = None, **kwargs: Any):
         """Initializes a CodeBlock object.
 
         :param code: The code content of the block.
@@ -602,11 +581,11 @@ class CodeBlock(Element):
         super().__init__(**kwargs)
         self.code = code
         self.language = language
-    
+
     @property
     def element_text(self) -> str:
         return self.code
-    
+
     @element_text.setter
     def element_text(self, text: str):
         self.code = text
@@ -615,7 +594,7 @@ class CodeBlock(Element):
     def element_text_source(self):
         return f"```{self.language}\n{self.code}\n```"
 
-    def _all_strings(self, strip = False, types = tuple()):
+    def _all_strings(self, strip=False, types=tuple()):
         if types:
             raise ValueError("CodeBlock does not support types")
         if strip:
@@ -627,34 +606,35 @@ class CodeBlock(Element):
     def __repr__(self) -> str:
         lang = f" language='{self.language}'" if self.language else ""
         return f"<CodeBlock{lang} code='{self.code[:30]}...'>"
-    
+
+
 class Table(Element):
     """Represents a table element in a Markdown document."""
 
     row_number = 0
     col_number = 0
-    table_type: Optional[str] = None
+    table_type: str | None = None
 
-    def __init__(self, headers: ListType[str], text: Optional[str] = None, **kwargs: Any):
+    def __init__(self, headers: list[str], text: str | None = None, **kwargs: Any):
         """Initializes a Table object.
 
         :param headers: A list of header names for the table.
         """
         super().__init__(**kwargs)
         self.headers = headers
-        self._text: Optional[str] = text
+        self._text: str | None = text
 
     @property
     def element_text(self):
         return self._text
-    
+
     @element_text.setter
     def element_text(self, text: str):
         self._text = text
 
     element_text_source = element_text
 
-    def _all_strings(self, strip = False, types = tuple()):
+    def _all_strings(self, strip=False, types=tuple()):
         if types:
             raise ValueError("Table does not support types")
         if strip:
@@ -666,10 +646,11 @@ class Table(Element):
     def __repr__(self) -> str:
         return f"<Table headers={self.headers}>"
 
+
 class Picture(Element):
     """Represents a picture element in a Markdown document."""
 
-    def __init__(self, src: str, alt_text: Optional[str] = None, title: Optional[str] = None, **kwargs: Any):
+    def __init__(self, src: str, alt_text: str | None = None, title: str | None = None, **kwargs: Any):
         """Initializes a Picture object.
 
         :param src: The source URL of the picture.
@@ -685,21 +666,21 @@ class Picture(Element):
     @property
     def element_text(self) -> str:
         return self._text
-    
+
     @element_text.setter
     def element_text(self, text: str):
         self._text = text
-    
+
     element_text_source = element_text
 
-    def _all_strings(self, strip = False, types = tuple()):
+    def _all_strings(self, strip=False, types=tuple()):
         if types:
             raise ValueError("Picture does not support types")
         if strip:
             yield self.element_text.strip()
         else:
             yield self.element_text
-    
+
     def __repr__(self) -> str:
         alt = f" alt='{self.alt_text}'" if self.alt_text else ""
         title = f" title='{self.title}'" if self.title else ""
