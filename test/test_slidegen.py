@@ -18,6 +18,7 @@ from slidegen.core.pptgen.pptpages import (
     ChapterContentPage,
     EndPage
 )
+from slidegen.core.pptgen.pptgen import PPTGen
 
 class TestSlideGen:
     """SlideGen核心功能测试类"""
@@ -40,9 +41,7 @@ class TestSlideGen:
     def test_markdown_document_parse(self, markdown_path):
         """测试Markdown文档解析功能"""
         # 创建MarkdownDocument对象
-        with open(markdown_path, 'r') as f:
-            markdown_text = f.read()
-        doc = MarkdownDocument(markdown_text)
+        doc = MarkdownDocument(markdown_path)
         
         # 验证文档是否正确解析
         assert doc is not None
@@ -51,18 +50,19 @@ class TestSlideGen:
         assert len(headings) > 0
     
     @pytest.fixture
-    def heading_list(self, markdown_path):
-        with open(markdown_path, 'r') as f:
-            markdown_text = f.read()
-        doc = MarkdownDocument(markdown_text)
-        headings = [elem for elem in doc.main.children]
-        return headings
+    def markdown_document(self, markdown_path):
+        doc = MarkdownDocument(markdown_path)
+        return doc
+    
+    @pytest.fixture
+    def heading_list(self, markdown_document):
+        return [elem for elem in markdown_document.main.children]
 
     def test_cover_page_generation(self, presentation):
         """测试PPT首页生成功能"""
         title = Heading(level=1, text="Hello World!")
         
-        CoverPage.generate_slide(presentation, title, cover_slide_index=0)
+        CoverPage.generate_slide(presentation, title, cover_page_index=0)
         
         temp_output = os.path.join(os.path.dirname(__file__), "test_cover.pptx")
         presentation.save(temp_output)
@@ -83,7 +83,8 @@ class TestSlideGen:
     def test_chapter_home_page_generation(self, presentation, heading_list):
         """测试PPT章节首页生成功能"""
         title = Heading(level=2, text="Hello World! This is a test title.")
-        ChapterHomePage.generate_slide(presentation, title, chapter_home_page_index=2, chapter_number=1)
+        ChapterHomePage.generate_slide(presentation, title, 
+                                       chapter_home_page_index=2, chapter_number=1, slide_index=2)
         temp_output = os.path.join(os.path.dirname(__file__), "test_chapter_home.pptx")
         presentation.save(temp_output)
         assert os.path.exists(temp_output)
@@ -96,3 +97,14 @@ class TestSlideGen:
         temp_output = os.path.join(os.path.dirname(__file__), "test_chapter_content.pptx")
         presentation.save(temp_output)
         assert os.path.exists(temp_output)
+
+    def test_ppt_generation(self, presentation, markdown_document):
+        """测试PPT生成功能"""
+        ppt_gen = PPTGen()
+        template_prs = Presentation(os.path.join(os.path.dirname(__file__),
+                                                  "data", "template_0.pptx"))
+        ppt_gen.generate(template_prs, markdown_document)
+        temp_output = os.path.join(os.path.dirname(__file__), "test_ppt.pptx")
+        template_prs.save(temp_output)
+        assert os.path.exists(temp_output)
+    
