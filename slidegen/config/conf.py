@@ -17,6 +17,8 @@ if os.path.isdir(secret_dir):
 load_dotenv()
 
 # [BASE]
+COMPONENTS_BASE_PATH = os.getenv("COMPONENTS_BASE_PATH", os.path.join(os.path.dirname(BASE_DIR), "components"))
+COMPONENTS_PATH = os.getenv("COMPONENTS_PATH", os.path.join(COMPONENTS_BASE_PATH, "shapes/shapes.json"))
 UIDGID = os.getenv("USER", "1101:1100")
 ENV = os.getenv("ENV")
 DEBUG = ENV == "dev"
