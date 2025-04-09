@@ -1,5 +1,5 @@
 import contextvars
-from typing import Union, Any
+from typing import Any
 
 from fastapi import Request
 from pydantic import BaseModel
@@ -28,27 +28,27 @@ class ContextVarsManager:
         _request.set(value)
 
     @property
-    def user_id(self) -> Union[int, str, None]:
+    def user_id(self) -> int | str | None:
         return _user_id.get()
 
     @user_id.setter
-    def user_id(self, value: Union[int, str, None]):
+    def user_id(self, value: int | str | None):
         _user_id.set(value)
 
     @property
-    def role_ids(self) -> Union[list[int], None]:
+    def role_ids(self) -> list[int] | None:
         return _role_ids.get()
 
     @role_ids.setter
-    def role_ids(self, value: Union[list[int], None]):
+    def role_ids(self, value: list[int] | None):
         _role_ids.set(value)
 
     @property
-    def user(self) -> Union[Any, BaseModel]:
+    def user(self) -> Any | BaseModel:
         return _user.get()
 
     @user.setter
-    def user(self, value: Union[Any, BaseModel]):
+    def user(self, value: Any | BaseModel):
         _user.set(value)
 
     @property
@@ -90,4 +90,3 @@ class ContextVarsManager:
 
 
 g = ContextVarsManager()
-

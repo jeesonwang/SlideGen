@@ -1,12 +1,12 @@
+import datetime
+import logging
 import os
 import re
 import sys
-import datetime
-import logging
-
-from loguru import logger
 
 from config.const import LOG_DIR
+from loguru import logger
+
 
 class InterceptHandler(logging.Handler):
     def emit(self, record):
@@ -22,9 +22,8 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(
-            level, record.getMessage()
-        )
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
 
 def clear_timeout_logs(log_dir: str, keep_day: int = 15):
     """

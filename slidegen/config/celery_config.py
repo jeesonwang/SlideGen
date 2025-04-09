@@ -1,7 +1,4 @@
-from kombu import Queue
-from celery.schedules import crontab
-
-from config.conf import TZ, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, CELERY_BROKER_DB, SCHEDULE_PERIOD
+from config.conf import CELERY_BROKER_DB, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, TZ
 
 broker_url = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_BROKER_DB}"
 result_backend = broker_url
@@ -29,5 +26,4 @@ task_queues = ()
 
 task_routes = ()
 
-beat_schedule = {
-}
+beat_schedule = {}
