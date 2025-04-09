@@ -1,5 +1,6 @@
 import contextlib
-from typing import Annotated, AsyncIterator, Iterator
+from typing import Annotated
+from collections.abc import AsyncIterator
 from urllib.parse import quote_plus
 
 from fastapi import Depends
