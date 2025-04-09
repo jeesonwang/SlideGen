@@ -51,9 +51,11 @@ class Page:
             shape = add_para_by_xml(shape, para_xml)
 
     @staticmethod
-    def remove_slide(pres, index):
+    def remove_slide(prs: Presentation, index: int):
         """Delete the slide at the given index"""
-        xml_slides = pres.slides._sldIdLst
+        rId = prs.slides._sldIdLst[index].rId
+        prs.part.drop_rel(rId)
+        xml_slides = prs.slides._sldIdLst
         xml_slides.remove(list(xml_slides)[index])
 
     @staticmethod
@@ -154,9 +156,11 @@ class CoverPage(Page):
         title_found = False
         # TODO: add subtitle
         for placeholder in cover_page.shapes.placeholders:
-            if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
+            placeholder_type = placeholder.placeholder_format.type
+            if placeholder_type == PP_PLACEHOLDER.TITLE or placeholder_type == PP_PLACEHOLDER.CENTER_TITLE:
                 CoverPage._set_text(placeholder, main_title)
                 placeholder.text_frame.word_wrap = False
+                title_found = True
                 break
         if not title_found:
             raise PPTTemplateError(
@@ -541,6 +545,9 @@ class ChapterContentPage(Page):
     Divide the chapter content slides into one-point, two-point, three-point, and four-point slides.
     """
 
+    # add static variable to track used pictures
+    used_pictures = {"opaque": set(), "transparent": set()}
+
     @staticmethod
     def _get_slide_type(content: Heading) -> int:
         """
@@ -639,11 +646,6 @@ class ChapterContentPage(Page):
                     ChapterContentPage._shape_alignment(added_shape)
                 elif shape.content_type == ContentType.PICTURE:
                     # picture is only in the first location
-                    if len(locs) != 1:
-                        raise PPTGenError(
-                            f"{ChapterContentPage.__name__}: \
-                                          Picture must have only one location: {len(locs)} != 1"
-                        )
                     if is_image_path(shape.path):
                         image_path = shape.path
                     elif shape.path.endswith("opaque"):
@@ -651,17 +653,30 @@ class ChapterContentPage(Page):
                         picture_dir = os.path.join(
                             COMPONENTS_BASE_PATH, "pictures/opaque"
                         )
-                        image_path = os.path.join(
-                            picture_dir, random.choice(os.listdir(picture_dir))
-                        )
+                        available_pictures = [p for p in os.listdir(picture_dir) 
+                                            if p not in ChapterContentPage.used_pictures["opaque"]]
+                        # if all pictures have been used, reset the used list
+                        if not available_pictures:
+                            ChapterContentPage.used_pictures["opaque"] = set()
+                            available_pictures = os.listdir(picture_dir)
+                        
+                        chosen_picture = random.choice(available_pictures)
+                        ChapterContentPage.used_pictures["opaque"].add(chosen_picture)
+                        image_path = os.path.join(picture_dir, chosen_picture)
                     elif shape.path.endswith("transparent"):
                         # random choose a picture from the transparent folder
                         picture_dir = os.path.join(
                             COMPONENTS_BASE_PATH, "pictures/transparent"
                         )
-                        image_path = os.path.join(
-                            picture_dir, random.choice(os.listdir(picture_dir))
-                        )
+                        available_pictures = [p for p in os.listdir(picture_dir) 
+                                            if p not in ChapterContentPage.used_pictures["transparent"]]
+                        if not available_pictures:
+                            ChapterContentPage.used_pictures["transparent"] = set()
+                            available_pictures = os.listdir(picture_dir)
+                        
+                        chosen_picture = random.choice(available_pictures)
+                        ChapterContentPage.used_pictures["transparent"].add(chosen_picture)
+                        image_path = os.path.join(picture_dir, chosen_picture)
                     else:
                         raise PPTGenError(
                             f"{ChapterContentPage.__name__}: \
@@ -689,7 +704,6 @@ class ChapterContentPage(Page):
                     )
             index += 1
         ChapterContentPage.move_slide(prs, new_slide, slide_index)
-
 
 class EndPage(Page):
     """End page"""

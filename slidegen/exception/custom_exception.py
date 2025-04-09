@@ -62,3 +62,6 @@ class PPTGenError(ApiError):
 
 class PPTTemplateError(ApiError):
     default_code = InsideServerErrorCode
+
+class MarkdownDocumentError(ApiError):
+    default_code = InsideServerErrorCode

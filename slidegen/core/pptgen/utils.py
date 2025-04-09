@@ -152,6 +152,8 @@ def add_para_by_xml(shape: Shape, xml: str):
     shape.text_frame.add_paragraph()
     shape.text_frame.paragraphs[0]._element.addnext(parse_xml(xml))
     del_para(0, shape)
+    if len(shape.text_frame.paragraphs) > 1:
+        del_para(1, shape)
     return shape
 
 def get_theme_colors(presentation):
