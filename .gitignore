@@ -105,6 +105,8 @@ driver
 .DS_Store
 .env
 
+# cursor
+.cursor
 # pytest
 .pytest_cache/
 # ruff
