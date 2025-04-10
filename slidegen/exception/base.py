@@ -1,11 +1,12 @@
-from exception.error_code import UnknownErrorCode, MESSAGE
-from contexts import BaseResponse
+from slidegen.contexts import BaseResponse
+from slidegen.exception.error_code import MESSAGE, UnknownErrorCode
 
 
 class ApiError(Exception):
     """
     标准API异常
     """
+
     default_code = UnknownErrorCode
 
     def __init__(self, message=None, code=None, http_code=None, data: dict | list | str = None, *args):

@@ -1,11 +1,11 @@
 import json
 from typing import Any
 
-from sqlalchemy import Column, Integer, DateTime, TypeDecorator, Text, SmallInteger
+from sqlalchemy import Column, DateTime, Integer, SmallInteger, Text, TypeDecorator
 
-from contexts import g
-from common.patch.json_decoder import CustomJSONEncoder
-from util.time import now_datetime
+from slidegen.common.patch.json_decoder import CustomJSONEncoder
+from slidegen.contexts import g
+from slidegen.util.time import now_datetime
 
 try:
     # sqlalchemy1.4+
@@ -56,6 +56,7 @@ def same_as(column_name: str):
 
 def get_attr_from_g(name: str, default: Any = None, raise_exception: bool = False):
     """从g对象中获取默认参数"""
+
     def getter():
         try:
             if not hasattr(g, name):
@@ -71,12 +72,20 @@ def get_attr_from_g(name: str, default: Any = None, raise_exception: bool = Fals
 
 class BaseModel(Base):
     """基类表模板"""
+
     __abstract__ = True
 
-    create_user_id = Column(Integer, nullable=False, index=True, default=get_attr_from_g("user_id", default=0), comment="创建用户ID")
+    create_user_id = Column(
+        Integer, nullable=False, index=True, default=get_attr_from_g("user_id", default=0), comment="创建用户ID"
+    )
     create_time = Column(DateTime(3), nullable=False, default=now_datetime, index=True, comment="创建时间")
-    update_user_id = Column(Integer, nullable=False, default=get_attr_from_g("user_id", default=0),
-                            onupdate=get_attr_from_g("user_id", default=0), comment="修改用户ID")
+    update_user_id = Column(
+        Integer,
+        nullable=False,
+        default=get_attr_from_g("user_id", default=0),
+        onupdate=get_attr_from_g("user_id", default=0),
+        comment="修改用户ID",
+    )
     update_time = Column(DateTime(3), nullable=False, default=now_datetime, onupdate=now_datetime, comment="修改时间")
     is_delete = Column(Boolean, nullable=False, default=False, comment="是否已删除")
 

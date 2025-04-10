@@ -4,8 +4,9 @@ import os
 import re
 import sys
 
-from config.const import LOG_DIR
 from loguru import logger
+
+from slidegen.config.const import LOG_DIR
 
 
 class InterceptHandler(logging.Handler):

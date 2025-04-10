@@ -1,28 +1,19 @@
 import contextlib
-from typing import Annotated
 from collections.abc import AsyncIterator
-from urllib.parse import quote_plus
+from typing import Annotated
 
 from fastapi import Depends
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import Session, sessionmaker
 
-from config.conf import (
-    MYSQL_HOST,
-    MYSQL_PORT,
-    MYSQL_USER,
-    MYSQL_PASSWORD,
-    MYSQL_DB,
-    MYSQL_CHARSET,
-    DB_TYPE,
-)
-from contexts import g
+from slidegen.config.conf import settings
+from slidegen.contexts import g
 
-if DB_TYPE == "MYSQL":
-    SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{quote_plus(MYSQL_PASSWORD)}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}?charset={MYSQL_CHARSET}"
-    ASYNC_SQLALCHEMY_DATABASE_URL = f"mysql+aiomysql://{MYSQL_USER}:{quote_plus(MYSQL_PASSWORD)}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}?charset={MYSQL_CHARSET}"
+if settings.DB_TYPE == "MYSQL":
+    SQLALCHEMY_DATABASE_URL = settings.SQLALCHEMY_DATABASE_URI
+    ASYNC_SQLALCHEMY_DATABASE_URL = settings.SQLALCHEMY_ASYNC_DATABASE_URI
     engine_sync = create_engine(
         url=SQLALCHEMY_DATABASE_URL,
         pool_recycle=300,
@@ -42,9 +33,9 @@ if DB_TYPE == "MYSQL":
     session_maker_sync = sessionmaker(bind=engine_sync, autocommit=False, autoflush=False)
     session_maker = async_sessionmaker(bind=engine, autoflush=False, autocommit=False)
 else:
-    raise RuntimeError(f"Unsupported database: {DB_TYPE}")
+    raise RuntimeError(f"Unsupported database: {settings.DB_TYPE}")
 
-print(f"DB_TYPE={DB_TYPE}, Connecting to database url={SQLALCHEMY_DATABASE_URL}")
+print(f"DB_TYPE={settings.DB_TYPE}, Connecting to database url={SQLALCHEMY_DATABASE_URL}")
 
 
 class DatabaseSessionManager:

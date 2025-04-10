@@ -1,9 +1,8 @@
 import datetime
-from typing import Union, Tuple
 
 import dateutil.parser
 
-from config.conf import TZ
+from slidegen.config.conf import settings
 
 
 def now_datetime():
@@ -13,7 +12,7 @@ def now_datetime():
 
 def now_tz_datetime():
     """获取带TIMEZONE的datetime"""
-    return datetime.datetime.now(tz=TZ)
+    return datetime.datetime.now(tz=settings.TZ)
 
 
 def init_datetime():
@@ -51,9 +50,7 @@ def days_date_range(start_date: datetime.datetime, end_date: datetime.datetime):
     return dates
 
 
-def time_difference(
-    date1: Union[str, datetime.datetime], date2: Union[str, datetime.datetime]
-) -> datetime.timedelta:
+def time_difference(date1: str | datetime.datetime, date2: str | datetime.datetime) -> datetime.timedelta:
     """获取时间差"""
     if isinstance(date1, str):
         date1 = strptime(date1)
@@ -63,8 +60,8 @@ def time_difference(
 
 
 def convert_to_search_interval(
-    start: Union[datetime.datetime, str], end: Union[datetime.datetime, str], length: int = 19
-) -> Tuple[str, str]:
+    start: datetime.datetime | str, end: datetime.datetime | str, length: int = 19
+) -> tuple[str, str]:
     """
     Convert %Y-%m-%d time format to %Y-%m-%d %H:%M:%S
 
@@ -85,7 +82,7 @@ def convert_to_search_interval(
     return start, end
 
 
-def convert_to_search_start_time(start: Union[datetime.datetime, str]) -> str:
+def convert_to_search_start_time(start: datetime.datetime | str) -> str:
     if isinstance(start, str) and len(start) == 19:
         return start
 
@@ -97,14 +94,12 @@ def convert_to_search_start_time(start: Union[datetime.datetime, str]) -> str:
     return start.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def convert_to_search_end_time(end: Union[datetime.datetime, str]) -> str:
+def convert_to_search_end_time(end: datetime.datetime | str) -> str:
     if isinstance(end, str) and len(end) == 19:
         return end
 
     if not isinstance(end, datetime.datetime):
-        end = datetime.datetime.strptime(end, "%Y-%m-%d").replace(
-            hour=23, minute=59, second=59
-        )
+        end = datetime.datetime.strptime(end, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
 
     end = end.strftime("%Y-%m-%d %H:%M:%S")
     return end

@@ -1,49 +1,120 @@
-import os
-import sys
+from pathlib import Path
+from typing import Annotated, Any, Literal
 
 import pytz
-from dotenv import load_dotenv
+from pydantic import (
+    AnyUrl,
+    BeforeValidator,
+    MySQLDsn,
+    RedisDsn,
+    computed_field,
+)
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# 将 BASE_DIR 加入python搜索路径
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE_DIR)
+# 将 BASE_DIR 加入python搜索路径, 使用.env文件中的PYTHONPATH替代了，注释掉备用
+BASE_DIR = Path(__file__).parent.parent
+# sys.path.insert(0, BASE_DIR)
 
-# [读取.env文件，转化为环境变量]
-# 当启用Docker secret功能时,读取secret ENV
-secret_dir = "/run/secrets"
-if os.path.isdir(secret_dir):
-    for secret_filename in os.listdir(secret_dir):
-        load_dotenv(os.path.join(secret_dir, secret_filename))
-load_dotenv()
 
-# [BASE]
-COMPONENTS_BASE_PATH = os.getenv("COMPONENTS_BASE_PATH", os.path.join(os.path.dirname(BASE_DIR), "components"))
-COMPONENTS_PATH = os.getenv("COMPONENTS_PATH", os.path.join(COMPONENTS_BASE_PATH, "shapes/shapes.json"))
-UIDGID = os.getenv("USER", "1101:1100")
-ENV = os.getenv("ENV")
-DEBUG = ENV == "dev"
-TZ = pytz.timezone(os.getenv("TZ", "Asia/Shanghai"))
-LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "INFO")
-SYNC_THREAD_COUNT = int(os.getenv("SYNC_THREAD_COUNT", 10))
-SHOW_DOCS = os.getenv("SHOW_DOCS", False)
+def parse_cors(v: Any) -> list[str] | str:
+    if isinstance(v, str) and not v.startswith("["):
+        return [i.strip() for i in v.split(",")]
+    elif isinstance(v, list | str):
+        return v
+    raise ValueError(v)
 
-# [REDIS]
-REDIS_HOST = os.getenv("REDIS_HOST")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
-CELERY_BROKER_DB = int(os.getenv("REDIS_DB", 0))
-REDIS_CACHE_DB = int(os.getenv("REDIS_CACHE_DB", 1))
 
-# [DB_TYPE]
-DB_TYPE = os.getenv("DB_TYPE", "MYSQL")
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        # 验证默认值是否正确
+        validate_default=False,
+        # 优先级：后面文件的配置会覆盖前面文件的配置
+        env_file=[".env"],
+        env_ignore_empty=True,
+        env_file_encoding="utf-8",
+        # 忽略未定义的配置
+        extra="ignore",
+    )
+    BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
 
-# [MYSQL]
-MYSQL_HOST = os.getenv("MYSQL_HOST")
-MYSQL_PORT = int(os.getenv("MYSQL_PORT", 3306))
-MYSQL_USER = os.getenv("MYSQL_USER")
-MYSQL_PASSWORD = os.getenv("MYSQL_ROOT_PASSWORD")
-MYSQL_DB = os.getenv("MYSQL_DB")
-MYSQL_CHARSET = os.getenv("MYSQL_CHARSET")
+    # [BASE]
+    COMPONENTS_BASE_PATH: Path = BASE_DIR.parent / "components"
+    COMPONENTS_PATH: Path = COMPONENTS_BASE_PATH / "shapes" / "shapes.json"
+    # 设置 dockerfile 中的环境变量
+    UIDGID: str = "1101:1100"
+    DEBUG: bool = False
+    # 设置 dockerfile 中的环境变量
+    TZ: pytz.timezone = pytz.timezone("Asia/Shanghai")
+    LOGGING_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    SYNC_THREAD_COUNT: int = 10
+    SHOW_DOCS: bool = False
+    DB_TYPE: Literal["MYSQL"] = "MYSQL"
 
-# [CELERY]
-SCHEDULE_PERIOD = int(os.getenv("SCHEDULE_PERIOD", 60))
+    # [REDIS]
+    REDIS_HOST: str
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str
+    CELERY_BROKER_DB: int = 0
+    REDIS_CACHE_DB: int = 1
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def CELERY_REDIS_URL(self) -> RedisDsn:
+        return RedisDsn.build(
+            scheme="redis",
+            host=self.REDIS_HOST,
+            port=self.REDIS_PORT,
+            password=self.REDIS_PASSWORD,
+            path=f"/{self.CELERY_BROKER_DB}",
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def REDIS_CACHE_URL(self) -> RedisDsn:
+        return RedisDsn.build(
+            scheme="redis",
+            host=self.REDIS_HOST,
+            port=self.REDIS_PORT,
+            password=self.REDIS_PASSWORD,
+            path=f"/{self.REDIS_CACHE_DB}",
+        )
+
+    # [MYSQL]
+    MYSQL_HOST: str
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str
+    MYSQL_PASSWORD: str
+    MYSQL_DB: str
+    MYSQL_CHARSET: str
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> MySQLDsn:
+        return MySQLDsn.build(
+            scheme="mysql+pymysql",
+            username=self.MYSQL_USER,
+            password=self.MYSQL_PASSWORD,
+            host=self.MYSQL_HOST,
+            port=self.MYSQL_PORT,
+            path=self.MYSQL_DB,
+            query={"charset": self.MYSQL_CHARSET},
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def SQLALCHEMY_ASYNC_DATABASE_URI(self) -> MySQLDsn:
+        return MySQLDsn.build(
+            scheme="mysql+aiomysql",
+            username=self.MYSQL_USER,
+            password=self.MYSQL_PASSWORD,
+            host=self.MYSQL_HOST,
+            port=self.MYSQL_PORT,
+            path=self.MYSQL_DB,
+            query={"charset": self.MYSQL_CHARSET},
+        )
+
+    # [CELERY]
+    SCHEDULE_PERIOD: int = 60
+
+
+settings: Settings = Settings()  # type: ignore

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """From Flask-Sqlachemy"""
+
 from math import ceil
 
 from sqlalchemy.orm import query
+
 
 class Pagination:
     """Internal helper class returned by :meth:`BaseQuery.paginate`.  You
@@ -37,8 +38,7 @@ class Pagination:
 
     def prev(self, error_out=False):
         """Returns a :class:`Pagination` object for the previous page."""
-        assert self.query is not None, 'a query object is required ' \
-                                       'for this method to work'
+        assert self.query is not None, "a query object is required for this method to work"
         return self.query.paginate(self.page - 1, self.per_page, error_out)
 
     @property
@@ -55,8 +55,7 @@ class Pagination:
 
     def next(self, error_out=False):
         """Returns a :class:`Pagination` object for the next page."""
-        assert self.query is not None, 'a query object is required ' \
-                                       'for this method to work'
+        assert self.query is not None, "a query object is required for this method to work"
         return self.query.paginate(self.page + 1, self.per_page, error_out)
 
     @property
@@ -71,8 +70,7 @@ class Pagination:
             return None
         return self.page + 1
 
-    def iter_pages(self, left_edge=2, left_current=2,
-                   right_current=5, right_edge=2):
+    def iter_pages(self, left_edge=2, left_current=2, right_current=5, right_edge=2):
         """Iterates over the page numbers in the pagination.  The four
         parameters control the thresholds how many numbers should be produced
         from the sides.  Skipped page numbers are represented as `None`.
@@ -98,9 +96,11 @@ class Pagination:
         """
         last = 0
         for num in range(1, self.pages + 1):
-            if num <= left_edge or \
-               (self.page - left_current - 1 < num < self.page + right_current) or \
-               num > self.pages - right_edge:
+            if (
+                num <= left_edge
+                or (self.page - left_current - 1 < num < self.page + right_current)
+                or num > self.pages - right_edge
+            ):
                 if last + 1 != num:
                     yield None
                 yield num

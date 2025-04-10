@@ -1,10 +1,7 @@
-from typing import Union
-
 import mammoth
 
 from .base import (
     DocumentParseResult,
-    DocumentParser,
 )
 from .html_parser import HtmlParser
 

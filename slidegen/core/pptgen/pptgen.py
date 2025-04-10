@@ -1,13 +1,14 @@
 from pptx.presentation import Presentation
 
-from core.docparse.markdown_parser import MarkdownDocument
-from exception import MarkdownDocumentError
+from slidegen.core.docparse.markdown_parser import MarkdownDocument
+from slidegen.exception import MarkdownDocumentError
+
 from .pptpages import (
-    CoverPage,
-    ChapterHomePage,
-    ChapterContentPage,
-    EndPage,
     CatalogPage,
+    ChapterContentPage,
+    ChapterHomePage,
+    CoverPage,
+    EndPage,
 )
 
 

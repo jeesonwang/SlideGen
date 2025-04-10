@@ -1,7 +1,7 @@
-from typing import Any, Union
 from abc import ABC
+from dataclasses import asdict, dataclass
+from typing import Any, Union
 
-from dataclasses import dataclass, asdict
 
 @dataclass
 class DocumentParseResult:
@@ -14,12 +14,12 @@ class DocumentParseResult:
         """Convert the DocumentParseResult to a dictionary."""
         return asdict(self)
 
+
 class DocumentParser(ABC):
     """Base class for document parsers."""
+
     def __init__(self, **kwargs: Any) -> None:
         pass
 
-    def convert(
-        self, local_path: str, **kwargs: Any
-    ) -> None | DocumentParseResult:
+    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
         raise NotImplementedError("Subclasses must implement this method")

@@ -1,19 +1,19 @@
 import re
-from typing import Any
-from types import SimpleNamespace
 from copy import deepcopy
+from types import SimpleNamespace
+from typing import Any
 
 from lxml import etree
-from pptx.opc.constants import RELATIONSHIP_TYPE as RT
-from pptx.text.text import _Paragraph, _Run
 from pptx.enum.shapes import PP_PLACEHOLDER
+from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 from pptx.oxml import parse_xml
 from pptx.shapes.autoshape import Shape
 from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
+from pptx.text.text import _Paragraph, _Run
 
-from exception.custom_exception import PPTGenError
-from core.pptgen.components import Location
+from slidegen.core.pptgen.components import Location
+from slidegen.exception.custom_exception import PPTGenError
 
 FONT_SIZE_CASE = {
     PP_PLACEHOLDER.TITLE: 54,

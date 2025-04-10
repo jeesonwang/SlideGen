@@ -1,35 +1,35 @@
 import copy
 import os
 import re
-import sys
 import tempfile
-from pathlib import Path
-from typing import List, Optional, BinaryIO, Union, Any
 import traceback
+from pathlib import Path
+from typing import Any, BinaryIO
 
-from loguru import logger
 import puremagic
+from loguru import logger
 
-from exception import FileParseError, FileTypeError
+from slidegen.exception import FileParseError, FileTypeError
+
 from .parsers import (
     DocumentParser,
     DocumentParseResult,
     DocxParser,
-    HtmlParser,
     ExcelParser,
+    HtmlParser,
 )
+
 
 class MarkdownConverter:
     """Convert file to markdown"""
 
     def __init__(self):
         self._builtins_enabled = False
-        self.document_parsers: List[DocumentParser] = []
+        self.document_parsers: list[DocumentParser] = []
         self.register_builtins()
 
     def register_builtins(self, **kwargs) -> None:
         if not self._builtins_enabled:
-            
             self.register_parser(DocxParser())
             self.register_parser(HtmlParser())
             self.register_parser(ExcelParser())
@@ -38,15 +38,12 @@ class MarkdownConverter:
         else:
             logger.warning("Builtins parsers already registered")
 
-    def convert_local(
-        self, path: Union[str, Path], **kwargs: Any
-    ) -> DocumentParseResult:
+    def convert_local(self, path: str | Path, **kwargs: Any) -> DocumentParseResult:
         if isinstance(path, Path):
             path = str(path)
 
         ext = kwargs.get("file_extension")
         extensions = [ext] if ext is not None else []
-
 
         base, ext = os.path.splitext(path)
         self._append_ext(extensions, ext)
@@ -56,11 +53,8 @@ class MarkdownConverter:
 
         # Convert
         return self._convert(path, extensions, **kwargs)
-    
-    def convert_stream(
-        self, stream: BinaryIO, **kwargs: Any
-    ) -> DocumentParseResult:
 
+    def convert_stream(self, stream: BinaryIO, **kwargs: Any) -> DocumentParseResult:
         ext = kwargs.get("file_extension")
         extensions = [ext] if ext is not None else []
 
@@ -87,13 +81,11 @@ class MarkdownConverter:
                 fh.close()
             except Exception:
                 pass
-            os.unlink(temp_path) # Delete the temporary file
+            os.unlink(temp_path)  # Delete the temporary file
 
         return result
 
-    def _convert(
-        self, local_path: str, extensions: List[Union[str, None]], **kwargs
-    ) -> DocumentParseResult:
+    def _convert(self, local_path: str, extensions: list[str | None], **kwargs) -> DocumentParseResult:
         error_trace = ""
         for ext in extensions + [None]:  # Try last with no extension
             for converter in self.document_parsers:
@@ -105,19 +97,16 @@ class MarkdownConverter:
                 else:
                     _kwargs.update({"file_extension": ext})
 
-
                 try:
                     res = converter.convert(local_path, **_kwargs)
                 except Exception:
                     error_trace = ("\n\n" + traceback.format_exc()).strip()
 
                 if res is not None:
-                    res.text_content = "\n".join(
-                        [line.rstrip() for line in re.split(r"\r?\n", res.text_content)]
-                    )
+                    res.text_content = "\n".join([line.rstrip() for line in re.split(r"\r?\n", res.text_content)])
                     res.text_content = re.sub(r"\n{3,}", "\n\n", res.text_content)
                     return res
-                
+
         if len(error_trace) > 0:
             raise FileParseError(
                 f"Could not convert '{local_path}' to Markdown. File type was recognized as {extensions}. While converting the file, the following error was encountered:\n\n{error_trace}"
@@ -126,11 +115,8 @@ class MarkdownConverter:
         raise FileTypeError(
             f"Could not convert '{local_path}' to Markdown. The formats {extensions} are not supported."
         )
-    
-    def convert(
-        self, source: Union[str, Path, BinaryIO, Any], **kwargs: Any
-    ) -> DocumentParseResult:
 
+    def convert(self, source: str | Path | BinaryIO | Any, **kwargs: Any) -> DocumentParseResult:
         # TODO: Add support for other source types
         if isinstance(source, (str, Path)):
             return self.convert_local(source, **kwargs)
@@ -138,8 +124,8 @@ class MarkdownConverter:
             return self.convert_stream(source, **kwargs)
         else:
             raise ValueError(f"Unknown source type {type(source)}")
-        
-    def _append_ext(self, extensions: List[str], ext: str | None) -> None:
+
+    def _append_ext(self, extensions: list[str], ext: str | None) -> None:
         """Append a unique non-None, non-empty extension to a list of extensions."""
         if ext is None:
             return

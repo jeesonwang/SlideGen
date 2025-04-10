@@ -2,9 +2,9 @@ import inspect
 
 from fastapi import APIRouter, Depends
 
-from contexts import g
-from engine.rdb import get_db, get_db_sync
-from contexts.schema import Pager
+from slidegen.contexts import g
+from slidegen.contexts.schema import Pager
+from slidegen.engine.rdb import get_db, get_db_sync
 
 base_router = APIRouter()
 

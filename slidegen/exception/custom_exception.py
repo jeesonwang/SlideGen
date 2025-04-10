@@ -1,23 +1,40 @@
-from exception.base import ApiError
-from exception.error_code import ParamCheckErrorCode, DataNotFoundCode, DataBaseErrorCode, UserErrorCode, \
-    ExpireTokenCode, PermissionDenyCode, UserLockErrorCode, SystemLockErrorCode, PasswordErrorCode, \
-    ExternalServerErrorCode, AccessDeniedCode, TokenNotExistsCode, InsideServerErrorCode
+from slidegen.exception.base import ApiError
+from slidegen.exception.error_code import (
+    AccessDeniedCode,
+    DataBaseErrorCode,
+    DataNotFoundCode,
+    ExpireTokenCode,
+    ExternalServerErrorCode,
+    InsideServerErrorCode,
+    ParamCheckErrorCode,
+    PasswordErrorCode,
+    PermissionDenyCode,
+    SystemLockErrorCode,
+    TokenNotExistsCode,
+    UserErrorCode,
+    UserLockErrorCode,
+)
 
 
 class NotFoundError(ApiError):
     default_code = DataNotFoundCode
 
+
 class TokenNotExistsError(ApiError):
     default_code = TokenNotExistsCode
+
 
 class ParamsCheckError(ApiError):
     default_code = ParamCheckErrorCode
 
+
 class DatasBaseError(ApiError):
     default_code = DataBaseErrorCode
 
+
 class InsideServerError(ApiError):
     default_code = InsideServerErrorCode
+
 
 class UserError(ApiError):
     default_code = UserErrorCode
@@ -29,6 +46,7 @@ class PasswordError(ApiError):
 
 class ExpireTokenError(ApiError):
     """该错误的默认错误码将返回401弹回到登录页"""
+
     default_code = ExpireTokenCode
 
 
@@ -51,17 +69,22 @@ class ServiceConnectionError(ApiError):
 class AccessDeniedError(ApiError):
     default_code = AccessDeniedCode
 
+
 class FileParseError(ApiError):
     default_code = InsideServerErrorCode
+
 
 class FileTypeError(ApiError):
     default_code = InsideServerErrorCode
 
+
 class PPTGenError(ApiError):
     default_code = InsideServerErrorCode
 
+
 class PPTTemplateError(ApiError):
     default_code = InsideServerErrorCode
+
 
 class MarkdownDocumentError(ApiError):
     default_code = InsideServerErrorCode

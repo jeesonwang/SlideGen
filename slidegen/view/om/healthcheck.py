@@ -1,4 +1,4 @@
-from view.core import BaseView
+from slidegen.view.core import BaseView
 
 
 class HealthCheckView(BaseView):

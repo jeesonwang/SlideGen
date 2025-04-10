@@ -1,9 +1,7 @@
-from typing import IO, TYPE_CHECKING, Union
-
-from typing import TypeAlias
+from typing import IO, TYPE_CHECKING, TypeAlias, Union
 
 if TYPE_CHECKING:
-    from .elements import Element, Paragraph, Heading, Table, CodeBlock, Picture
+    from .elements import CodeBlock, Element, Heading, Paragraph, Picture, Table
 
 _IncomingSource: TypeAlias = str | bytes | IO[str] | IO[bytes]
 _MarkdownNode: TypeAlias = Union["Element", "Paragraph", "Heading", "Table", "CodeBlock", "Picture"]

@@ -1,10 +1,10 @@
-import re
-from typing import Any
-from collections.abc import Iterable
 import os
+import re
+from collections.abc import Iterable
+from typing import Any
 
-from .elements import Element, Paragraph, Heading, Table, CodeBlock, Picture
 from ._typing import _IncomingSource
+from .elements import CodeBlock, Element, Heading, Paragraph, Picture, Table
 
 
 class MarkdownDocument(Element):

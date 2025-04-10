@@ -1,12 +1,12 @@
 from typing import Any
+
 from bs4 import BeautifulSoup
 
-from .base import DocumentParseResult, DocumentParser
 from ._markdownify import CustomMarkdownify
+from .base import DocumentParser, DocumentParseResult
 
 
 class HtmlParser(DocumentParser):
-
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self.html_table = kwargs.get("html_table", True)

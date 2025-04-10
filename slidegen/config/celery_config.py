@@ -1,12 +1,12 @@
-from config.conf import CELERY_BROKER_DB, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, TZ
+from .conf import settings
 
-broker_url = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_BROKER_DB}"
-result_backend = broker_url
+broker_url = settings.CELERY_REDIS_URL
+result_backend = settings.CELERY_REDIS_URL
 
 task_serializer = "json"
 result_serializer = "json"
 accept_content = ["json"]
-timezone = TZ
+timezone = settings.TZ
 enable_utc = False
 worker_hijack_root_logger = False  # 禁止celery拦截日志配置(使用loguru的任务配置)
 

@@ -1,11 +1,11 @@
+import re
+from collections.abc import Iterable, Iterator
 from typing import (
     Any,
-    Self,
     Optional,
+    Self,
     cast,
 )
-from collections.abc import Iterator, Iterable
-import re
 
 from ._typing import _AtMostOneNode, _InsertableElement, _OutElement
 

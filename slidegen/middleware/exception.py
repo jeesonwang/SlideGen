@@ -1,13 +1,13 @@
 import time
 
-from fastapi import Request, FastAPI
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from loguru import logger
+from pydantic import BaseModel
 
-from contexts.context import g
-from exception import ApiError, UnknownErrorCode, ParamCheckErrorCode, MESSAGE
+from slidegen.contexts.context import g
+from slidegen.exception import MESSAGE, ApiError, ParamCheckErrorCode, UnknownErrorCode
 
 
 def register_exception_handler(app: FastAPI):
@@ -103,7 +103,8 @@ def register_exception_handler(app: FastAPI):
         try:
             logger.info(
                 f"{method}: {url}, 用时: {duration:.4f}s, Query Params: {query_params},"
-                f" Body: {request_body.decode()} IP: {client_ip}, Agent: {client_agent}. ")
+                f" Body: {request_body.decode()} IP: {client_ip}, Agent: {client_agent}. "
+            )
             # from db.backends.mysql import session
             # session.remove()
         except Exception:

@@ -27,6 +27,9 @@ dependencies = [
     "bs4",
     "markdownify>=0.14.1",
     "pandas",
+    "pydantic-settings>=2.8.1",
+    "rich>=14.0.0",
+    "gmssl>=3.2.2",
 ]
 
 [dependency-groups]
@@ -61,6 +64,7 @@ select = [
     "ARG001", # unused arguments in functions
 ]
 ignore = [
+    "C416", # use list comprehension instead of map
     "E501", # line too long, handled by black
     "B008", # do not perform function calls in argument defaults
     "W191", # indentation contains tabs

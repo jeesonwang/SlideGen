@@ -8,7 +8,7 @@ from lxml import etree
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.slide import Slide
 
-from config.conf import COMPONENTS_PATH
+from slidegen.config.conf import settings
 
 
 def remove_custDataLst(xml_str: str) -> str:
@@ -464,4 +464,4 @@ class ComponentsManager:
         logger.info(f"Reloaded components from {json_path}")
 
 
-components_manager = ComponentsManager(COMPONENTS_PATH)
+components_manager = ComponentsManager(settings.COMPONENTS_PATH)

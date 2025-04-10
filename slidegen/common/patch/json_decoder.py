@@ -1,11 +1,12 @@
 import decimal
+from dataclasses import asdict, is_dataclass
 from datetime import date, time, timedelta
 from json import JSONEncoder
-from dataclasses import is_dataclass, asdict
 
 
 class CustomJSONEncoder(JSONEncoder):
     """修改datetime打印格式"""
+
     def default(self, obj):
         try:
             if isinstance(obj, (date, time, timedelta)):

@@ -3,7 +3,7 @@ from datetime import datetime
 
 from gmssl import sm2, sm4
 
-from config.conf import SM2_PRIVATE_KEY, SM2_PUBLIC_KEY, SM4_KEY
+from slidegen.config.conf import SM2_PRIVATE_KEY, SM2_PUBLIC_KEY, SM4_KEY
 
 
 class SM2:
@@ -36,7 +36,9 @@ class SM4:
 
     def decrypt(self, ciphertext: str):
         self.crypt.set_key(key=bytes.fromhex(SM4_KEY), mode=sm4.SM4_DECRYPT)
-        decrypt_value = self.crypt.crypt_ecb(bytes.fromhex(ciphertext))  # ecb模式开始解密。bytes.fromhex():十六进制字符转为十六进制字节
+        decrypt_value = self.crypt.crypt_ecb(
+            bytes.fromhex(ciphertext)
+        )  # ecb模式开始解密。bytes.fromhex():十六进制字符转为十六进制字节
         return decrypt_value.decode()
 
 

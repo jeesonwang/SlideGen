@@ -1,31 +1,30 @@
-import os
-import io
 import copy
-from typing import cast
+import io
+import os
 import random
 from enum import Enum
+from typing import cast
 
-from pptx.presentation import Presentation
-from pptx.slide import Slide
-from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
-from pptx.oxml.shapes.groupshape import CT_GroupShape
-from pptx.shapes.base import BaseShape
-from pptx.shapes.autoshape import Shape
-from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from loguru import logger
+from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.oxml.shapes.groupshape import CT_GroupShape
+from pptx.presentation import Presentation
+from pptx.shapes.autoshape import Shape
+from pptx.shapes.base import BaseShape
+from pptx.slide import Slide
 
-from core.docparse.markdown_parser import Heading
-from core.pptgen.utils import (
-    runs_merge,
-    convert_paragraph_xml,
+from slidegen.config.conf import settings
+from slidegen.core.docparse.markdown_parser import Heading
+from slidegen.core.pptgen.components import ChapterLayout, ContentType, components_manager
+from slidegen.core.pptgen.utils import (
     add_para_by_xml,
     add_shape_by_xml,
+    convert_paragraph_xml,
     is_image_path,
+    runs_merge,
 )
-
-from exception import PPTTemplateError, PPTGenError
-from core.pptgen.components import components_manager, ContentType, ChapterLayout
-from config.conf import COMPONENTS_BASE_PATH
+from slidegen.exception import PPTGenError, PPTTemplateError
 
 
 class Page:
@@ -608,7 +607,7 @@ class ChapterContentPage(Page):
                         image_path = shape.path
                     elif shape.path.endswith("opaque"):
                         # random choose a picture from the opaque folder
-                        picture_dir = os.path.join(COMPONENTS_BASE_PATH, "pictures/opaque")
+                        picture_dir = os.path.join(settings.COMPONENTS_BASE_PATH, "pictures/opaque")
                         available_pictures = [
                             p for p in os.listdir(picture_dir) if p not in ChapterContentPage.used_pictures["opaque"]
                         ]
@@ -622,7 +621,7 @@ class ChapterContentPage(Page):
                         image_path = os.path.join(picture_dir, chosen_picture)
                     elif shape.path.endswith("transparent"):
                         # random choose a picture from the transparent folder
-                        picture_dir = os.path.join(COMPONENTS_BASE_PATH, "pictures/transparent")
+                        picture_dir = os.path.join(settings.COMPONENTS_BASE_PATH, "pictures/transparent")
                         available_pictures = [
                             p
                             for p in os.listdir(picture_dir)

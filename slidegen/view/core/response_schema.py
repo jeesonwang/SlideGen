@@ -1,14 +1,13 @@
 from datetime import datetime
-from typing import Any, Annotated, TypeVar
+from typing import Annotated, Any, TypeVar
 
-from pydantic import BaseModel, WrapValidator, ConfigDict
-from pydantic_core.core_schema import ValidatorFunctionWrapHandler, ValidationInfo
+from pydantic import BaseModel, ConfigDict, WrapValidator
+from pydantic_core.core_schema import ValidationInfo, ValidatorFunctionWrapHandler
 
 T = TypeVar("T", bound=BaseModel)
 
-def maybe_strip_whitespace(
-        v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
-) -> int:
+
+def maybe_strip_whitespace(v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> int:
     if isinstance(v, datetime):
         return datetime_to_gmt_str(v)
     return v
@@ -75,6 +74,7 @@ def ListRes(data_model, validate: bool = False):
         return ResponseModel
     else:
         return ResponseSoftModel
+
 
 def PagerRes(data_model: T, validate: bool = False):
     class ListResponseModel(CustomModel):
