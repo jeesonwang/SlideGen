@@ -3,6 +3,16 @@
 ## 说明
 Python: 3.11.8
 
+### 环境变量配置
+
+```bash
+# 生成 .env 文件
+cp .env.sample .env
+
+# 编辑 .env 文件
+# vim .env
+```
+
 ### 安装依赖
 ```bash
 # uv 安装 https://docs.astral.sh/uv/
