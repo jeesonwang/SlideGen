@@ -98,7 +98,7 @@ class Settings(BaseSettings):
             host=self.MYSQL_HOST,
             port=self.MYSQL_PORT,
             path=self.MYSQL_DB,
-            query={"charset": self.MYSQL_CHARSET},
+            query=f"charset={self.MYSQL_CHARSET}",
         )
 
     @computed_field  # type: ignore[prop-decorator]
@@ -111,7 +111,7 @@ class Settings(BaseSettings):
             host=self.MYSQL_HOST,
             port=self.MYSQL_PORT,
             path=self.MYSQL_DB,
-            query={"charset": self.MYSQL_CHARSET},
+            query=f"charset={self.MYSQL_CHARSET}",
         )
 
     # [CELERY]
