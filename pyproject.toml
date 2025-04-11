@@ -25,11 +25,12 @@ dependencies = [
     "types-pytz",
     "mammoth",
     "bs4",
-    "markdownify>=0.14.1",
+    "markdownify==0.14.1",
     "pandas",
     "pydantic-settings>=2.8.1",
     "rich>=14.0.0",
     "gmssl>=3.2.2",
+    "pytest>=8.3.5",
 ]
 
 [dependency-groups]
