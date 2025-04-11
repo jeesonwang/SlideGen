@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import FastAPI
 
 from slidegen.common.log import init as logger_init
@@ -6,7 +8,7 @@ from slidegen.middleware import register_middleware
 from slidegen.view import register_routes
 
 logger_init()
-app_configs = {}
+app_configs: dict[str, Any] = {}
 if not settings.SHOW_DOCS:
     app_configs["docs_url"] = None
     app_configs["redoc_url"] = None
