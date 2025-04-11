@@ -51,7 +51,7 @@ def clear_timeout_logs(log_dir: str, keep_day: int = 15):
                     logging.info(f"删除超时日志成功: {filepath}")
 
 
-def init():
+def init() -> None:
     clear_timeout_logs(LOG_DIR, keep_day=15)
 
 

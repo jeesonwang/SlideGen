@@ -25,6 +25,13 @@ def parse_cors(v: Any) -> list[str] | str:
     raise ValueError(v)
 
 
+def parse_timezone(v: str) -> tzinfo:
+    try:
+        return pytz.timezone(v)
+    except pytz.exceptions.UnknownTimeZoneError:
+        raise ValueError(f"Unknown timezone: {v}")
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         # 验证默认值是否正确
@@ -46,7 +53,7 @@ class Settings(BaseSettings):
     UIDGID: str = "1101:1100"
     DEBUG: bool = False
     # 设置 dockerfile 中的环境变量
-    TZ: tzinfo = pytz.timezone("Asia/Shanghai")
+    TZ: Annotated[tzinfo, BeforeValidator(parse_timezone)] = pytz.timezone("Asia/Shanghai")
     LOGGING_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     SYNC_THREAD_COUNT: int = 10
     SHOW_DOCS: bool = False

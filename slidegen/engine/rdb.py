@@ -1,5 +1,5 @@
 import contextlib
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from typing import Annotated
 
 from fastapi import Depends
@@ -12,8 +12,8 @@ from slidegen.config.conf import settings
 from slidegen.contexts import g
 
 if settings.DB_TYPE == "MYSQL":
-    SQLALCHEMY_DATABASE_URL = settings.SQLALCHEMY_DATABASE_URI
-    ASYNC_SQLALCHEMY_DATABASE_URL = settings.SQLALCHEMY_ASYNC_DATABASE_URI
+    SQLALCHEMY_DATABASE_URL = str(settings.SQLALCHEMY_DATABASE_URI)
+    ASYNC_SQLALCHEMY_DATABASE_URL = str(settings.SQLALCHEMY_ASYNC_DATABASE_URI)
     engine_sync = create_engine(
         url=SQLALCHEMY_DATABASE_URL,
         pool_recycle=300,
@@ -39,7 +39,7 @@ print(f"DB_TYPE={settings.DB_TYPE}, Connecting to database url={SQLALCHEMY_DATAB
 
 
 class DatabaseSessionManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self._session_maker = session_maker
         self._engine_sync = engine_sync
         self._session_maker_sync = session_maker_sync
@@ -76,19 +76,19 @@ class DatabaseSessionManager:
 sessionmanager = DatabaseSessionManager()
 
 
-async def get_db():
+async def get_db() -> AsyncIterator[AsyncSession]:
     async with sessionmanager.session() as session:
         g.session = session
         yield session
 
 
-async def get_db_sync():
+async def get_db_sync() -> AsyncIterator[Session]:
     async with sessionmanager.session_sync() as session:
         g.session_sync = session
         yield session
 
 
-def load_session_context(func):
+def load_session_context(func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         session = sessionmanager._session_maker_sync()
         g.session_sync = session

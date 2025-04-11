@@ -12,6 +12,7 @@ base_router = APIRouter()
 class BaseView:
     permissions_classes = []
     path: str = None
+    authentication_classes = []
 
     def __init__(self, path: str, tags: list[str]):
         self.path = path or self.path
