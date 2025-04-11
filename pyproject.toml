@@ -31,6 +31,9 @@ dependencies = [
     "rich>=14.0.0",
     "gmssl>=3.2.2",
     "pytest>=8.3.5",
+    "inflect>=7.5.0",
+    "mypy>=1.15.0",
+    "openai>=1.72.0",
 ]
 
 [dependency-groups]
@@ -58,7 +61,6 @@ select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
     "F",      # pyflakes
-    "I",      # isort
     "B",      # flake8-bugbear
     "C4",     # flake8-comprehensions
     "UP",     # pyupgrade
