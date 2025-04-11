@@ -1,3 +1,4 @@
+from datetime import tzinfo
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -45,7 +46,7 @@ class Settings(BaseSettings):
     UIDGID: str = "1101:1100"
     DEBUG: bool = False
     # 设置 dockerfile 中的环境变量
-    TZ: pytz.timezone = pytz.timezone("Asia/Shanghai")
+    TZ: tzinfo = pytz.timezone("Asia/Shanghai")
     LOGGING_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     SYNC_THREAD_COUNT: int = 10
     SHOW_DOCS: bool = False

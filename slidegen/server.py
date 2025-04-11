@@ -17,9 +17,3 @@ if not settings.SHOW_DOCS:
 app = FastAPI(title=settings.PROJECT_NAME, **app_configs)
 register_middleware(app=app)
 register_routes(app=app)
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("server:app", host="127.0.0.1", port=10003, reload=True)
