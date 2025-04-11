@@ -2,6 +2,7 @@ import os
 import re
 from collections.abc import Iterable
 from typing import Any
+from collections.abc import Iterator
 
 from ._typing import _IncomingSource
 from .elements import CodeBlock, Element, Heading, Paragraph, Picture, Table
@@ -25,11 +26,11 @@ class MarkdownDocument(Element):
         if source:
             self._parse(source)
 
-    def _parse(self, markdown_text: str):
+    def _parse(self, markdown_text: str) -> None:
         parser = MarkdownParser(self)
         parser.parse(markdown_text)
 
-    def _all_strings(self, strip: bool = False, types: Iterable[type[Element]] = ()):
+    def _all_strings(self, strip: bool = False, types: Iterable[type[Element]] = ()) -> Iterator[str]:
         types = tuple(types)
         for child in self.descendants:
             if not types or isinstance(child, types):
@@ -42,7 +43,7 @@ class MarkdownDocument(Element):
     def title(self) -> str:
         return self.main.text if self.main is not None else ""
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "<MarkdownDocument title={self.title}>"
 
     def __repr__(self) -> str:
@@ -144,7 +145,7 @@ class MarkdownParser:
 
         return False
 
-    def handle_list(self, match: re.Match) -> None:
+    def handle_list(self, match: re.Match[str]) -> None:
         bullet = match.group(1)
         text = match.group(2).strip()
 
@@ -269,7 +270,7 @@ class MarkdownParser:
         self.previous_heading.append(paragraph)
         return True
 
-    def _parse_heading_var_one(self, level, string, next_string):
+    def _parse_heading_var_one(self, level: int, string: str, next_string: str | None) -> bool:
         if next_string is None or re.search(r"^\s*$", string) is not None:
             return False
 
@@ -288,7 +289,7 @@ class MarkdownParser:
 
         return self._parse_heading_action(level=level, text=string.strip(), text_source=f"{string}\n{next_string}")
 
-    def _parse_heading_var_two(self, level, string):
+    def _parse_heading_var_two(self, level: int, string: str) -> bool:
         regex = r"^(\s?#{%s}\s+)(.*)$" % level
         result = re.search(regex, string)
 
@@ -297,7 +298,7 @@ class MarkdownParser:
 
         return self._parse_heading_action(level=level, text=result[2], text_source=result[1] + result[2])
 
-    def _parse_heading_action(self, level, text, text_source):
+    def _parse_heading_action(self, level: int, text: str, text_source: str) -> bool:
         cur_heading = Heading(level, text)
         cur_heading.element_text_source = text_source
         if self.previous_heading is self.document:

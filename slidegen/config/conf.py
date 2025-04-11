@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
 
     # [BASE]
+    PROJECT_NAME: str = "SlideGen"
     COMPONENTS_BASE_PATH: Path = BASE_DIR.parent / "components"
     COMPONENTS_PATH: Path = COMPONENTS_BASE_PATH / "shapes" / "shapes.json"
     # 设置 dockerfile 中的环境变量

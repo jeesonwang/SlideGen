@@ -12,7 +12,7 @@ if not settings.SHOW_DOCS:
     app_configs["redoc_url"] = None
     app_configs["openapi_url"] = None
 
-app = FastAPI(**app_configs)
+app = FastAPI(title=settings.PROJECT_NAME, **app_configs)
 register_middleware(app=app)
 register_routes(app=app)
 
