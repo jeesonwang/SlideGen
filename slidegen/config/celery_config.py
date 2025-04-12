@@ -1,3 +1,5 @@
+from typing import Any
+
 from .conf import settings
 
 broker_url = settings.CELERY_REDIS_URL
@@ -26,4 +28,4 @@ task_queues = ()
 
 task_routes = ()
 
-beat_schedule = {}
+beat_schedule: dict[str, dict[str, Any]] = {}
