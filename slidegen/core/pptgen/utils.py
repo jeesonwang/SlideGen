@@ -7,10 +7,12 @@ from lxml import etree
 from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 from pptx.oxml import parse_xml
+from pptx.presentation import Presentation
 from pptx.shapes.autoshape import Shape
 from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 from pptx.text.text import _Paragraph, _Run
+from pptx.util import Length
 
 from slidegen.core.pptgen.components import Location
 from slidegen.exception.custom_exception import PPTGenError
@@ -55,7 +57,7 @@ def is_image_path(file: str) -> bool:
     return file.split(".")[-1].lower() in IMAGE_EXTENSIONS
 
 
-def is_english(texts):
+def is_english(texts: list[str]) -> bool:
     eng = 0
     if not texts:
         return False
@@ -67,7 +69,7 @@ def is_english(texts):
     return False
 
 
-def is_chinese(text):
+def is_chinese(text: str) -> bool:
     if not text:
         return False
     chinese = 0
@@ -89,7 +91,7 @@ def get_font_style(font: dict[str, Any]) -> str:
     Returns:
         str: The CSS style string.
     """
-    font = SimpleNamespace(**font)
+    font = SimpleNamespace(**font)  # type: ignore
     styles = []
 
     if hasattr(font, "size") and font.size:
@@ -136,7 +138,7 @@ def runs_merge(paragraph: _Paragraph) -> _Run | None:
     return run
 
 
-def del_para(paragraph_id: int, shape: BaseShape):
+def del_para(paragraph_id: int, shape: Shape) -> None:
     """
     Delete a paragraph from a shape.
     """
@@ -144,7 +146,7 @@ def del_para(paragraph_id: int, shape: BaseShape):
     para._element.getparent().remove(para._element)
 
 
-def add_para_by_xml(shape: Shape, xml: str):
+def add_para_by_xml(shape: Shape, xml: str) -> Shape:
     """
     Add a paragraph in a text frame by XML string.
     """
@@ -159,7 +161,7 @@ def add_para_by_xml(shape: Shape, xml: str):
     return shape
 
 
-def get_theme_colors(presentation):
+def get_theme_colors(presentation: Presentation) -> dict[str, str]:
     theme_part = presentation.slide_master.part.part_related_by(RT.THEME)
     theme = parse_xml(theme_part.blob)
     color_elements = theme.xpath("a:themeElements/a:clrScheme/*")
@@ -219,7 +221,7 @@ def add_shape_by_xml(
     shape_name: str,
     text_content: str = "",
     location: Location | None = None,
-) -> Shape:
+) -> BaseShape:
     """
     Add a shape by XML string.
 
@@ -239,18 +241,20 @@ def add_shape_by_xml(
         slide.shapes._spTree.insert_element_before(parse_xml(shape_xml), "p:extLst")
     )
     if location is not None:
-        new_shape.left = location.x
-        new_shape.top = location.y
-        new_shape.width = location.width
-        new_shape.height = location.height
+        new_shape.left = Length(location.x)
+        new_shape.top = Length(location.y)
+        new_shape.width = Length(location.width)
+        new_shape.height = Length(location.height)
 
     return new_shape
 
 
-def clone_para(paragraph_id: int, shape: BaseShape):
+def clone_para(paragraph_id: int, shape: Shape) -> None:
     """
     Clone a paragraph in a shape.
     """
+    if not shape.has_text_frame:
+        raise PPTGenError("Shape does not have a text frame.")
     para = shape.text_frame.paragraphs[paragraph_id]
     shape.text_frame.paragraphs[-1]._element.addnext(parse_xml(para._element.xml))
 

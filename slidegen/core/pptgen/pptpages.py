@@ -3,7 +3,7 @@ import io
 import os
 import random
 from enum import Enum
-from typing import cast
+from typing import Any
 
 from loguru import logger
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
@@ -31,7 +31,7 @@ class Page:
     """PPT pages base class"""
 
     @staticmethod
-    def _set_text(shape: BaseShape, text: str):
+    def _set_text(shape: Shape, text: str) -> None:
         """Set the text of the shape, keep the original paragraph style."""
         assert shape.has_text_frame, "Shape must have a text frame"
         if shape.is_placeholder:
@@ -42,7 +42,8 @@ class Page:
         if shape.text:
             para = tf.paragraphs[0]
             run = runs_merge(para)
-            run.text = text
+            if run:
+                run.text = text
         # if the shape has no text, add a new paragraph and keep the original paragraph style
         else:
             para = tf.paragraphs[0]
@@ -50,7 +51,7 @@ class Page:
             shape = add_para_by_xml(shape, para_xml)
 
     @staticmethod
-    def remove_slide(prs: Presentation, index: int):
+    def remove_slide(prs: Presentation, index: int) -> None:
         """Delete the slide at the given index"""
         rId = prs.slides._sldIdLst[index].rId
         prs.part.drop_rel(rId)
@@ -58,12 +59,13 @@ class Page:
         xml_slides.remove(list(xml_slides)[index])
 
     @staticmethod
-    def remove_shapes(sp_tree: CT_GroupShape, shapes: list[Shape]):
+    def remove_shapes(sp_tree: CT_GroupShape, shapes: list[Shape]) -> None:
         for shp in shapes:
-            sp_tree.remove(shp.element)
+            if shp:
+                sp_tree.remove(shp.element)
 
     @staticmethod
-    def _set_text_style(shape: Shape, style: dict):
+    def _set_text_style(shape: Shape, style: dict[str, Any]) -> None:
         """Set the input `Shape` text style"""
         if not shape.has_text_frame:
             return
@@ -128,15 +130,12 @@ class Page:
 
         return copied_slide
 
-    def generate_slide(self, prs: Presentation, content) -> Slide:
-        raise NotImplementedError("Must implement generate_slide")
-
 
 class CoverPage(Page):
     """Presentation cover page"""
 
     @staticmethod
-    def generate_slide(prs: Presentation, content: Heading, *, cover_page_index: int = 0):
+    def generate_slide(prs: Presentation, content: Heading, *, cover_page_index: int = 0) -> None:
         """
         Generate the cover page
 
@@ -178,12 +177,14 @@ class CatalogItem:
     Catalog item including number shape, text shape and background shape.
     """
 
-    def __init__(self, number_shape: dict, text_shape: dict, background_shape: dict | None = None):
+    def __init__(
+        self, number_shape: dict[str, Any], text_shape: dict[str, Any], background_shape: dict[str, Any] | None = None
+    ):
         self.number_shape = number_shape
         self.text_shape = text_shape
         self.background_shape = background_shape
 
-    def asdict(self):
+    def asdict(self) -> dict[str, Any]:
         return {
             "number_shape": self.number_shape,
             "text_shape": self.text_shape,
@@ -191,12 +192,12 @@ class CatalogItem:
         }
 
 
-class CatalogList(list):
+class CatalogList(list[CatalogItem]):
     """
     Catalog list including a list of `CatalogItem`.
     """
 
-    def asdict(self):
+    def asdict(self) -> list[dict[str, Any]]:
         return [item.asdict() for item in self]
 
 
@@ -207,12 +208,12 @@ class CatalogPage(Page):
     vertical_tolerance = 1.5
 
     @staticmethod
-    def _calculate_distance(shape1: dict, shape2: dict) -> float:
+    def _calculate_distance(shape1: dict[str, Any], shape2: dict[str, Any]) -> float:
         """Calculate the distance between two shapes"""
         return ((shape1["left"] - shape2["left"]) ** 2 + (shape1["top"] - shape2["top"]) ** 2) ** 0.5
 
     @staticmethod
-    def _layout_direction(number_shapes: list[dict]) -> str:
+    def _layout_direction(number_shapes: list[dict[str, Any]]) -> CatalogLayout:
         """Judge the layout direction of the catalog page"""
         if len(number_shapes) < 2:
             raise PPTTemplateError("To judge the layout direction, catalog page must have at least two chapter numbers")
@@ -234,15 +235,15 @@ class CatalogPage(Page):
 
     @staticmethod
     def _get_catalog_items(slide: Slide) -> CatalogList:
-        number_shapes = []
-        text_shapes = []
-        all_shapes = []
+        number_shapes: list[dict[str, Any]] = []
+        text_shapes: list[dict[str, Any]] = []
+        all_shapes: list[dict[str, Any]] = []
         for shape in slide.shapes:
             if shape.is_placeholder:
                 # placeholder shapes are not included in the all_shapes list
                 continue
-            shape_info = {
-                "text": shape.text.strip() if shape.has_text_frame else None,
+            shape_info: dict[str, Any] = {
+                "text": shape.text.strip() if shape.has_text_frame else None,  # type: ignore
                 "left": shape.left,
                 "top": shape.top,
                 "width": shape.width,
@@ -254,18 +255,18 @@ class CatalogPage(Page):
             if shape.has_text_frame:
                 text_shapes.append(shape_info)
             all_shapes.append(shape_info)
-        for shape in text_shapes:
+        for shape_info in text_shapes:
             # check if the text is a chapter number
-            text = shape["text"].strip()
+            text = shape_info["text"].strip()  # type: ignore
             if len(text) > 3:
                 continue
             if text.isdigit() or (text.endswith(".") and text[:-1].isdigit()):
                 # TODO: Optimize judgment conditions
                 if int(text.replace(".", "")) > 49:
                     continue
-                number_shapes.append(shape)
+                number_shapes.append(shape_info)
         try:
-            number_shapes.sort(key=lambda shape: int(shape["text"]))
+            number_shapes.sort(key=lambda shape: int(shape["text"]))  # type: ignore
         except ValueError:
             raise PPTTemplateError("Chapter number must be a number")
 
@@ -315,13 +316,14 @@ class CatalogPage(Page):
 
             if closest_text_shape:
                 catalog_list.append(CatalogItem(number_shape, closest_text_shape))
-            try:
-                all_shapes.remove(number_shape)
-                all_shapes.remove(closest_text_shape)
-            except ValueError:
-                raise PPTTemplateError(
-                    f"all shape: {all_shapes}\n current closest_text_shape: {closest_text_shape} \n current number_shape: {number_shape}"
-                )
+                try:
+                    all_shapes.remove(number_shape)
+                    if closest_text_shape is not None:
+                        all_shapes.remove(closest_text_shape)
+                except ValueError:
+                    raise PPTTemplateError(
+                        f"all shape: {all_shapes}\n current closest_text_shape: {closest_text_shape} \n current number_shape: {number_shape}"
+                    )
         assert len(number_shapes) == len(catalog_list), (
             "The number of chapter numbers and chapter titles must be the same"
         )
@@ -331,14 +333,14 @@ class CatalogPage(Page):
             for i, number_shape in enumerate(number_shapes):
                 min_distance = float("inf")
                 closest_background_shape = None
-                for shape in all_shapes:
-                    distance = CatalogPage._calculate_distance(number_shape, shape)
+                for shape_info in all_shapes:
+                    distance = CatalogPage._calculate_distance(number_shape, shape_info)
                     if distance < min_distance:
                         min_distance = distance
-                        if min_distance < shape["height"] * CatalogPage.vertical_tolerance:
-                            closest_background_shape = shape
+                        if min_distance < shape_info["height"] * CatalogPage.vertical_tolerance:
+                            closest_background_shape = shape_info
                 if closest_background_shape:
-                    cast(CatalogItem, catalog_list[i]).background_shape = closest_background_shape
+                    catalog_list[i].background_shape = closest_background_shape
 
         return catalog_list
 
@@ -378,11 +380,11 @@ class CatalogPage(Page):
                     [
                         item.number_shape["shape"],
                         item.text_shape["shape"],
-                        item.background_shape["shape"],
+                        *([item.background_shape["shape"]] if item.background_shape else []),
                     ],
                 )
 
-            catalog_items = catalog_items[:catalog_num]
+            catalog_items = catalog_items[:catalog_num]  # type: ignore
         # TODO: Add catalog items to the slide
         for i in range(len(catalog_items)):
             cur_content = content[i].element_text
@@ -426,7 +428,7 @@ class ChapterHomePage(Page):
         chapter_home_page_index: int = 2,
         chapter_number: int = 1,
         slide_index: int = 2,
-    ):
+    ) -> None:
         """
         Generate the chapter home page
 
@@ -496,7 +498,8 @@ class ChapterHomePage(Page):
         elif style_type == 2:
             return f"PART {str(chapter_number).zfill(2)}"  # PART 01, PART 02, PART 03, ...
         else:
-            return f"PART {p.number_to_words(chapter_number).upper()}"  # PART ONE, PART TWO, PART THREE, ...
+            # PART ONE, PART TWO, PART THREE, ...
+            return f"PART {p.number_to_words(chapter_number).upper()}"  # type: ignore
 
 
 class ChapterContentPage(Page):
@@ -507,7 +510,7 @@ class ChapterContentPage(Page):
     """
 
     # add static variable to track used pictures
-    used_pictures = {"opaque": set(), "transparent": set()}
+    used_pictures: dict[str, set[str]] = {"opaque": set(), "transparent": set()}
 
     @staticmethod
     def _get_slide_type(content: Heading) -> int:
@@ -517,10 +520,10 @@ class ChapterContentPage(Page):
         return len(content)
 
     @staticmethod
-    def _shape_alignment(shape: Shape):
+    def _shape_alignment(shape: BaseShape | Shape) -> None:
         """Set the alignment of the shape. Uniformly justify the text in the shape"""
         if shape.has_text_frame:
-            tf = shape.text_frame
+            tf = shape.text_frame  # type: ignore
             tf.vertical_anchor = MSO_ANCHOR.TOP
             for paragraph in tf.paragraphs:
                 paragraph.alignment = PP_ALIGN.JUSTIFY
@@ -532,7 +535,7 @@ class ChapterContentPage(Page):
         *,
         chapter_page_index: int = 3,
         slide_index: int = 3,
-    ):
+    ) -> None:
         """
         Generate the chapter content page
 
@@ -547,7 +550,7 @@ class ChapterContentPage(Page):
         slide_type = ChapterContentPage._get_slide_type(content)
         if slide_type > 4:
             raise PPTGenError(f"{ChapterContentPage.__name__}: Invalid slide type: {slide_type}")
-        titles = [child.element_text for child in content.children]
+        titles = [child.element_text for child in content.children]  # type: ignore
         section_texts = [child.text for child in content.children]
 
         chapter_page = prs.slides[chapter_page_index]
@@ -560,9 +563,9 @@ class ChapterContentPage(Page):
                 break
 
         index = 0
-        chapter_layout = ChapterLayout(slide_type)
+        chapter_layout = ChapterLayout(slide_type)  # type: ignore
         style = components_manager.get_random_style(chapter_layout)
-        logger.debug(f"{ChapterContentPage.__name__}: {chapter_layout} {style.name}")
+        logger.debug(f"{ChapterContentPage.__name__}: {chapter_layout} {style.name if style else 'None'}")
 
         # Sort by zorder
         sorted_shapes = sorted(style.shapes.items(), key=lambda x: x[1].zorder)
@@ -579,7 +582,7 @@ class ChapterContentPage(Page):
                         )
                     added_shape = add_shape_by_xml(
                         slide=new_slide,
-                        shape_xml=shape.xml,
+                        shape_xml=shape.xml,  # type: ignore
                         shape_id=index,
                         shape_name=shape_name,
                         text_content=section_texts[idx],
@@ -594,7 +597,7 @@ class ChapterContentPage(Page):
                         )
                     added_shape = add_shape_by_xml(
                         slide=new_slide,
-                        shape_xml=shape.xml,
+                        shape_xml=shape.xml,  # type: ignore
                         shape_id=index,
                         shape_name=shape_name,
                         text_content=titles[idx],
@@ -602,6 +605,11 @@ class ChapterContentPage(Page):
                     )
                     ChapterContentPage._shape_alignment(added_shape)
                 elif shape.content_type == ContentType.PICTURE:
+                    if shape.path is None:
+                        raise PPTGenError(
+                            f"{ChapterContentPage.__name__}: \
+                                          Picture path is None: {shape.path}"
+                        )
                     # picture is only in the first location
                     if is_image_path(shape.path):
                         image_path = shape.path
@@ -637,13 +645,13 @@ class ChapterContentPage(Page):
                     else:
                         raise PPTGenError(
                             f"{ChapterContentPage.__name__}: \
-                                          Invalid image path: {shape.path} in {style.name}"
+                                          Invalid image path: {shape.path}"
                         )
                     added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
                 elif shape.content_type == ContentType.NUMBER:
                     added_shape = add_shape_by_xml(
                         slide=new_slide,
-                        shape_xml=shape.xml,
+                        shape_xml=shape.xml,  # type: ignore
                         shape_id=index,
                         shape_name=shape_name,
                         text_content=str(idx + 1).zfill(2),
@@ -652,7 +660,7 @@ class ChapterContentPage(Page):
                 else:
                     added_shape = add_shape_by_xml(
                         slide=new_slide,
-                        shape_xml=shape.xml,
+                        shape_xml=shape.xml,  # type: ignore
                         shape_id=index,
                         shape_name=shape_name,
                         location=loc,
@@ -671,7 +679,7 @@ class EndPage(Page):
         *,
         end_page_index: int = 4,
         slide_index: int = 4,
-    ):
+    ) -> None:
         if content is None:
             content = Heading(text="Thank you!", level=2)
         template_slide = prs.slides[end_page_index]

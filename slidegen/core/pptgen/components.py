@@ -1,11 +1,14 @@
 import json
 from dataclasses import dataclass
 from enum import Enum, IntEnum
-from typing import Any
+from pathlib import Path
+from typing import Any, cast
 
 from loguru import logger
 from lxml import etree
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.shapes.autoshape import Shape
+from pptx.shapes.picture import Picture
 from pptx.slide import Slide
 
 from slidegen.config.conf import settings
@@ -46,7 +49,7 @@ class ContentType(Enum):
     TITLE = "title"
     NONE = None
 
-    def __eq__(self, other):
+    def __eq__(self, other: str | object) -> bool:
         if isinstance(other, str):
             return self.value == other
         return super().__eq__(other)
@@ -55,18 +58,20 @@ class ContentType(Enum):
 class ChapterLayout(IntEnum):
     """Chapter layout type"""
 
+    str_value: str
+
     ONE_POINT = (1, "one_point")
     TWO_POINTS = (2, "two_points")
     THREE_POINTS = (3, "three_points")
     FOUR_POINTS = (4, "four_points")
 
-    def __new__(cls, number, str_value):
+    def __new__(cls, number: int, str_value: str) -> "ChapterLayout":
         obj = int.__new__(cls, number)
         obj._value_ = number
         obj.str_value = str_value
         return obj
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name} ({self.value})"
 
 
@@ -124,7 +129,7 @@ class CShape:
 class Style:
     """Represent a style of shapes, including multiple shapes"""
 
-    def __init__(self, name: str, shapes_data: dict[str, Any] = None):
+    def __init__(self, name: str, shapes_data: dict[str, Any] | None = None):
         self.name = name
         self.shapes: dict[str, CShape] = {}
 
@@ -155,9 +160,9 @@ class Style:
         """Get a shape by its name"""
         return self.shapes.get(shape_name)
 
-    def add_shape(self, shape: CShape) -> None:
+    def add_shape(self, shape_name: str, shape: CShape) -> None:
         """Add a shape to the style"""
-        self.shapes[shape.name] = shape
+        self.shapes[shape_name] = shape
 
     def __len__(self) -> int:
         """Get the number of shapes"""
@@ -167,7 +172,7 @@ class Style:
 class LayoutType:
     """Represent a layout type (like two_points or three_points)."""
 
-    def __init__(self, name: str, data: dict[str, Any] = None):
+    def __init__(self, name: str, data: dict[str, Any] | None = None):
         self.name = name
         self.styles: dict[str, Style] = {}
         self.style_order: Style | None = None
@@ -211,21 +216,21 @@ class LayoutType:
 class ComponentsManager:
     """Manage all components, styles, and layouts"""
 
-    def __init__(self, json_path: str | None = None):
+    def __init__(self, json_path: str | Path | None = None):
         self.layout_types: dict[str, LayoutType] = {}
 
         if json_path:
             self.load_from_json(json_path)
             self.json_path = json_path
 
-    def load_from_json(self, json_path: str) -> None:
+    def load_from_json(self, json_path: str | Path) -> None:
         with open(json_path, encoding="utf-8") as f:
             data = json.load(f)
 
         for layout_name, layout_data in data.items():
             self.layout_types[layout_name] = LayoutType(layout_name, layout_data)
 
-    def save_to_json(self, json_path: str) -> None:
+    def save_to_json(self, json_path: str | Path) -> None:
         data = {}
         for layout_name, layout in self.layout_types.items():
             data[layout_name] = layout.to_dict()
@@ -244,7 +249,7 @@ class ComponentsManager:
         """
         return self.layout_types.get(layout_name.str_value)
 
-    def get_random_style(self, layout_name: ChapterLayout) -> Style | None:
+    def get_random_style(self, layout_name: ChapterLayout) -> Style:
         """Get a random style from a specified layout type
 
         Args:
@@ -263,7 +268,9 @@ class ComponentsManager:
 
         layout = self.get_layout_type(layout_name)
         if not layout or not layout.styles:
-            return None
+            raise ValueError(
+                f"Layout type '{layout_name}' not found, available layout types: {self.layout_types_names}"
+            )
 
         style_name = random.choice(list(layout.styles.keys()))
         return layout.styles[style_name]
@@ -321,12 +328,12 @@ class ComponentsManager:
             logger.exception(f"Compare shapes error: {e}")
             return False
 
-    def add_style_from_slide(self, slide: Slide, layout_type: str, style_name: str) -> None:
+    def add_style_from_slide(self, slide: Slide, layout_type: ChapterLayout, style_name: str) -> None:
         """Add a style to the manager from a slide
 
         Args:
             slide (Slide): The slide to add the style from.
-            layout_type (str): The layout type to add the style to, like "two_points".
+            layout_type (str): The layout type to add the style to, like "ChapterLayout.TWO_POINTS".
             style_name (str): The name of the style to add, like "style_1".
         """
         layout = self.get_layout_type(layout_type)
@@ -352,7 +359,7 @@ class ComponentsManager:
             if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                 path = f"components/picture/{shape.name}.png"
                 with open(path, "wb") as f:
-                    f.write(shape.image.blob)
+                    f.write(cast(Picture, shape).image.blob)
                 shape_data = {
                     "xml": None,
                     "zorder": i,
@@ -370,7 +377,7 @@ class ComponentsManager:
                 current_area = shape.height * shape.width
                 if current_area > area:
                     area = current_area
-                shape_text = shape.text
+                shape_text = cast(Shape, shape).text
                 content_type = None
                 if shape_text:
                     content_type = "content"
@@ -411,10 +418,10 @@ class ComponentsManager:
             if shape_data["xml"] is None:
                 continue
 
-            if shape_data["content_type"] == "content":
-                current_area = shape_data["location"][0]["height"] * shape_data["location"][0]["width"]
+            if shape_data["content_type"] == "content" and isinstance(shape_data["location"], list):
+                current_area = int(shape_data["location"][0]["height"]) * int(shape_data["location"][0]["width"])
                 if current_area < (area - 10000):
-                    if self.get_text_from_xml(shape_data["xml"]).isdigit():
+                    if self.get_text_from_xml(shape_data["xml"]).isdigit():  # type: ignore
                         shape_data["content_type"] = "number"
                     else:
                         shape_data["content_type"] = "title"
@@ -422,8 +429,8 @@ class ComponentsManager:
             for shape_name_other, shape_data_other in list(shape_data_dict.items()):
                 if shape_name == shape_name_other or shape_data_other["xml"] is None:
                     continue
-                if self.are_same_shape(shape_data["xml"], shape_data_other["xml"]):
-                    shape_data["location"].extend(shape_data_other["location"])
+                if self.are_same_shape(shape_data["xml"], shape_data_other["xml"]):  # type: ignore
+                    shape_data["location"].extend(shape_data_other["location"])  # type: ignore
                     shape_data_other["xml"] = None
                     shapes_to_remove.append(shape_name_other)
 
@@ -440,13 +447,6 @@ class ComponentsManager:
     @property
     def layout_types_names(self) -> list[str]:
         return list(self.layout_types.keys())
-
-    def __getattr__(self, name):
-        layout = self.get_layout_type(name)
-        if layout:
-            return layout
-        else:
-            raise AttributeError(f"Layout type '{name}' not found")
 
     @staticmethod
     def get_text_from_xml(xml: str) -> str:

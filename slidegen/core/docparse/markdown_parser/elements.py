@@ -20,6 +20,9 @@ class Element:
     contents: list[type["Element"]]
     _decomposed: bool = False
 
+    element_text: str
+    element_text_source: str
+
     def __init__(self, **kwargs: Any) -> None:
         self.contents = []
         self.__dict__.update(kwargs)
@@ -492,9 +495,9 @@ class Heading(Element):
         self.level = level
         self._text = text
 
-    def _all_strings(self, strip=False, types=tuple()):
+    def _all_strings(self, strip: bool = False, types: Iterable[type["Element"]] = ()) -> Iterator[str]:
         for descendant in self.descendants:
-            if not types or isinstance(descendant, types):
+            if not types or any(isinstance(descendant, t) for t in types):
                 text = descendant.element_text
                 if isinstance(descendant, Heading) and not strip:
                     text = descendant.element_text_source
@@ -502,13 +505,13 @@ class Heading(Element):
                     yield text
 
     @property
-    def element_text_source(self):
+    def element_text_source(self) -> str:
         if self._element_text_source is None:
             return "#" * self.level + self.element_text
         return self._element_text_source
 
     @element_text_source.setter
-    def element_text_source(self, text: str):
+    def element_text_source(self, text: str) -> None:
         self._element_text_source = text
 
     @property
@@ -516,7 +519,7 @@ class Heading(Element):
         return self._text
 
     @element_text.setter
-    def element_text(self, text: str):
+    def element_text(self, text: str) -> None:
         self._text = text
 
     def __repr__(self) -> str:
@@ -545,7 +548,7 @@ class Paragraph(Element):
         return _text
 
     @element_text.setter
-    def element_text(self, text: str):
+    def element_text(self, text: str) -> None:
         self._text = text
 
     @property
@@ -553,10 +556,10 @@ class Paragraph(Element):
         return self._text
 
     @element_text_source.setter
-    def element_text_source(self, text: str):
+    def element_text_source(self, text: str) -> None:
         self._text = text
 
-    def _all_strings(self, strip=False, types=tuple()):
+    def _all_strings(self, strip: bool = False, types: Iterable[type["Element"]] = ()) -> Iterator[str]:
         if types:
             raise ValueError("Paragraph does not support types")
         if strip:
@@ -587,14 +590,23 @@ class CodeBlock(Element):
         return self.code
 
     @element_text.setter
-    def element_text(self, text: str):
+    def element_text(self, text: str) -> None:
         self.code = text
 
     @property
-    def element_text_source(self):
+    def element_text_source(self) -> str:
         return f"```{self.language}\n{self.code}\n```"
 
-    def _all_strings(self, strip=False, types=tuple()):
+    @element_text_source.setter
+    def element_text_source(self, text: str) -> None:
+        match = re.match(r"```(\w+)?\n(.*?)\n```", text, re.DOTALL)
+        if match:
+            self.language = match.group(1)
+            self.code = match.group(2)
+        else:
+            self.code = text
+
+    def _all_strings(self, strip: bool = False, types: Iterable[type["Element"]] = ()) -> Iterator[str]:
         if types:
             raise ValueError("CodeBlock does not support types")
         if strip:
@@ -615,26 +627,32 @@ class Table(Element):
     col_number = 0
     table_type: str | None = None
 
-    def __init__(self, headers: list[str], text: str | None = None, **kwargs: Any):
+    def __init__(self, headers: list[str], text: str = "", **kwargs: Any):
         """Initializes a Table object.
 
         :param headers: A list of header names for the table.
         """
         super().__init__(**kwargs)
         self.headers = headers
-        self._text: str | None = text
+        self._text = text
 
     @property
-    def element_text(self):
+    def element_text(self) -> str:
         return self._text
 
     @element_text.setter
-    def element_text(self, text: str):
+    def element_text(self, text: str) -> None:
         self._text = text
 
-    element_text_source = element_text
+    @property
+    def element_text_source(self) -> str:
+        return self._text
 
-    def _all_strings(self, strip=False, types=tuple()):
+    @element_text_source.setter
+    def element_text_source(self, text: str) -> None:
+        self._text = text
+
+    def _all_strings(self, strip: bool = False, types: Iterable[type["Element"]] = ()) -> Iterator[str]:
         if types:
             raise ValueError("Table does not support types")
         if strip:
@@ -668,12 +686,18 @@ class Picture(Element):
         return self._text
 
     @element_text.setter
-    def element_text(self, text: str):
+    def element_text(self, text: str) -> None:
         self._text = text
 
-    element_text_source = element_text
+    @property
+    def element_text_source(self) -> str:
+        return self._text
 
-    def _all_strings(self, strip=False, types=tuple()):
+    @element_text_source.setter
+    def element_text_source(self, text: str) -> None:
+        self._text = text
+
+    def _all_strings(self, strip: bool = False, types: Iterable[type["Element"]] = ()) -> Iterator[str]:
         if types:
             raise ValueError("Picture does not support types")
         if strip:

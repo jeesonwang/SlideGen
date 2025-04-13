@@ -18,12 +18,12 @@ class HtmlParser(DocumentParser):
             return None
 
         result = None
-        with open(local_path, "rt", encoding="utf-8") as fh:
+        with open(local_path, encoding="utf-8") as fh:
             result = self._convert(fh.read())
 
         return result
 
-    def _convert(self, html_content: str) -> None | DocumentParseResult:
+    def _convert(self, html_content: str) -> DocumentParseResult:
         soup = BeautifulSoup(html_content, "html.parser")
         # Remove javascript and style blocks
         for script in soup(["script", "style"]):

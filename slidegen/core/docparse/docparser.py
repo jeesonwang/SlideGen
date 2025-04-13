@@ -23,12 +23,12 @@ from .parsers import (
 class MarkdownConverter:
     """Convert file to markdown"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._builtins_enabled = False
         self.document_parsers: list[DocumentParser] = []
         self.register_builtins()
 
-    def register_builtins(self, **kwargs) -> None:
+    def register_builtins(self, **kwargs: Any) -> None:
         if not self._builtins_enabled:
             self.register_parser(DocxParser())
             self.register_parser(HtmlParser())
@@ -85,7 +85,7 @@ class MarkdownConverter:
 
         return result
 
-    def _convert(self, local_path: str, extensions: list[str | None], **kwargs) -> DocumentParseResult:
+    def _convert(self, local_path: str, extensions: list[str | None], **kwargs: Any) -> DocumentParseResult:
         error_trace = ""
         for ext in extensions + [None]:  # Try last with no extension
             for converter in self.document_parsers:
@@ -141,7 +141,7 @@ class MarkdownConverter:
         """Register a document parser."""
         self.document_parsers.insert(0, parser)
 
-    def _guess_ext_magic(self, path):
+    def _guess_ext_magic(self, path: str) -> list[str]:
         """Use puremagic (a Python implementation of libmagic) to guess a file's extension based on the first few bytes."""
         try:
             guesses = puremagic.magic_file(path)
@@ -160,7 +160,7 @@ class MarkdownConverter:
                     except puremagic.main.PureError:
                         pass
 
-            extensions = list()
+            extensions = []
             for g in guesses:
                 ext = g.extension.strip()
                 if len(ext) > 0:

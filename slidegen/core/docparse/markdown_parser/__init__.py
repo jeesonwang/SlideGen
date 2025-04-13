@@ -1,11 +1,12 @@
 import os
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from typing import Any
-from collections.abc import Iterator
 
 from ._typing import _IncomingSource
 from .elements import CodeBlock, Element, Heading, Paragraph, Picture, Table
+
+__all__ = ["Heading", "MarkdownDocument", "MarkdownParser"]
 
 
 class MarkdownDocument(Element):
@@ -23,7 +24,7 @@ class MarkdownDocument(Element):
             if os.path.isfile(source) and source.endswith(".md"):
                 with open(source, encoding="utf-8") as f:
                     source = f.read()
-        if source:
+        if source and isinstance(source, str):
             self._parse(source)
 
     def _parse(self, markdown_text: str) -> None:
@@ -31,9 +32,8 @@ class MarkdownDocument(Element):
         parser.parse(markdown_text)
 
     def _all_strings(self, strip: bool = False, types: Iterable[type[Element]] = ()) -> Iterator[str]:
-        types = tuple(types)
         for child in self.descendants:
-            if not types or isinstance(child, types):
+            if not types or any(isinstance(child, t) for t in types):
                 if strip:
                     yield child.element_text.strip()
                 else:
@@ -51,16 +51,18 @@ class MarkdownDocument(Element):
 
 
 class MarkdownParser:
+    table_type: str | None
+    previous_heading: MarkdownDocument | Heading
+
     def __init__(self, document: MarkdownDocument):
         self.document = document
         self.previous_heading = document
-        self.stack = []
         self.in_code_block = False
         self.in_table_block = False
-        self.table_lines = []
+        self.table_lines: list[str] = []
 
-        self.code_language = None
-        self.code_lines = []
+        self.code_language: str | None = None
+        self.code_lines: list[str] = []
 
         self.jump_to_next = False
 
@@ -156,7 +158,10 @@ class MarkdownParser:
         if self.is_markdown_table_start(line, next_line):
             self.in_table_block = True
             self.table_type = "markdown"
-            self.table_lines = [line, next_line]
+            if next_line is not None:
+                self.table_lines = [line, next_line]
+            else:
+                self.table_lines = [line]
             self.jump_to_next = True  # Skip the separator line
             return True
         elif line.strip().startswith("<table"):
@@ -180,7 +185,7 @@ class MarkdownParser:
                 return False
         return True
 
-    def process_table_row(self, line: str, next_line: str | None) -> bool:
+    def process_table_row(self, line: str, next_line: str | None) -> None:
         if self.table_type == "markdown":
             stripped = line.strip()
             if not stripped or not stripped.startswith("|"):
@@ -204,7 +209,7 @@ class MarkdownParser:
         self.table_lines = []
 
     def parse_markdown_table(self) -> None:
-        lines = [line.strip() for line in self.table_lines]
+        lines = [line.strip() for line in self.table_lines if line is not None]
         headers = [h.strip() for h in lines[0].split("|")[1:-1]]
         row_number = len(lines)
         col_number = len(headers)
@@ -308,9 +313,9 @@ class MarkdownParser:
                 self.previous_heading.append(cur_heading)
             else:
                 parent = self.previous_heading.parent
-                while parent.level >= level:
-                    parent = parent.parent
-                parent.append(cur_heading)
+                while parent.level >= level:  # type: ignore
+                    parent = parent.parent  # type: ignore
+                parent.append(cur_heading)  # type: ignore
         if cur_heading.level == 1:
             self.document.main = cur_heading
         self.previous_heading = cur_heading

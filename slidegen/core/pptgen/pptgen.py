@@ -1,6 +1,6 @@
 from pptx.presentation import Presentation
 
-from slidegen.core.docparse.markdown_parser import MarkdownDocument
+from slidegen.core.docparse.markdown_parser import Heading, MarkdownDocument
 from slidegen.exception import MarkdownDocumentError
 
 from .pptpages import (
@@ -20,7 +20,7 @@ class PPTGen:
     and must be in accordance with `CoverPage`, `CatalogPage`, `ChapterHomePage`, `ChapterContentPage`, `EndPage`.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.slide_index = 0
         self.chapter_index = 1
 
@@ -30,7 +30,7 @@ class PPTGen:
         markdown_document: MarkdownDocument,
         cover_page_index: int = 0,
         catalog_page_index: int = 1,
-    ):
+    ) -> Presentation:
         """generate the complete PPT presentation"""
 
         headings = [h for h in markdown_document.descendants if hasattr(h, "level") and h.level == 1]
@@ -39,12 +39,14 @@ class PPTGen:
             raise MarkdownDocumentError("Markdown document must have at least one level 1 heading")
 
         main_heading = markdown_document.main
+        if main_heading is None:
+            raise MarkdownDocumentError("Markdown document must have a main heading")
         CoverPage.generate_slide(template_prs, main_heading, cover_page_index=cover_page_index)
 
         # obtain all level 2 headings as chapters
         chapters = []
         for h in main_heading.descendants:
-            if hasattr(h, "level") and h.level == 2:
+            if isinstance(h, Heading) and h.level == 2:
                 chapters.append(h)
 
         if not chapters:
@@ -83,7 +85,7 @@ class PPTGen:
 
         return template_prs
 
-    def _cleanup_template_slides(self, template_prs: Presentation, be_removed_slides_index: list[int]):
+    def _cleanup_template_slides(self, template_prs: Presentation, be_removed_slides_index: list[int]) -> None:
         # delete slides from back to front
         be_removed_slides_index.sort(reverse=True)
         for i in be_removed_slides_index:

@@ -10,23 +10,23 @@ from slidegen.config.const import LOG_DIR
 
 
 class InterceptHandler(logging.Handler):
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         # get corresponding Loguru level if it exists
         try:
             level = logger.level(record.levelname).name
         except ValueError:
-            level = record.levelno
+            level = record.levelno  # type: ignore
 
         # find caller from where originated the logged message
         frame, depth = sys._getframe(6), 6
         while frame and frame.f_code.co_filename == logging.__file__:
-            frame = frame.f_back
+            frame = frame.f_back  # type: ignore
             depth += 1
 
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-def clear_timeout_logs(log_dir: str, keep_day: int = 15):
+def clear_timeout_logs(log_dir: str, keep_day: int = 15) -> None:
     """
     删除最大超过keep_day的日志
     由于loguru本身不具备在删除既往日志的功能(只支持同一进程的日志旋转),添加本方法进行处理

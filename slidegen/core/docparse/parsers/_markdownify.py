@@ -5,7 +5,7 @@ from urllib.parse import quote, unquote, urlparse, urlunparse
 import markdownify
 
 
-class CustomMarkdownify(markdownify.MarkdownConverter):
+class CustomMarkdownify(markdownify.MarkdownConverter):  # type: ignore
     """
     A custom version of markdownify's MarkdownConverter. Changes include:
 
@@ -22,7 +22,7 @@ class CustomMarkdownify(markdownify.MarkdownConverter):
         options["heading_style"] = options.get("heading_style", markdownify.ATX)
         if "html_table" in options:
             html_table = options.get("html_table")
-            self._remain_html_table = html_table
+            self._remain_html_table = html_table  # type: ignore
         # Explicitly cast options to the expected type if necessary
         super().__init__(**options)
 
@@ -34,7 +34,7 @@ class CustomMarkdownify(markdownify.MarkdownConverter):
 
         return super().convert_hn(n, el, text, convert_as_inline)  # type: ignore
 
-    def convert_a(self, el: Any, text: str, convert_as_inline: bool):
+    def convert_a(self, el: Any, text: str, convert_as_inline: bool) -> str:
         """Same as usual converter, but removes Javascript links and escapes URIs.
         From https://github.com/microsoft/markitdown/blob/main/packages/markitdown/src/markitdown/converters/_markdownify.py
         """
@@ -88,14 +88,14 @@ class CustomMarkdownify(markdownify.MarkdownConverter):
 
         return "![%s](%s%s)" % (alt, src, title_part)
 
-    def convert_table(self, el, text, convert_as_inline):
+    def convert_table(self, el: Any, text: str, convert_as_inline: bool) -> str:
         if self._remain_html_table:
             text = "<table>" + text + "</table>"
         else:
             text = super().convert_table(el, text, convert_as_inline)
         return text.strip()
 
-    def convert_th(self, el, text, convert_as_inline):
+    def convert_th(self, el: Any, text: str, convert_as_inline: bool) -> str:
         if self._remain_html_table:
             attrs = " ".join(f'{k}="{v}"' for k, v in el.attrs.items())
             if attrs:
@@ -106,7 +106,7 @@ class CustomMarkdownify(markdownify.MarkdownConverter):
             text = super().convert_th(el, text, convert_as_inline)
         return text.strip()
 
-    def convert_td(self, el, text, convert_as_inline):
+    def convert_td(self, el: Any, text: str, convert_as_inline: bool) -> str:
         if self._remain_html_table:
             attrs = " ".join(f'{k}="{v}"' for k, v in el.attrs.items())
             if attrs:
@@ -117,7 +117,7 @@ class CustomMarkdownify(markdownify.MarkdownConverter):
             text = super().convert_td(el, text, convert_as_inline)
         return text.strip().replace("\n", " ")
 
-    def convert_tr(self, el, text, convert_as_inline):
+    def convert_tr(self, el: Any, text: str, convert_as_inline: bool) -> str:
         if self._remain_html_table:
             text = "<tr>" + text + "</tr>"
         else:

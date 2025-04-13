@@ -1,3 +1,5 @@
+from typing import Any
+
 import mammoth
 
 from .base import (
@@ -11,10 +13,10 @@ class DocxParser(HtmlParser):
     DOCX parser
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-    def convert(self, local_path, **kwargs) -> None | DocumentParseResult:
+    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
         # Bail if not a DOCX
         extension = kwargs.get("file_extension", "")
         if extension.lower() != ".docx":

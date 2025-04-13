@@ -1,3 +1,5 @@
+from typing import Any
+
 import pandas as pd
 
 from .base import DocumentParseResult
@@ -9,11 +11,10 @@ class ExcelParser(HtmlParser):
     Parser for excel files.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-    def convert(self, local_path, **kwargs) -> None | DocumentParseResult:
-        
+    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
         extension = kwargs.get("file_extension", "").lower()
         if extension not in [".xlsx", ".xls"]:
             return None
