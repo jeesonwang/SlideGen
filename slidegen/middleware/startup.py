@@ -5,9 +5,9 @@ from fastapi import FastAPI
 from slidegen.config.conf import settings
 
 
-def startup():
-    RunVar("_default_thread_limiter").set(CapacityLimiter(settings.SYNC_THREAD_COUNT))
+def startup() -> None:
+    RunVar("_default_thread_limiter").set(CapacityLimiter(settings.SYNC_THREAD_COUNT))  # type: ignore
 
 
-def register_startup(app: FastAPI):
+def register_startup(app: FastAPI) -> None:
     app.on_event("startup")(startup)

@@ -1,6 +1,6 @@
 import contextlib
 from collections.abc import AsyncIterator, Callable
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends
 from fastapi.concurrency import run_in_threadpool
@@ -88,8 +88,8 @@ async def get_db_sync() -> AsyncIterator[Session]:
         yield session
 
 
-def load_session_context(func: Callable) -> Callable:
-    def wrapper(*args, **kwargs):
+def load_session_context(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         session = sessionmanager._session_maker_sync()
         g.session_sync = session
         try:

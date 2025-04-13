@@ -1,6 +1,7 @@
 import time
+from collections.abc import Awaitable, Callable
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from loguru import logger
@@ -10,16 +11,16 @@ from slidegen.contexts.context import g
 from slidegen.exception import MESSAGE, ApiError, ParamCheckErrorCode, UnknownErrorCode
 
 
-def register_exception_handler(app: FastAPI):
+def register_exception_handler(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
-    async def custom_exception_handler(request: Request, exc: ApiError):
+    async def custom_exception_handler(request: Request, exc: ApiError) -> JSONResponse:
         return JSONResponse(
             status_code=exc.http_code,
             content={"message": f"{exc.message}", "code": exc.code},
         )
 
     @app.exception_handler(Exception)
-    async def exception_handler(request: Request, exc):
+    async def exception_handler(request: Request, exc: Exception) -> JSONResponse:
         code = UnknownErrorCode
         return JSONResponse(
             status_code=MESSAGE[code]["http_code"],
@@ -27,7 +28,7 @@ def register_exception_handler(app: FastAPI):
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request, exc):
+    async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
         code = ParamCheckErrorCode
         errors = exc.errors()
         model_exc = errors.pop()
@@ -52,7 +53,7 @@ def register_exception_handler(app: FastAPI):
         )
 
     @app.exception_handler(ResponseValidationError)
-    async def response_exception_handler(request, exc):
+    async def response_exception_handler(request: Request, exc: ResponseValidationError) -> JSONResponse:
         code = UnknownErrorCode
         errors = exc.errors()
         model_exc = errors.pop()
@@ -77,7 +78,7 @@ def register_exception_handler(app: FastAPI):
         )
 
     @app.middleware("http")
-    async def common_requests(request: Request, call_next):
+    async def common_requests(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         # 记录请求开始时间
         start_time = time.time()
 

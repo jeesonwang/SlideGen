@@ -42,7 +42,7 @@ RoleChangeErrorCode = 1303
 RoleDelErrorCode = 1304
 RoleExistsErrorCode = 1305
 
-MESSAGE = {
+MESSAGE: dict[int, dict[str, str | int]] = {
     RequestSuccessCode: {"message": "请求成功", "http_code": status.HTTP_200_OK},
     UnknownErrorCode: {"message": "未知错误", "http_code": status.HTTP_500_INTERNAL_SERVER_ERROR},
     # API内部错误，以1101开头
@@ -67,7 +67,6 @@ MESSAGE = {
     PermissionDenyCode: {"message": "用户权限不足", "http_code": status.HTTP_403_FORBIDDEN},
     UserLockErrorCode: {"message": "用户已锁定,请稍后再试", "http_code": status.HTTP_403_FORBIDDEN},
     SystemLockErrorCode: {"message": "系统用户均已锁定,请联系管理员或开发人员", "http_code": status.HTTP_403_FORBIDDEN},
-
     UserNotExistsCode: {"message": "用户不存在或已注销，请联系管理员", "http_code": status.HTTP_403_FORBIDDEN},
     PasswordErrorCode: {"message": "密码错误", "http_code": status.HTTP_403_FORBIDDEN},
     UserExistsErrorCode: {"message": "用户已存在", "http_code": status.HTTP_403_FORBIDDEN},
@@ -76,7 +75,6 @@ MESSAGE = {
     UserDelErrorCode: {"message": "删除用户失败", "http_code": status.HTTP_403_FORBIDDEN},
     SourcePasswordErrorCode: {"message": "原密码错误", "http_code": status.HTTP_403_FORBIDDEN},
     ChangePasswordErrorCode: {"message": "修改密码失败", "http_code": status.HTTP_403_FORBIDDEN},
-
     RoleNotExistsCode: {"message": "角色不存在", "http_code": status.HTTP_403_FORBIDDEN},
     RoleNameExistsCode: {"message": "角色名已存在", "http_code": status.HTTP_403_FORBIDDEN},
     RoleChangeErrorCode: {"message": "角色修改失败", "http_code": status.HTTP_403_FORBIDDEN},
