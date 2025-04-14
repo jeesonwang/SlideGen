@@ -44,7 +44,7 @@ IMAGE_EXTENSIONS: set[str] = {
 }
 
 
-def is_image_path(file: str) -> bool:
+def is_image_path(file: str | None) -> bool:
     """
     Check if a file path is an image based on its extension.
 
@@ -54,6 +54,8 @@ def is_image_path(file: str) -> bool:
     Returns:
         bool: True if the file is an image, False otherwise.
     """
+    if file is None:
+        return False
     return file.split(".")[-1].lower() in IMAGE_EXTENSIONS
 
 

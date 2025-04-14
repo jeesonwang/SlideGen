@@ -14,7 +14,6 @@ from pptx.shapes.autoshape import Shape
 from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 
-from slidegen.config.conf import settings
 from slidegen.core.docparse.markdown_parser import Heading
 from slidegen.core.pptgen.components import ChapterLayout, ContentType, components_manager
 from slidegen.core.pptgen.utils import (
@@ -513,6 +512,35 @@ class ChapterContentPage(Page):
     used_pictures: dict[str, set[str]] = {"opaque": set(), "transparent": set()}
 
     @staticmethod
+    def _get_picture(picture_path: str) -> str:
+        """
+        Get a random picture path
+
+        Args:
+            picture_type: picture type, 'opaque' or 'transparent'
+
+        Returns:
+            str: the random chosen picture path
+        """
+        if picture_path.endswith("opaque"):
+            picture_type = "opaque"
+        elif picture_path.endswith("transparent"):
+            picture_type = "transparent"
+        else:
+            raise PPTGenError(f"{ChapterContentPage.__name__}: Invalid picture path: {picture_path}")
+        picture_dir = picture_path
+        available_pictures = [
+            p for p in os.listdir(picture_dir) if p not in ChapterContentPage.used_pictures[picture_type]
+        ]
+        if not available_pictures:
+            ChapterContentPage.used_pictures[picture_type] = set()
+            available_pictures = os.listdir(picture_dir)
+
+        chosen_picture = random.choice(available_pictures)
+        ChapterContentPage.used_pictures[picture_type].add(chosen_picture)
+        return os.path.join(picture_dir, chosen_picture)
+
+    @staticmethod
     def _get_slide_type(content: Heading) -> int:
         """
         Get the slide type of the chapter content page
@@ -606,47 +634,11 @@ class ChapterContentPage(Page):
                     ChapterContentPage._shape_alignment(added_shape)
                 elif shape.content_type == ContentType.PICTURE:
                     if shape.path is None:
-                        raise PPTGenError(
-                            f"{ChapterContentPage.__name__}: \
-                                          Picture path is None: {shape.path}"
-                        )
-                    # picture is only in the first location
+                        raise PPTGenError(f"{ChapterContentPage.__name__}: Picture path is None: {shape.path}")
                     if is_image_path(shape.path):
                         image_path = shape.path
-                    elif shape.path.endswith("opaque"):
-                        # random choose a picture from the opaque folder
-                        picture_dir = os.path.join(settings.COMPONENTS_BASE_PATH, "pictures/opaque")
-                        available_pictures = [
-                            p for p in os.listdir(picture_dir) if p not in ChapterContentPage.used_pictures["opaque"]
-                        ]
-                        # if all pictures have been used, reset the used list
-                        if not available_pictures:
-                            ChapterContentPage.used_pictures["opaque"] = set()
-                            available_pictures = os.listdir(picture_dir)
-
-                        chosen_picture = random.choice(available_pictures)
-                        ChapterContentPage.used_pictures["opaque"].add(chosen_picture)
-                        image_path = os.path.join(picture_dir, chosen_picture)
-                    elif shape.path.endswith("transparent"):
-                        # random choose a picture from the transparent folder
-                        picture_dir = os.path.join(settings.COMPONENTS_BASE_PATH, "pictures/transparent")
-                        available_pictures = [
-                            p
-                            for p in os.listdir(picture_dir)
-                            if p not in ChapterContentPage.used_pictures["transparent"]
-                        ]
-                        if not available_pictures:
-                            ChapterContentPage.used_pictures["transparent"] = set()
-                            available_pictures = os.listdir(picture_dir)
-
-                        chosen_picture = random.choice(available_pictures)
-                        ChapterContentPage.used_pictures["transparent"].add(chosen_picture)
-                        image_path = os.path.join(picture_dir, chosen_picture)
                     else:
-                        raise PPTGenError(
-                            f"{ChapterContentPage.__name__}: \
-                                          Invalid image path: {shape.path}"
-                        )
+                        image_path = ChapterContentPage._get_picture(shape.path)
                     added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
                 elif shape.content_type == ContentType.NUMBER:
                     added_shape = add_shape_by_xml(
