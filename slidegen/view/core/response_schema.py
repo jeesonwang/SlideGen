@@ -7,7 +7,7 @@ from pydantic_core.core_schema import ValidationInfo, ValidatorFunctionWrapHandl
 T = TypeVar("T", bound=BaseModel)
 
 
-def maybe_strip_whitespace(v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> int:
+def maybe_strip_whitespace(v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> Any:
     if isinstance(v, datetime):
         return datetime_to_gmt_str(v)
     return v
@@ -30,74 +30,63 @@ class CustomModel(BaseModel):
     )
 
 
-def Res(data_model: T, validate: bool = False):
-    class ResponseModel(CustomModel):
-        model_config = model_config
-        code: int = 0
-        data: T
-        message: str = "Success"
-
-    class ResponseSoftModel(CustomModel):
-        model_config = model_config
-        code: int = 0
-        data: Annotated[T, WrapValidator(maybe_strip_whitespace)] = None
-        message: str = "Success"
-
-    if validate:
-        return ResponseModel
-    else:
-        return ResponseSoftModel
+class ResponseModel(CustomModel):
+    model_config = model_config
+    code: int = 0
+    data: type[BaseModel]
+    message: str = "Success"
 
 
-def ListRes(data_model, validate: bool = False):
-    class ListResponseModel(CustomModel):
-        model_config = model_config
-        per_page: int
-        page: int
-        pages: int
-        total: int
-        items: list[T]
-
-    class ResponseModel(CustomModel):
-        model_config = model_config
-        code: int = 0
-        data: ListResponseModel
-        message: str = "Success"
-
-    class ResponseSoftModel(CustomModel):
-        model_config = model_config
-        code: int = 0
-        data: Annotated[ListResponseModel, WrapValidator(maybe_strip_whitespace)] = None
-        message: str = "Success"
-
-    if validate:
-        return ResponseModel
-    else:
-        return ResponseSoftModel
+class ResponseSoftModel(CustomModel):
+    model_config = model_config
+    code: int = 0
+    data: Annotated[type[BaseModel] | None, WrapValidator(maybe_strip_whitespace)] = None
+    message: str = "Success"
 
 
-def PagerRes(data_model: T, validate: bool = False):
-    class ListResponseModel(CustomModel):
-        model_config = model_config
-        per_page: int
-        page: int
-        pages: int
-        total: int
-        items: list[T]
+# List response model
+class ListResponseModel(CustomModel):
+    model_config = model_config
+    per_page: int
+    page: int
+    pages: int
+    total: int
+    items: list[type[BaseModel]]
 
-    class ResponseModel(CustomModel):
-        model_config = model_config
-        code: int = 0
-        data: ListResponseModel
-        message: str = "Success"
 
-    class ResponseSoftModel(CustomModel):
-        model_config = model_config
-        code: int = 0
-        data: Annotated[ListResponseModel, WrapValidator(maybe_strip_whitespace)] = None
-        message: str = "Success"
+class ListResponseDataModel(CustomModel):
+    model_config = model_config
+    code: int = 0
+    data: ListResponseModel
+    message: str = "Success"
 
-    if validate:
-        return ResponseModel
-    else:
-        return ResponseSoftModel
+
+class ListResponseSoftDataModel(CustomModel):
+    model_config = model_config
+    code: int = 0
+    data: Annotated[ListResponseModel | None, WrapValidator(maybe_strip_whitespace)] = None
+    message: str = "Success"
+
+
+# Page response model
+class PageResponseModel(CustomModel):
+    model_config = model_config
+    per_page: int
+    page: int
+    pages: int
+    total: int
+    items: list[type[BaseModel]]
+
+
+class PageResponseDataModel(CustomModel):
+    model_config = model_config
+    code: int = 0
+    data: PageResponseModel
+    message: str = "Success"
+
+
+class PageResponseSoftDataModel(CustomModel):
+    model_config = model_config
+    code: int = 0
+    data: Annotated[PageResponseModel | None, WrapValidator(maybe_strip_whitespace)] = None
+    message: str = "Success"

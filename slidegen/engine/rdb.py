@@ -53,10 +53,10 @@ class DatabaseSessionManager:
         try:
             yield session
         except Exception:
-            await g.session.rollback()
+            await g.session.rollback()  # type: ignore
             raise
         finally:
-            await g.session.close()
+            await g.session.close()  # type: ignore
 
     @contextlib.asynccontextmanager
     async def session_sync(self) -> AsyncIterator[Session]:
@@ -67,10 +67,10 @@ class DatabaseSessionManager:
         try:
             yield session
         except Exception:
-            await run_in_threadpool(lambda: g.session_sync.rollback())
+            await run_in_threadpool(lambda: g.session_sync.rollback())  # type: ignore
             raise
         finally:
-            await run_in_threadpool(lambda: g.session_sync.close())
+            await run_in_threadpool(lambda: g.session_sync.close())  # type: ignore
 
 
 sessionmanager = DatabaseSessionManager()

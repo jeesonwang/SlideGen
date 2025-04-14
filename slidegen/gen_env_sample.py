@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 from pydantic_settings import BaseSettings
@@ -6,7 +7,9 @@ from rich import print
 from slidegen.config.conf import BASE_DIR, Settings
 
 
-def generate_env_sample(settings_class: type[BaseSettings], output_file: str = BASE_DIR.parent / ".env.sample") -> None:
+def generate_env_sample(
+    settings_class: type[BaseSettings], output_file: str | Path = BASE_DIR.parent / ".env.sample"
+) -> None:
     fields: dict[str, Any] = settings_class.model_fields
     lines = ["PYTHONPATH=."]
 

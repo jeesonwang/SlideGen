@@ -5,30 +5,30 @@ import dateutil.parser
 from slidegen.config.conf import settings
 
 
-def now_datetime():
+def now_datetime() -> datetime.datetime:
     """获取实时datetime"""
     return now_tz_datetime().replace(tzinfo=None)
 
 
-def now_tz_datetime():
+def now_tz_datetime() -> datetime.datetime:
     """获取带TIMEZONE的datetime"""
     return datetime.datetime.now(tz=settings.TZ)
 
 
-def init_datetime():
+def init_datetime() -> datetime.datetime:
     """初始化数据时间"""
     return strptime("1970-01-01 00:00:00")
 
 
-def strftime(date: datetime.datetime, fmt: str = "%Y-%m-%d %H:%M:%S"):
+def strftime(date: datetime.datetime, fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
     return date.strftime(fmt)
 
 
-def now_tz_datestring(fmt: str = "%Y-%m-%d %H:%M:%S"):
+def now_tz_datestring(fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
     return strftime(now_datetime(), fmt=fmt)
 
 
-def strptime(datestr: str, fmt=None):
+def strptime(datestr: str, fmt: str | None = None) -> datetime.datetime:
     if fmt is not None:
         return datetime.datetime.strptime(datestr, fmt)
 
@@ -36,9 +36,11 @@ def strptime(datestr: str, fmt=None):
         return datetime.datetime.strptime(datestr, "%Y-%m-%d")
     elif len(datestr) == 19:
         return datetime.datetime.strptime(datestr, "%Y-%m-%d %H:%M:%S")
+    else:
+        raise ValueError(f"Invalid datetime string: {datestr}")
 
 
-def days_date_range(start_date: datetime.datetime, end_date: datetime.datetime):
+def days_date_range(start_date: str, end_date: str) -> list[str]:
     """获取时间周期列表"""
     dates = []
     dt = datetime.datetime.strptime(start_date, "%Y-%m-%d")
@@ -87,11 +89,11 @@ def convert_to_search_start_time(start: datetime.datetime | str) -> str:
         return start
 
     if isinstance(start, datetime.datetime):
-        start = start.date()
+        start = start.date()  # type: ignore
     else:
-        start = datetime.datetime.strptime(start, "%Y-%m-%d").date()
+        start = datetime.datetime.strptime(start, "%Y-%m-%d").date()  # type: ignore
 
-    return start.strftime("%Y-%m-%d %H:%M:%S")
+    return start.strftime("%Y-%m-%d %H:%M:%S")  # type: ignore
 
 
 def convert_to_search_end_time(end: datetime.datetime | str) -> str:
@@ -105,7 +107,7 @@ def convert_to_search_end_time(end: datetime.datetime | str) -> str:
     return end
 
 
-def is_valid_datetime(value: str):
+def is_valid_datetime(value: str) -> bool:
     try:
         dateutil.parser.parse(value)
         return True

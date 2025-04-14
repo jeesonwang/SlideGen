@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """From Flask-Sqlachemy"""
 
+from collections.abc import Generator
 from math import ceil
+from typing import Any
 
 from sqlalchemy.orm import query
 
@@ -14,7 +16,7 @@ class Pagination:
     no longer work.
     """
 
-    def __init__(self, query, page, per_page, total, items):
+    def __init__(self, query: "Query", page: int, per_page: int, total: int, items: list[Any]):
         #: the unlimited query object that was used to create this
         #: pagination object.
         self.query = query
@@ -28,7 +30,7 @@ class Pagination:
         self.items = items
 
     @property
-    def pages(self):
+    def pages(self) -> int:
         """The total number of pages"""
         if self.per_page == 0:
             pages = 0
@@ -36,41 +38,43 @@ class Pagination:
             pages = int(ceil(self.total / float(self.per_page)))
         return pages
 
-    def prev(self, error_out=False):
+    def prev(self, error_out: bool = False) -> "Pagination":
         """Returns a :class:`Pagination` object for the previous page."""
         assert self.query is not None, "a query object is required for this method to work"
         return self.query.paginate(self.page - 1, self.per_page, error_out)
 
     @property
-    def prev_num(self):
+    def prev_num(self) -> int | None:
         """Number of the previous page."""
         if not self.has_prev:
             return None
         return self.page - 1
 
     @property
-    def has_prev(self):
+    def has_prev(self) -> bool:
         """True if a previous page exists"""
         return self.page > 1
 
-    def next(self, error_out=False):
+    def next(self, error_out: bool = False) -> "Pagination":
         """Returns a :class:`Pagination` object for the next page."""
         assert self.query is not None, "a query object is required for this method to work"
         return self.query.paginate(self.page + 1, self.per_page, error_out)
 
     @property
-    def has_next(self):
+    def has_next(self) -> bool:
         """True if a next page exists."""
         return self.page < self.pages
 
     @property
-    def next_num(self):
+    def next_num(self) -> int | None:
         """Number of the next page"""
         if not self.has_next:
             return None
         return self.page + 1
 
-    def iter_pages(self, left_edge=2, left_current=2, right_current=5, right_edge=2):
+    def iter_pages(
+        self, left_edge: int = 2, left_current: int = 2, right_current: int = 5, right_edge: int = 2
+    ) -> Generator[Any, Any, Any]:
         """Iterates over the page numbers in the pagination.  The four
         parameters control the thresholds how many numbers should be produced
         from the sides.  Skipped page numbers are represented as `None`.
@@ -108,7 +112,13 @@ class Pagination:
 
 
 class Query(query.Query):
-    def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None):
+    def paginate(
+        self,
+        page: int | None = None,
+        per_page: int | None = None,
+        error_out: bool = True,
+        max_per_page: int | None = None,
+    ) -> Pagination:
         """Returns ``per_page`` items from page ``page``.
 
         If ``page`` or ``per_page`` are ``None``, they will be retrieved from
@@ -159,4 +169,9 @@ class Query(query.Query):
         return Pagination(self, page, per_page, total, items)
 
 
-query.Query = Query
+def patch_sqlalchemy() -> None:
+    """Patch SQLAlchemy Query with pagination"""
+    query.Query.paginate = Query.paginate
+
+
+patch_sqlalchemy()

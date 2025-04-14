@@ -6,5 +6,5 @@ from .om.healthcheck import HealthCheckView
 HealthCheckView(path="/healthcheck", tags=["运维"])
 
 
-def register_routes(app: FastAPI):
+def register_routes(app: FastAPI) -> None:
     app.include_router(router=base_router)

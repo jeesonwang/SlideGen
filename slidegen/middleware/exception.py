@@ -15,7 +15,7 @@ def register_exception_handler(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def custom_exception_handler(request: Request, exc: ApiError) -> JSONResponse:
         return JSONResponse(
-            status_code=exc.http_code,
+            status_code=exc.http_code,  # type: ignore
             content={"message": f"{exc.message}", "code": exc.code},
         )
 
@@ -23,7 +23,7 @@ def register_exception_handler(app: FastAPI) -> None:
     async def exception_handler(request: Request, exc: Exception) -> JSONResponse:
         code = UnknownErrorCode
         return JSONResponse(
-            status_code=MESSAGE[code]["http_code"],
+            status_code=MESSAGE[code]["http_code"],  # type: ignore
             content={"message": f"{exc}", "code": code},
         )
 
@@ -31,12 +31,12 @@ def register_exception_handler(app: FastAPI) -> None:
     async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
         code = ParamCheckErrorCode
         errors = exc.errors()
-        model_exc = errors.pop()
+        model_exc = errors.pop()  # type: ignore
         model: BaseModel = model_exc.get("model")
         if not model:
-            errors.append(model_exc)
+            errors.append(model_exc)  # type: ignore
             return JSONResponse(
-                status_code=MESSAGE[code]["http_code"],
+                status_code=MESSAGE[code]["http_code"],  # type: ignore
                 content={"message": f"{exc}", "code": code},
             )
         display_error = ""
@@ -48,7 +48,7 @@ def register_exception_handler(app: FastAPI) -> None:
                     display_error += f"{display_field_name} {error['msg']}"
                     break
         return JSONResponse(
-            status_code=MESSAGE[code]["http_code"],
+            status_code=MESSAGE[code]["http_code"],  # type: ignore
             content={"message": f"{display_error}", "code": code},
         )
 
@@ -56,12 +56,12 @@ def register_exception_handler(app: FastAPI) -> None:
     async def response_exception_handler(request: Request, exc: ResponseValidationError) -> JSONResponse:
         code = UnknownErrorCode
         errors = exc.errors()
-        model_exc = errors.pop()
+        model_exc = errors.pop()  # type: ignore
         model: BaseModel = model_exc.get("model")
         if not model:
-            errors.append(model_exc)
+            errors.append(model_exc)  # type: ignore
             return JSONResponse(
-                status_code=MESSAGE[code]["http_code"],
+                status_code=MESSAGE[code]["http_code"],  # type: ignore
                 content={"message": f"{exc}", "code": code},
             )
         display_error = ""
@@ -73,7 +73,7 @@ def register_exception_handler(app: FastAPI) -> None:
                     display_error += f"{display_field_name} {error['msg']}"
                     break
         return JSONResponse(
-            status_code=MESSAGE[code]["http_code"],
+            status_code=MESSAGE[code]["http_code"],  # type: ignore
             content={"message": f"{display_error}", "code": code},
         )
 
@@ -85,7 +85,7 @@ def register_exception_handler(app: FastAPI) -> None:
         # 获取请求信息
         method = request.method
         url = str(request.url.path)
-        client_ip = request.client.host
+        client_ip = request.client.host  # type: ignore
         client_agent = request.headers.get("user-agent")
         query_params = dict(request.query_params)
         request_body = await request.body()

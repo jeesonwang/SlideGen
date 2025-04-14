@@ -1,6 +1,10 @@
 import inspect
+from collections.abc import Callable
+from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from fastapi.dependencies.models import Dependant
+from pydantic import BaseModel
 
 from slidegen.contexts import g
 from slidegen.contexts.schema import Pager
@@ -11,7 +15,7 @@ base_router = APIRouter()
 
 class BaseView:
     permissions_classes = []
-    path: str = None
+    path: str | None = None
     authentication_classes = []
 
     def __init__(self, path: str, tags: list[str]):
@@ -20,23 +24,28 @@ class BaseView:
         self.register_routes()
 
     @property
-    def request(self):
+    def request(self) -> Request | None:
         return g.request
 
     @property
-    def user(self):
+    def user(self) -> Any | BaseModel | None:
         return g.user
 
     @property
-    def user_id(self):
+    def user_id(self) -> int | str | None:
         return g.user.id
 
     @property
-    def role_ids(self):
+    def role_ids(self) -> list[int] | None:
         return g.user.role_ids
 
     @staticmethod
-    def response(code: int = 0, message: str = "请求成功", data: dict | None | list | str = None, pager: Pager = None):
+    def response(
+        code: int = 0,
+        message: str = "请求成功",
+        data: dict[str, Any] | None | list[Any] | str = None,
+        pager: Pager | None = None,
+    ) -> dict[str, Any]:
         if isinstance(data, list):
             if pager:
                 data = {"items": data or [], **pager.model_dump()}
@@ -45,7 +54,7 @@ class BaseView:
 
         return {"code": code, "message": message, "trace_id": g.trace_id, "data": data or {}}
 
-    def get_dependencies(self, extra_params: dict, method):
+    def get_dependencies(self, extra_params: dict[str, Any], method: Callable[..., Any]) -> list[Dependant]:
         custom_permission_classes = extra_params.pop("permission_classes", None)
         custom_authentication_classes = extra_params.pop("authentication_classes", None)
         authentication_classes = (
@@ -63,7 +72,7 @@ class BaseView:
             dependencies += [Depends(get_db_sync)]
         return dependencies
 
-    def register_routes(self):
+    def register_routes(self) -> None:
         method_map = {
             "get": {
                 "path": self.path,
