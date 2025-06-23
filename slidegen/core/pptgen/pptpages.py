@@ -15,6 +15,7 @@ from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 
 from slidegen.core.docparse.markdown_parser import Heading
+from slidegen.core.exception import PPTGenError, PPTTemplateError
 from slidegen.core.pptgen.components import ChapterLayout, ContentType, components_manager
 from slidegen.core.pptgen.utils import (
     add_para_by_xml,
@@ -23,7 +24,6 @@ from slidegen.core.pptgen.utils import (
     is_image_path,
     runs_merge,
 )
-from slidegen.exception import PPTGenError, PPTTemplateError
 
 
 class Page:

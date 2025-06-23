@@ -9,7 +9,7 @@ from typing import Any, BinaryIO
 import puremagic
 from loguru import logger
 
-from slidegen.exception import FileParseError, FileTypeError
+from slidegen.core.exception import FileParseError, FileTypeError
 
 from .parsers import (
     DocumentParser,

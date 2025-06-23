@@ -1,7 +1,7 @@
 from pptx.presentation import Presentation
 
 from slidegen.core.docparse.markdown_parser import Heading, MarkdownDocument
-from slidegen.exception import MarkdownDocumentError
+from slidegen.core.exception import MarkdownDocumentError
 
 from .pptpages import (
     CatalogPage,
