@@ -52,11 +52,11 @@ class CustomMarkdownify(markdownify.MarkdownConverter):  # type: ignore
         if href:
             try:
                 parsed_url = urlparse(href)  # type: ignore
-                if parsed_url.scheme and parsed_url.scheme.lower() not in ["http", "https", "file"]:  # type: ignore
-                    return "%s%s%s" % (prefix, text, suffix)
-                href = urlunparse(parsed_url._replace(path=quote(unquote(parsed_url.path))))  # type: ignore
+                if parsed_url.scheme and parsed_url.scheme.lower() not in ["http", "https", "file"]:
+                    return f"{prefix}{text}{suffix}"
+                href = urlunparse(parsed_url._replace(path=quote(unquote(parsed_url.path))))
             except ValueError:  # It's not clear if this ever gets thrown
-                return "%s%s%s" % (prefix, text, suffix)
+                return f"{prefix}{text}{suffix}"
 
         # For the replacement see #29: text nodes underscores are escaped
         if (
@@ -66,11 +66,15 @@ class CustomMarkdownify(markdownify.MarkdownConverter):  # type: ignore
             and not self.options["default_title"]
         ):
             # Shortcut syntax
-            return "<%s>" % href
+            return f"<{href}>"
         if self.options["default_title"] and not title:
             title = href
-        title_part = ' "%s"' % title.replace('"', r"\"") if title else ""
-        return "%s[%s](%s%s)%s" % (prefix, text, href, title_part, suffix) if href else text
+        if title:
+            safe_title = title.replace('"', r'\\"')
+            title_part = f' "{safe_title}"'
+        else:
+            title_part = ""
+        return f"{prefix}[{text}]({href}{title_part}){suffix}" if href else text
 
     def convert_img(self, el: Any, text: str, convert_as_inline: bool) -> str:
         """Same as usual converter, but removes data URIs"""
@@ -78,7 +82,11 @@ class CustomMarkdownify(markdownify.MarkdownConverter):  # type: ignore
         alt = el.attrs.get("alt", None) or ""
         src = el.attrs.get("src", None) or ""
         title = el.attrs.get("title", None) or ""
-        title_part = ' "%s"' % title.replace('"', r"\"") if title else ""
+        if title:
+            safe_title = title.replace('"', r'\\"')
+            title_part = f' "{safe_title}"'
+        else:
+            title_part = ""
         if convert_as_inline and el.parent.name not in self.options["keep_inline_images_in"]:
             return alt
 
@@ -86,7 +94,7 @@ class CustomMarkdownify(markdownify.MarkdownConverter):  # type: ignore
         if src.startswith("data:"):
             src = src.split(",")[0] + "..."
 
-        return "![%s](%s%s)" % (alt, src, title_part)
+        return f"![{alt}]({src}{title_part})"
 
     def convert_table(self, el: Any, text: str, convert_as_inline: bool) -> str:
         if self._remain_html_table:
