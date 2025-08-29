@@ -148,7 +148,7 @@ class MarkdownParser:
         return False
 
     def handle_list(self, match: re.Match[str]) -> None:
-        bullet = match.group(1)
+        # bullet = match.group(1)
         text = match.group(2).strip()
 
         item = Paragraph(text)
@@ -286,7 +286,7 @@ class MarkdownParser:
         else:
             raise Exception(f"Not support level: {level}")
 
-        regex = r"^%s{3,}\s*$" % tmpl
+        regex = rf"^{tmpl}{{3,}}\s*$"
         result = re.search(regex, next_string)
 
         if result is None:
@@ -295,7 +295,7 @@ class MarkdownParser:
         return self._parse_heading_action(level=level, text=string.strip(), text_source=f"{string}\n{next_string}")
 
     def _parse_heading_var_two(self, level: int, string: str) -> bool:
-        regex = r"^(\s?#{%s}\s+)(.*)$" % level
+        regex = rf"^(\s?#{{{level}}}\s+)(.*)$"
         result = re.search(regex, string)
 
         if result is None:
