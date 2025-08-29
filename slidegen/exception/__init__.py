@@ -1,6 +1,6 @@
 from .base import ApiError
-from .custom_exception import *
-from .error_code import *
+from .custom_exception import *  # noqa: F403
+from .error_code import *  # noqa: F403
 
 __all__ = [
     "ApiError",
@@ -37,4 +37,7 @@ __all__ = [
     "UserAddErrorCode",
     "UserUpdateErrorCode",
     "UserDeleteErrorCode",
+    "PPTGenError",
+    "PPTTemplateError",
+    "MarkdownDocumentError",
 ]

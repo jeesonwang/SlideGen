@@ -14,16 +14,16 @@ from pptx.shapes.autoshape import Shape
 from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 
-from slidegen.core.docparse.markdown_parser import Heading
-from slidegen.core.pptgen.components import ChapterLayout, ContentType, components_manager
-from slidegen.core.pptgen.utils import (
+from slidegen.exception import PPTGenError, PPTTemplateError
+from slidegen.workflows.docparse.markdown_parser import Heading
+from slidegen.workflows.pptgen.components import ChapterLayout, ContentType, components_manager
+from slidegen.workflows.pptgen.utils import (
     add_para_by_xml,
     add_shape_by_xml,
     convert_paragraph_xml,
     is_image_path,
     runs_merge,
 )
-from slidegen.exception import PPTGenError, PPTTemplateError
 
 
 class Page:

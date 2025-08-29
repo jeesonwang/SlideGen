@@ -11,7 +11,7 @@ from pptx.shapes.autoshape import Shape
 from pptx.shapes.picture import Picture
 from pptx.slide import Slide
 
-from slidegen.config.conf import settings
+from slidegen.config import settings
 
 
 def remove_custDataLst(xml_str: str) -> str:
