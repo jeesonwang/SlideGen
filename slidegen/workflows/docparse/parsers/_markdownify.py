@@ -30,15 +30,15 @@ class CustomMarkdownify(markdownify.MarkdownConverter):  # type: ignore
         """Same as usual, but be sure to start with a new line"""
         if not convert_as_inline:
             if not re.search(r"^\n", text):
-                return "\n" + super().convert_hn(n, el, text, convert_as_inline)  # type: ignore
+                return "\n" + super().convert_hn(n, el, text, convert_as_inline)
 
-        return super().convert_hn(n, el, text, convert_as_inline)  # type: ignore
+        return super().convert_hn(n, el, text, convert_as_inline)
 
     def convert_a(self, el: Any, text: str, convert_as_inline: bool) -> str:
         """Same as usual converter, but removes Javascript links and escapes URIs.
         From https://github.com/microsoft/markitdown/blob/main/packages/markitdown/src/markitdown/converters/_markdownify.py
         """
-        prefix, suffix, text = markdownify.chomp(text)  # type: ignore
+        prefix, suffix, text = markdownify.chomp(text)
         if not text:
             return ""
 
@@ -51,7 +51,7 @@ class CustomMarkdownify(markdownify.MarkdownConverter):  # type: ignore
         # Escape URIs and skip non-http or file schemes
         if href:
             try:
-                parsed_url = urlparse(href)  # type: ignore
+                parsed_url = urlparse(href)
                 if parsed_url.scheme and parsed_url.scheme.lower() not in ["http", "https", "file"]:
                     return f"{prefix}{text}{suffix}"
                 href = urlunparse(parsed_url._replace(path=quote(unquote(parsed_url.path))))
