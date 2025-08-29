@@ -1,6 +1,7 @@
 from slidegen.exception.base import ApiError
 from slidegen.exception.error_code import (
     AccessDeniedCode,
+    AuthDenyCode,
     DataBaseErrorCode,
     DataNotFoundCode,
     ExpireTokenCode,
@@ -12,7 +13,9 @@ from slidegen.exception.error_code import (
     SystemLockErrorCode,
     TokenNotExistsCode,
     UserErrorCode,
+    UserExistsErrorCode,
     UserLockErrorCode,
+    UserNotExistsCode,
 )
 
 
@@ -38,6 +41,14 @@ class InsideServerError(ApiError):
 
 class UserError(ApiError):
     default_code = UserErrorCode
+
+
+class UserNotExistsError(ApiError):
+    default_code = UserNotExistsCode
+
+
+class UserExistsError(ApiError):
+    default_code = UserExistsErrorCode
 
 
 class PasswordError(ApiError):
@@ -68,6 +79,10 @@ class ServiceConnectionError(ApiError):
 
 class AccessDeniedError(ApiError):
     default_code = AccessDeniedCode
+
+
+class AuthDenyError(ApiError):
+    default_code = AuthDenyCode
 
 
 class FileParseError(ApiError):

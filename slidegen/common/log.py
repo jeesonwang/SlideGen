@@ -6,7 +6,7 @@ import sys
 
 from loguru import logger
 
-from slidegen.config.const import LOG_DIR
+from app.config import settings
 
 
 class InterceptHandler(logging.Handler):
@@ -52,10 +52,10 @@ def clear_timeout_logs(log_dir: str, keep_day: int = 15) -> None:
 
 
 def init() -> None:
-    clear_timeout_logs(LOG_DIR, keep_day=15)
+    clear_timeout_logs(settings.LOG_DIR, keep_day=15)
 
 
-LOG_LEVEL = logging.getLevelName(os.environ.get("LOG_LEVEL", "INFO"))
+LOG_LEVEL = logging.getLevelName(settings.LOGGING_LEVEL)
 
 intercept_handler = InterceptHandler()
 logging.root.setLevel(LOG_LEVEL)
@@ -77,13 +77,10 @@ for name in [
 logger.configure(handlers=[{"sink": sys.stderr, "level": LOG_LEVEL}])
 
 # [定义日志路径]
-os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(settings.LOG_DIR, exist_ok=True)
 
-# 日志旋转、大小限制、更替等参数均支持多种配置,详情请参考文档
-# [logger参数文档: https://loguru.readthedocs.io/en/stable/api/logger.html#loguru._logger.Logger]
-# 请务必设置colorize=False,避免在不同系统上由于颜色标签的写入造成问题
 logger.add(
-    os.path.join(LOG_DIR, "info_{time:%Y-%m-%d}.log"),
+    os.path.join(settings.LOG_DIR, "info_{time:%Y-%m-%d}.log"),
     level="INFO",
     colorize=False,
     rotation="1 days",
@@ -95,7 +92,7 @@ logger.add(
     catch=False,
 )
 logger.add(
-    os.path.join(LOG_DIR, "error_{time:%Y-%m-%d}.log"),
+    os.path.join(settings.LOG_DIR, "error_{time:%Y-%m-%d}.log"),
     level="ERROR",
     colorize=False,
     rotation="1 days",

@@ -1,4 +1,5 @@
 from fastapi import status
+from pydantic import BaseModel
 
 # API内部错误，以1101开头
 RequestSuccessCode = 0
@@ -34,6 +35,7 @@ SourcePasswordErrorCode = 1211
 ChangePasswordErrorCode = 1212
 UserLockErrorCode = 1213
 SystemLockErrorCode = 1214
+AuthDenyCode = 1215
 
 # 角色错误，以1300开头
 RoleNotExistsCode = 1301
@@ -42,42 +44,49 @@ RoleChangeErrorCode = 1303
 RoleDelErrorCode = 1304
 RoleExistsErrorCode = 1305
 
-MESSAGE: dict[int, dict[str, str | int]] = {
-    RequestSuccessCode: {"message": "请求成功", "http_code": status.HTTP_200_OK},
-    UnknownErrorCode: {"message": "未知错误", "http_code": status.HTTP_500_INTERNAL_SERVER_ERROR},
+
+class HttpErrorCode(BaseModel):
+    message: str
+    http_code: int
+
+
+MESSAGE = {
+    RequestSuccessCode: HttpErrorCode(message="请求成功", http_code=status.HTTP_200_OK),
+    UnknownErrorCode: HttpErrorCode(message="未知错误", http_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
     # API内部错误，以1101开头
-    ParamCheckErrorCode: {"message": "参数错误", "http_code": status.HTTP_400_BAD_REQUEST},
-    ParamTypeErrorCode: {"message": "数据格式不正确", "http_code": status.HTTP_400_BAD_REQUEST},
-    DataBaseErrorCode: {"message": "数据库错误", "http_code": status.HTTP_400_BAD_REQUEST},
-    DataExistsErrorCode: {"message": "数据已存在", "http_code": status.HTTP_400_BAD_REQUEST},
-    AccessDeniedCode: {"message": "请求被拒绝", "http_code": status.HTTP_403_FORBIDDEN},
-    RequestTimeoutCode: {"message": "等待超时", "http_code": status.HTTP_408_REQUEST_TIMEOUT},
-    ExternalServerErrorCode: {"message": "外部服务异常", "http_code": status.HTTP_500_INTERNAL_SERVER_ERROR},
-    InsideServerErrorCode: {"message": "内部服务异常", "http_code": status.HTTP_500_INTERNAL_SERVER_ERROR},
-    ServiceUnavailableCode: {"message": "接口异常，请稍后再试", "http_code": status.HTTP_503_SERVICE_UNAVAILABLE},
-    MethodNotAllowedCode: {"message": "方法不允许", "http_code": status.HTTP_405_METHOD_NOT_ALLOWED},
-    DataNotFoundCode: {"message": "资源不存在", "http_code": status.HTTP_404_NOT_FOUND},
-    DataUpdateErrorCode: {"message": "资源更新失败", "http_code": status.HTTP_400_BAD_REQUEST},
-    DataChangeErrorCode: {"message": "资源修改失败", "http_code": status.HTTP_400_BAD_REQUEST},
-    DataDelErrorCode: {"message": "资源删除失败", "http_code": status.HTTP_400_BAD_REQUEST},
+    ParamCheckErrorCode: HttpErrorCode(message="参数错误", http_code=status.HTTP_400_BAD_REQUEST),
+    ParamTypeErrorCode: HttpErrorCode(message="数据格式不正确", http_code=status.HTTP_400_BAD_REQUEST),
+    DataBaseErrorCode: HttpErrorCode(message="数据库错误", http_code=status.HTTP_400_BAD_REQUEST),
+    DataExistsErrorCode: HttpErrorCode(message="数据已存在", http_code=status.HTTP_400_BAD_REQUEST),
+    AccessDeniedCode: HttpErrorCode(message="请求被拒绝", http_code=status.HTTP_403_FORBIDDEN),
+    RequestTimeoutCode: HttpErrorCode(message="等待超时", http_code=status.HTTP_408_REQUEST_TIMEOUT),
+    ExternalServerErrorCode: HttpErrorCode(message="外部服务异常", http_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+    InsideServerErrorCode: HttpErrorCode(message="内部服务异常", http_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+    ServiceUnavailableCode: HttpErrorCode(
+        message="接口异常，请稍后再试", http_code=status.HTTP_503_SERVICE_UNAVAILABLE
+    ),
+    MethodNotAllowedCode: HttpErrorCode(message="方法不允许", http_code=status.HTTP_405_METHOD_NOT_ALLOWED),
+    DataNotFoundCode: HttpErrorCode(message="资源不存在", http_code=status.HTTP_404_NOT_FOUND),
+    DataUpdateErrorCode: HttpErrorCode(message="资源更新失败", http_code=status.HTTP_400_BAD_REQUEST),
+    DataChangeErrorCode: HttpErrorCode(message="资源修改失败", http_code=status.HTTP_400_BAD_REQUEST),
+    DataDelErrorCode: HttpErrorCode(message="资源删除失败", http_code=status.HTTP_400_BAD_REQUEST),
     # 用户错误，以1200开头
-    UserErrorCode: {"message": "用户错误", "http_code": status.HTTP_400_BAD_REQUEST},
-    ExpireTokenCode: {"message": "令牌过期或权限变动，请重新登录", "http_code": status.HTTP_401_UNAUTHORIZED},
-    TokenNotExistsCode: {"message": "token不存在或已失效", "http_code": status.HTTP_401_UNAUTHORIZED},
-    PermissionDenyCode: {"message": "用户权限不足", "http_code": status.HTTP_403_FORBIDDEN},
-    UserLockErrorCode: {"message": "用户已锁定,请稍后再试", "http_code": status.HTTP_403_FORBIDDEN},
-    SystemLockErrorCode: {"message": "系统用户均已锁定,请联系管理员或开发人员", "http_code": status.HTTP_403_FORBIDDEN},
-    UserNotExistsCode: {"message": "用户不存在或已注销，请联系管理员", "http_code": status.HTTP_403_FORBIDDEN},
-    PasswordErrorCode: {"message": "密码错误", "http_code": status.HTTP_403_FORBIDDEN},
-    UserExistsErrorCode: {"message": "用户已存在", "http_code": status.HTTP_403_FORBIDDEN},
-    UserNameNotExistsCode: {"message=": "用户不存在", "http_code": status.HTTP_403_FORBIDDEN},
-    UserChangeErrorCode: {"message": "修改用户失败", "http_code": status.HTTP_403_FORBIDDEN},
-    UserDelErrorCode: {"message": "删除用户失败", "http_code": status.HTTP_403_FORBIDDEN},
-    SourcePasswordErrorCode: {"message": "原密码错误", "http_code": status.HTTP_403_FORBIDDEN},
-    ChangePasswordErrorCode: {"message": "修改密码失败", "http_code": status.HTTP_403_FORBIDDEN},
-    RoleNotExistsCode: {"message": "角色不存在", "http_code": status.HTTP_403_FORBIDDEN},
-    RoleNameExistsCode: {"message": "角色名已存在", "http_code": status.HTTP_403_FORBIDDEN},
-    RoleChangeErrorCode: {"message": "角色修改失败", "http_code": status.HTTP_403_FORBIDDEN},
-    RoleDelErrorCode: {"message": "角色删除失败", "http_code": status.HTTP_403_FORBIDDEN},
-    RoleExistsErrorCode: {"message": "角色存在相关用户", "http_code": status.HTTP_403_FORBIDDEN},
+    UserErrorCode: HttpErrorCode(message="用户错误", http_code=status.HTTP_400_BAD_REQUEST),
+    ExpireTokenCode: HttpErrorCode(message="令牌过期或权限变动，请重新登录", http_code=status.HTTP_401_UNAUTHORIZED),
+    TokenNotExistsCode: HttpErrorCode(message="token不存在或已失效", http_code=status.HTTP_401_UNAUTHORIZED),
+    PermissionDenyCode: HttpErrorCode(message="用户权限不足", http_code=status.HTTP_403_FORBIDDEN),
+    UserNotExistsCode: HttpErrorCode(message="用户不存在或已注销，请联系管理员", http_code=status.HTTP_403_FORBIDDEN),
+    PasswordErrorCode: HttpErrorCode(message="密码错误", http_code=status.HTTP_403_FORBIDDEN),
+    UserExistsErrorCode: HttpErrorCode(message="用户已存在", http_code=status.HTTP_403_FORBIDDEN),
+    UserNameNotExistsCode: HttpErrorCode(message="用户不存在", http_code=status.HTTP_403_FORBIDDEN),
+    UserChangeErrorCode: HttpErrorCode(message="修改用户失败", http_code=status.HTTP_403_FORBIDDEN),
+    UserDelErrorCode: HttpErrorCode(message="删除用户失败", http_code=status.HTTP_403_FORBIDDEN),
+    SourcePasswordErrorCode: HttpErrorCode(message="原密码错误", http_code=status.HTTP_403_FORBIDDEN),
+    ChangePasswordErrorCode: HttpErrorCode(message="修改密码失败", http_code=status.HTTP_403_FORBIDDEN),
+    RoleNotExistsCode: HttpErrorCode(message="角色不存在", http_code=status.HTTP_403_FORBIDDEN),
+    RoleNameExistsCode: HttpErrorCode(message="角色名已存在", http_code=status.HTTP_403_FORBIDDEN),
+    RoleChangeErrorCode: HttpErrorCode(message="角色修改失败", http_code=status.HTTP_403_FORBIDDEN),
+    RoleDelErrorCode: HttpErrorCode(message="角色删除失败", http_code=status.HTTP_403_FORBIDDEN),
+    RoleExistsErrorCode: HttpErrorCode(message="角色存在相关用户", http_code=status.HTTP_403_FORBIDDEN),
+    AuthDenyCode: HttpErrorCode(message="用户未登录", http_code=status.HTTP_401_UNAUTHORIZED),
 }

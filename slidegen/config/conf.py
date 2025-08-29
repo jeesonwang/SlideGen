@@ -1,3 +1,4 @@
+import secrets
 from datetime import tzinfo
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -12,7 +13,6 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# 将 BASE_DIR 加入python搜索路径, 使用.env文件中的PYTHONPATH替代了，注释掉备用
 BASE_DIR = Path(__file__).parent.parent
 # sys.path.insert(0, BASE_DIR)
 
@@ -43,12 +43,18 @@ class Settings(BaseSettings):
         # 忽略未定义的配置
         extra="ignore",
     )
+
+    # [CORS]
     BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
 
     # [BASE]
+    API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "SlideGen"
     COMPONENTS_BASE_PATH: Path = BASE_DIR.parent / "components"
     COMPONENTS_PATH: Path = COMPONENTS_BASE_PATH / "shapes" / "shapes.json"
+
+    SECRET_KEY: str = secrets.token_urlsafe(32)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     # 设置 dockerfile 中的环境变量
     UIDGID: str = "1101:1100"
     DEBUG: bool = False
@@ -58,6 +64,7 @@ class Settings(BaseSettings):
     SYNC_THREAD_COUNT: int = 10
     SHOW_DOCS: bool = False
     DB_TYPE: Literal["MYSQL"] = "MYSQL"
+    DB_ECHO: bool = False
 
     # [REDIS]
     REDIS_HOST: str
