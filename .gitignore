@@ -111,3 +111,6 @@ driver
 .pytest_cache/
 # ruff
 .ruff_cache/
+
+# data
+test/data
