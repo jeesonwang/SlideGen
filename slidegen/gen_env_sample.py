@@ -4,7 +4,7 @@ from typing import Any
 from pydantic_settings import BaseSettings
 from rich import print
 
-from slidegen.config.conf import BASE_DIR, Settings
+from slidegen.core.conf import BASE_DIR, Settings
 
 
 def generate_env_sample(

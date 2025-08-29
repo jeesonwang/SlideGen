@@ -52,13 +52,10 @@
       "source.fixAll.ruff": "explicit", // 保存时自动修复可修复的 lint 错误
       "source.organizeImports.ruff": "explicit" // 保存时自动排序 import 语句
     }
-},
-"python.testing.pytestArgs": [
-    "test"
-],
-"python.testing.unittestEnabled": false,
-"python.testing.pytestEnabled": true,
-"[json]": {
+  },
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-}
+  }
 }

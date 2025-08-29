@@ -2,7 +2,7 @@ import datetime
 
 import dateutil.parser
 
-from slidegen.config.conf import settings
+from slidegen.core import settings
 
 
 def now_datetime() -> datetime.datetime:
