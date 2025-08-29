@@ -17,7 +17,7 @@ class Element:
     next_sibling: _AtMostOneNode
     previous_sibling: _AtMostOneNode
 
-    contents: list[type["Element"]]
+    contents: list["Element"]
     _decomposed: bool = False
 
     element_text: str
@@ -88,7 +88,7 @@ class Element:
         """
         return self.__deepcopy__({})
 
-    default: Iterable[type["Element"]] = tuple()
+    default: Iterable[type["Element"]] = ()
 
     def _all_strings(self, strip: bool = False, types: Iterable[type["Element"]] = default) -> Iterator[str]:
         """
@@ -107,8 +107,7 @@ class Element:
         """Yield all interesting strings in this Element, stripping them
         first.
         """
-        for string in self._all_strings(True):
-            yield string
+        yield from self._all_strings(True)
 
     def get_text(
         self,
@@ -250,7 +249,7 @@ class Element:
 
         :return The newly inserted Elements.
         """
-        inserted: list[type[Element]] = []
+        inserted: list[Element] = []
         for new_child in new_children:
             inserted.extend(self._insert(position, new_child))
             position += 1
@@ -435,8 +434,7 @@ class Element:
         yielded by the other generator.
         """
         yield self
-        for i in other_generator:
-            yield i
+        yield from other_generator
 
     @property
     def decomposed(self) -> bool:
