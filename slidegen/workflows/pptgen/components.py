@@ -8,7 +8,6 @@ from loguru import logger
 from lxml import etree
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.shapes.autoshape import Shape
-from pptx.shapes.picture import Picture
 from pptx.slide import Slide
 
 from slidegen.config import settings
@@ -47,6 +46,7 @@ class ContentType(Enum):
     PICTURE = "picture"
     NUMBER = "number"
     TITLE = "title"
+    ICON = "icon"
     NONE = None
 
     def __eq__(self, other: str | object) -> bool:
@@ -92,7 +92,6 @@ class CShape:
     xml: str | None
     zorder: int
     content_type: str | None
-    path: str | None
     location: list[Location]
 
     @classmethod
@@ -108,7 +107,6 @@ class CShape:
             xml=data.get("xml"),
             zorder=data.get("zorder", 0),
             content_type=data.get("content_type"),
-            path=data.get("path"),
             location=location_list,
         )
 
@@ -121,7 +119,6 @@ class CShape:
             "xml": self.xml,
             "zorder": self.zorder,
             "content_type": self.content_type,
-            "path": self.path,
             "location": location_list,
         }
 
@@ -357,14 +354,14 @@ class ComponentsManager:
                 continue
             location = Location(x=shape.left, y=shape.top, width=shape.width, height=shape.height)
             if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-                path = f"components/picture/{shape.name}.png"
-                with open(path, "wb") as f:
-                    f.write(cast(Picture, shape).image.blob)
+                if self.is_icon(location):
+                    content_type = "icon"
+                else:
+                    content_type = "picture"
                 shape_data = {
                     "xml": None,
                     "zorder": i,
-                    "content_type": "picture",
-                    "path": path,
+                    "content_type": content_type,
                     "location": [
                         {"x": location.x, "y": location.y, "width": location.width, "height": location.height}
                     ],
@@ -385,7 +382,6 @@ class ComponentsManager:
                     "xml": xml_str,
                     "zorder": i,
                     "content_type": content_type,
-                    "path": None,
                     "location": [
                         {"x": location.x, "y": location.y, "width": location.width, "height": location.height}
                     ],
@@ -401,7 +397,6 @@ class ComponentsManager:
                         "xml": xml_str,
                         "zorder": i,
                         "content_type": None,
-                        "path": None,
                         "location": [
                             {"x": location.x, "y": location.y, "width": location.width, "height": location.height}
                         ],
@@ -443,6 +438,11 @@ class ComponentsManager:
 
         layout.add_style(new_style)
         logger.info(f"Added style '{style_name}' to layout type '{layout_type}' with {len(new_style.shapes)} shapes")
+
+    @staticmethod
+    def is_icon(shape_location: Location) -> bool:
+        """Distinguishing Icons and Images by Area"""
+        return shape_location.width * shape_location.height < 3900000 * 3900000
 
     @property
     def layout_types_names(self) -> list[str]:
