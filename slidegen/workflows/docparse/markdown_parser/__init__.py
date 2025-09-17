@@ -271,7 +271,7 @@ class MarkdownParser:
         if not line.strip():
             return False
         paragraph = Paragraph(line)
-        # 使用基类append方法
+        # use append method
         self.previous_heading.append(paragraph)
         return True
 

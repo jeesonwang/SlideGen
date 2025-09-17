@@ -54,7 +54,7 @@ async def reset_password(session: SessionDep, body: NewPassword) -> Message:
     elif not user.is_active:
         raise UserLockError("Inactive user")
     hashed_password = get_password_hash(password=body.new_password)
-    user.hashed_password = hashed_password  # type: ignore
+    user.hashed_password = hashed_password
     session.add(user)
     await session.commit()
     return Message(message="Password updated successfully")
