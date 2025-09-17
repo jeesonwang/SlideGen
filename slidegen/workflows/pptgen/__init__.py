@@ -1,3 +1,3 @@
-from .pptgen import PPTGen
+from .pptgen import SlideGenerator
 
-__all__ = ["PPTGen"]
+__all__ = ["SlideGenerator"]

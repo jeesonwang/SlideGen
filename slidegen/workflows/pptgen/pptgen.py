@@ -2,8 +2,7 @@ from pptx.presentation import Presentation
 
 from slidegen.exception import MarkdownDocumentError
 from slidegen.workflows.docparse.markdown_parser import Heading, MarkdownDocument
-
-from .pptpages import (
+from slidegen.workflows.pptgen.pptpages import (
     CatalogPage,
     ChapterContentPage,
     ChapterHomePage,
@@ -12,7 +11,7 @@ from .pptpages import (
 )
 
 
-class PPTGen:
+class SlideGenerator:
     """
     Generate a PPT presentation from a markdown document
 
@@ -24,7 +23,7 @@ class PPTGen:
         self.slide_index = 0
         self.chapter_index = 1
 
-    def generate(
+    async def generate(
         self,
         template_prs: Presentation,
         markdown_document: MarkdownDocument,
@@ -41,7 +40,7 @@ class PPTGen:
         main_heading = markdown_document.main
         if main_heading is None:
             raise MarkdownDocumentError("Markdown document must have a main heading")
-        CoverPage.generate_slide(template_prs, main_heading, cover_page_index=cover_page_index)
+        await CoverPage.generate_slide(template_prs, main_heading, cover_page_index=cover_page_index)
 
         # obtain all level 2 headings as chapters
         chapters = []
@@ -52,7 +51,9 @@ class PPTGen:
         if not chapters:
             raise MarkdownDocumentError("Markdown document must have at least one level 2 heading")
 
-        catalog_last_index = CatalogPage.generate_slide(template_prs, chapters, catalog_page_index=catalog_page_index)
+        catalog_last_index = await CatalogPage.generate_slide(
+            template_prs, chapters, catalog_page_index=catalog_page_index
+        )
 
         chapter_home_page_index = catalog_last_index + 1
         chapter_content_page_index = chapter_home_page_index + 1
@@ -60,7 +61,7 @@ class PPTGen:
         current_slide_index = end_page_index + 1
 
         for chapter_index, chapter in enumerate(chapters):
-            ChapterHomePage.generate_slide(
+            await ChapterHomePage.generate_slide(
                 template_prs,
                 chapter,
                 chapter_home_page_index=chapter_home_page_index,
@@ -69,7 +70,7 @@ class PPTGen:
             )
             current_slide_index += 1
 
-            ChapterContentPage.generate_slide(
+            await ChapterContentPage.generate_slide(
                 template_prs,
                 chapter,
                 chapter_page_index=chapter_content_page_index,
@@ -77,7 +78,7 @@ class PPTGen:
             )
             current_slide_index += 1
 
-        EndPage.generate_slide(template_prs, end_page_index=end_page_index, slide_index=current_slide_index)
+        await EndPage.generate_slide(template_prs, end_page_index=end_page_index, slide_index=current_slide_index)
 
         self._cleanup_template_slides(
             template_prs, [chapter_home_page_index, chapter_content_page_index, end_page_index]

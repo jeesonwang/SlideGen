@@ -3,6 +3,7 @@ import io
 import os
 import random
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from loguru import logger
@@ -15,13 +16,16 @@ from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 
 from slidegen.exception import PPTGenError, PPTTemplateError
+from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.workflows.docparse.markdown_parser import Heading
 from slidegen.workflows.pptgen.components import ChapterLayout, ContentType, components_manager
-from slidegen.workflows.pptgen.utils import (
+from slidegen.workflows.pptgen.icon_searcher import IconSearcher, icon_searcher
+from slidegen.workflows.pptgen.image_generator import ImageGenerator
+from slidegen.workflows.utils.get_env import get_temp_directory_env
+from slidegen.workflows.utils.slide_utils import (
     add_para_by_xml,
     add_shape_by_xml,
     convert_paragraph_xml,
-    is_image_path,
     runs_merge,
 )
 
@@ -129,12 +133,16 @@ class Page:
 
         return copied_slide
 
+    @staticmethod
+    async def generate_slide(*args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError("Page.generate_slide is abstract; override in subclasses")
+
 
 class CoverPage(Page):
     """Presentation cover page"""
 
     @staticmethod
-    def generate_slide(prs: Presentation, content: Heading, *, cover_page_index: int = 0) -> None:
+    async def generate_slide(prs: Presentation, content: Heading, *, cover_page_index: int = 0) -> None:
         """
         Generate the cover page
 
@@ -344,7 +352,7 @@ class CatalogPage(Page):
         return catalog_list
 
     @staticmethod
-    def generate_slide(
+    async def generate_slide(
         prs: Presentation,
         content: list[Heading],
         *,
@@ -404,7 +412,7 @@ class CatalogPage(Page):
             catalog_page_index += 1
             CatalogPage.move_slide(prs, new_catalog_slide, catalog_page_index)
             # Recursively generate the new catalog page
-            CatalogPage.generate_slide(
+            await Page.generate_slide(
                 prs,
                 content[len(catalog_items) :],
                 catalog_page_index=catalog_page_index,
@@ -420,7 +428,7 @@ class ChapterHomePage(Page):
     selected_style: int | None = None
 
     @staticmethod
-    def generate_slide(
+    async def generate_slide(
         prs: Presentation,
         content: Heading,
         *,
@@ -508,38 +516,10 @@ class ChapterContentPage(Page):
     Divide the chapter content slides into one-point, two-point, three-point, and four-point slides.
     """
 
-    # add static variable to track used pictures
-    used_pictures: dict[str, set[str]] = {"opaque": set(), "transparent": set()}
-
-    @staticmethod
-    def _get_picture(picture_path: str) -> str:
-        """
-        Get a random picture path
-
-        Args:
-            picture_type: picture type, 'opaque' or 'transparent'
-
-        Returns:
-            str: the random chosen picture path
-        """
-        # TODO: retrieve the picture from the database
-        if picture_path.endswith("opaque"):
-            picture_type = "opaque"
-        elif picture_path.endswith("transparent"):
-            picture_type = "transparent"
-        else:
-            raise PPTGenError(f"{ChapterContentPage.__name__}: Invalid picture path: {picture_path}")
-        picture_dir = picture_path
-        available_pictures = [
-            p for p in os.listdir(picture_dir) if p not in ChapterContentPage.used_pictures[picture_type]
-        ]
-        if not available_pictures:
-            ChapterContentPage.used_pictures[picture_type] = set()
-            available_pictures = os.listdir(picture_dir)
-
-        chosen_picture = random.choice(available_pictures)
-        ChapterContentPage.used_pictures[picture_type].add(chosen_picture)
-        return os.path.join(picture_dir, chosen_picture)
+    image_generator: ImageGenerator = ImageGenerator(
+        get_temp_directory_env() or os.path.join(os.getcwd(), "generated_images")
+    )
+    icon_searcher: IconSearcher = icon_searcher
 
     @staticmethod
     def _get_slide_type(content: Heading) -> int:
@@ -558,7 +538,7 @@ class ChapterContentPage(Page):
                 paragraph.alignment = PP_ALIGN.JUSTIFY
 
     @staticmethod
-    def generate_slide(
+    async def generate_slide(
         prs: Presentation,
         content: Heading,
         *,
@@ -603,61 +583,99 @@ class ChapterContentPage(Page):
             # locs must be in order
             locs = shape.location
             for idx, loc in enumerate(locs):
-                if shape.content_type == ContentType.CONTENT:
-                    if len(section_texts) != len(locs):
-                        raise PPTGenError(
-                            f"{ChapterContentPage.__name__}: \
-                                          Text content must be equal to the number of locations: {len(section_texts)} != {len(locs)}"
+                match shape.content_type:
+                    case ContentType.CONTENT:
+                        if len(section_texts) != len(locs):
+                            raise PPTGenError(
+                                f"{ChapterContentPage.__name__}: \
+                                            Text content must be equal to the number of locations: {len(section_texts)} != {len(locs)}"
+                            )
+                        added_shape = add_shape_by_xml(
+                            slide=new_slide,
+                            shape_xml=shape.xml,
+                            shape_id=index,
+                            shape_name=shape_name,
+                            text_content=section_texts[idx],
+                            location=loc,
                         )
-                    added_shape = add_shape_by_xml(
-                        slide=new_slide,
-                        shape_xml=shape.xml,  # type: ignore
-                        shape_id=index,
-                        shape_name=shape_name,
-                        text_content=section_texts[idx],
-                        location=loc,
-                    )
-                    ChapterContentPage._shape_alignment(added_shape)
-                elif shape.content_type == ContentType.TITLE:
-                    if len(titles) != len(locs):
-                        raise PPTGenError(
-                            f"{ChapterContentPage.__name__}: \
-                                          Title must be equal to the number of locations: {len(titles)} != {len(locs)}"
+                        ChapterContentPage._shape_alignment(added_shape)
+                    case ContentType.TITLE:
+                        if len(titles) != len(locs):
+                            raise PPTGenError(
+                                f"{ChapterContentPage.__name__}: \
+                                            Title must be equal to the number of locations: {len(titles)} != {len(locs)}"
+                            )
+                        added_shape = add_shape_by_xml(
+                            slide=new_slide,
+                            shape_xml=shape.xml,
+                            shape_id=index,
+                            shape_name=shape_name,
+                            text_content=titles[idx],
+                            location=loc,
                         )
-                    added_shape = add_shape_by_xml(
-                        slide=new_slide,
-                        shape_xml=shape.xml,  # type: ignore
-                        shape_id=index,
-                        shape_name=shape_name,
-                        text_content=titles[idx],
-                        location=loc,
-                    )
-                    ChapterContentPage._shape_alignment(added_shape)
-                elif shape.content_type == ContentType.PICTURE:
-                    if shape.path is None:
-                        raise PPTGenError(f"{ChapterContentPage.__name__}: Picture path is None: {shape.path}")
-                    if is_image_path(shape.path):
-                        image_path = shape.path
-                    else:
-                        image_path = ChapterContentPage._get_picture(shape.path)
-                    added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
-                elif shape.content_type == ContentType.NUMBER:
-                    added_shape = add_shape_by_xml(
-                        slide=new_slide,
-                        shape_xml=shape.xml,  # type: ignore
-                        shape_id=index,
-                        shape_name=shape_name,
-                        text_content=str(idx + 1).zfill(2),
-                        location=loc,
-                    )
-                else:
-                    added_shape = add_shape_by_xml(
-                        slide=new_slide,
-                        shape_xml=shape.xml,  # type: ignore
-                        shape_id=index,
-                        shape_name=shape_name,
-                        location=loc,
-                    )
+                        ChapterContentPage._shape_alignment(added_shape)
+                    case ContentType.PICTURE:
+                        image_path = None
+                        try:
+                            prompt_text = titles[idx] if idx < len(titles) else content.element_text
+                            prompt = ImagePrompt(prompt=prompt_text, theme_prompt=None)
+
+                            image_result = await ChapterContentPage.image_generator.generate_image(prompt)
+                            if image_result.path and os.path.exists(image_result.path):
+                                image_path = image_result.path
+                        except Exception:
+                            logger.exception(f"{ChapterContentPage.__name__}: Image generation failed")
+
+                        added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
+                    case ContentType.NUMBER:
+                        added_shape = add_shape_by_xml(
+                            slide=new_slide,
+                            shape_xml=shape.xml,
+                            shape_id=index,
+                            shape_name=shape_name,
+                            text_content=str(idx + 1).zfill(2),
+                            location=loc,
+                        )
+                    case ContentType.ICON:
+                        icon_path = None
+                        try:
+                            query = None
+                            if idx < len(titles) and titles[idx]:
+                                query = titles[idx]
+                            elif idx < len(section_texts) and section_texts[idx]:
+                                query = section_texts[idx]
+                            else:
+                                query = content.element_text
+
+                            results = await ChapterContentPage.icon_searcher.search_icons(query, k=1)
+                            if results:
+                                rel_path = results[0]
+                                abs_path = os.path.join(Path(__file__).resolve().parents[3], rel_path)
+                                icon_path = abs_path if os.path.exists(abs_path) else rel_path
+                        except Exception:
+                            logger.exception(f"{ChapterContentPage.__name__}: Icon search failed")
+
+                        if not icon_path:
+                            placeholder_rel = os.path.join("components", "icons", "placeholder.png")
+                            placeholder_abs = os.path.join(Path(__file__).resolve().parents[3], placeholder_rel)
+                            if os.path.exists(placeholder_abs):
+                                icon_path = placeholder_abs
+                            elif os.path.exists(placeholder_rel):
+                                icon_path = placeholder_rel
+                            else:
+                                raise PPTGenError(
+                                    f"{ChapterContentPage.__name__}: Unable to resolve icon path for shape '{shape_name}'"
+                                )
+
+                        added_shape = new_slide.shapes.add_picture(icon_path, loc.x, loc.y, loc.width, loc.height)
+                    case _:
+                        added_shape = add_shape_by_xml(
+                            slide=new_slide,
+                            shape_xml=shape.xml,  # type: ignore
+                            shape_id=index,
+                            shape_name=shape_name,
+                            location=loc,
+                        )
             index += 1
         ChapterContentPage.move_slide(prs, new_slide, slide_index)
 
@@ -666,7 +684,7 @@ class EndPage(Page):
     """End page"""
 
     @staticmethod
-    def generate_slide(
+    async def generate_slide(
         prs: Presentation,
         content: Heading | None = None,
         *,
