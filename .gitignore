@@ -114,3 +114,7 @@ driver
 
 # data
 test/data
+
+# images
+generated_images/
+*.png
