@@ -18,9 +18,9 @@ from pptx.slide import Slide
 from slidegen.exception import PPTGenError, PPTTemplateError
 from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.workflows.docparse.markdown_parser import Heading
-from slidegen.workflows.pptgen.components import ChapterLayout, ContentType, components_manager
-from slidegen.workflows.pptgen.icon_searcher import IconSearcher, icon_searcher
-from slidegen.workflows.pptgen.image_generator import ImageGenerator
+from slidegen.workflows.presentation.components import ChapterLayout, ContentType, components_manager
+from slidegen.workflows.presentation.icon_searcher import IconSearcher, icon_searcher
+from slidegen.workflows.presentation.image_generator import ImageGenerator
 from slidegen.workflows.utils.get_env import get_temp_directory_env
 from slidegen.workflows.utils.slide_utils import (
     add_para_by_xml,

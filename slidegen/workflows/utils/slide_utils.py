@@ -15,7 +15,7 @@ from pptx.text.text import _Paragraph, _Run
 from pptx.util import Length
 
 from slidegen.exception import PPTGenError
-from slidegen.workflows.pptgen.components import Location
+from slidegen.workflows.presentation.components import Location
 
 FONT_SIZE_CASE = {
     PP_PLACEHOLDER.TITLE: 54,

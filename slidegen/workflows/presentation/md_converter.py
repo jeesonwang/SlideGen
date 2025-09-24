@@ -2,7 +2,7 @@ from pptx.presentation import Presentation
 
 from slidegen.exception import MarkdownDocumentError
 from slidegen.workflows.docparse.markdown_parser import Heading, MarkdownDocument
-from slidegen.workflows.pptgen.pptpages import (
+from slidegen.workflows.presentation.pages import (
     CatalogPage,
     ChapterContentPage,
     ChapterHomePage,
@@ -11,7 +11,7 @@ from slidegen.workflows.pptgen.pptpages import (
 )
 
 
-class SlideGenerator:
+class MarkdownToPresentation:
     """
     Generate a PPT presentation from a markdown document
 
