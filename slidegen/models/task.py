@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from celery import states  # type: ignore
+from celery import states
 from sqlalchemy import DateTime, Integer, LargeBinary, PickleType, Sequence, Text
 from sqlmodel import Column, Field
 

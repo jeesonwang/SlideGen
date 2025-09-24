@@ -36,12 +36,6 @@ class UpdatePassword(SQLModel):
     new_password: str = Field(min_length=8, max_length=40)
 
 
-# Database model, database table inferred from class name (deprecated, use UserModel instead)
-# class User(UserBase, table=True):
-#     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-#     hashed_password: str
-
-
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: uuid.UUID
