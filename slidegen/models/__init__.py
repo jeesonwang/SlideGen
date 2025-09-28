@@ -1,5 +1,6 @@
+from .base import Base
+from .llm_config import LLMConfigModel, LLMProvider
 from .task import CeleryTask, CeleryTaskSet
 from .user import UserModel
-from .base import Base
 
-__all__ = ["DocStatus", "CeleryTask", "CeleryTaskSet", "UserModel", "Base"]
+__all__ = ["CeleryTask", "CeleryTaskSet", "UserModel", "Base", "LLMConfigModel", "LLMProvider"]
