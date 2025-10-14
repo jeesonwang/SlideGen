@@ -13,9 +13,9 @@ class IconSearcher:
         self.collection_name = "icons"
         self.client = chromadb.PersistentClient(path="chroma", settings=Settings(anonymized_telemetry=False))
         logger.info("Initializing icons collection...")
+        self.default_icons_path = Path("components/icons.json")
         self._initialize_icons_collection()
         logger.info("Icons collection initialized.")
-        self.default_icons_path = Path("components/icons.json")
 
     def _initialize_icons_collection(self) -> None:
         self.embedding_function = ONNXMiniLM_L6_V2()
