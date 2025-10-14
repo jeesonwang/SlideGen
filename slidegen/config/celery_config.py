@@ -2,7 +2,7 @@ from typing import Any
 
 from kombu import Queue
 
-from slidegen.config import settings
+from .conf import settings
 
 # Queue
 backend_doc_process_queue = "doc_process"

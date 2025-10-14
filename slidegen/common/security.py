@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt
-from passlib.context import CryptContext  # type: ignore
+from passlib.context import CryptContext
 
 from slidegen.config import settings
 
