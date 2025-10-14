@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import or_, select
 
-from app.common.security import get_password_hash, verify_password
-from app.models.user import UserCreate, UserModel, UserUpdate
+from slidegen.common.security import get_password_hash, verify_password
+from slidegen.models.user import UserCreate, UserModel, UserUpdate
 
 
 class UserCenter:

@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "SlideGen"
     COMPONENTS_BASE_PATH: Path = BASE_DIR.parent / "components"
     COMPONENTS_PATH: Path = COMPONENTS_BASE_PATH / "shapes" / "shapes.json"
+    LOG_DIR: str = (BASE_DIR / "logs").as_posix()
 
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8

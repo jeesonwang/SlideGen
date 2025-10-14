@@ -6,7 +6,7 @@ import sys
 
 from loguru import logger
 
-from app.config import settings
+from slidegen.config import settings
 
 
 class InterceptHandler(logging.Handler):
@@ -28,11 +28,11 @@ class InterceptHandler(logging.Handler):
 
 def clear_timeout_logs(log_dir: str, keep_day: int = 15) -> None:
     """
-    删除最大超过keep_day的日志
-    由于loguru本身不具备在删除既往日志的功能(只支持同一进程的日志旋转),添加本方法进行处理
-    强依赖数据文件格式包含 yyyy-mm-dd格式
-    :param log_dir: 日志路径
-    :param keep_day: 最多保留日
+    delete the logs that are older than keep_day days
+    Since loguru itself does not have the function of deleting past logs (only supports log rotation for the same process), add this method to handle it
+    Strongly dependent on the data file format containing yyyy-mm-dd format
+    :param log_dir: log path
+    :param keep_day: maximum number of days to keep
     :return:
     """
     pattern = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -46,9 +46,9 @@ def clear_timeout_logs(log_dir: str, keep_day: int = 15) -> None:
                 try:
                     os.remove(filepath)
                 except Exception as err:
-                    logging.info(f"删除超时日志失败: {filepath}: {err}")
+                    logging.info(f"Failed to delete timeout logs: {filepath}: {err}")
                 else:
-                    logging.info(f"删除超时日志成功: {filepath}")
+                    logging.info(f"Successfully deleted timeout logs: {filepath}")
 
 
 def init() -> None:
@@ -76,7 +76,7 @@ for name in [
 
 logger.configure(handlers=[{"sink": sys.stderr, "level": LOG_LEVEL}])
 
-# [定义日志路径]
+# [Define log path]
 os.makedirs(settings.LOG_DIR, exist_ok=True)
 
 logger.add(
