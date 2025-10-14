@@ -1,6 +1,6 @@
 from enum import Enum
 
-from utils.get_env import (
+from .get_env import (
     get_google_api_key_env,
     get_image_provider_env,
     get_openai_api_key_env,
@@ -44,7 +44,7 @@ def get_selected_image_provider() -> ImageProvider | None:
     return None
 
 
-def get_image_provider_api_key() -> str:
+def get_image_provider_api_key() -> str | None:
     selected_image_provider = get_selected_image_provider()
     if selected_image_provider == ImageProvider.PEXELS:
         return get_pexels_api_key_env()
