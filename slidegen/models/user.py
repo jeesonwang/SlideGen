@@ -3,14 +3,12 @@ import uuid
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
 
-from slidegen.models.base import Base
-
 
 # Shared properties
 class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True, max_length=255)
-    is_active: bool = True
-    is_superuser: bool = False
+    is_active: bool = Field(default=True)
+    is_superuser: bool = Field(default=False)
     username: str | None = Field(default=None, max_length=255)
 
 
@@ -68,13 +66,10 @@ class NewPassword(SQLModel):
 
 
 # Database model
-class UserModel(Base, table=True):
+class UserModel(UserBase, table=True):
     __tablename__ = "users"
     __comment__ = "user table"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, description="user id")
-    email: str = Field(max_length=255, unique=True, index=True, description="email")
-    username: str | None = Field(default=None, max_length=255, description="username")
-    hashed_password: str = Field(max_length=255, description="hashed password")
-    is_active: bool = Field(default=True, description="is active")
-    is_superuser: bool = Field(default=False, description="is superuser")
+    email: EmailStr = Field(unique=True, index=True, max_length=255, nullable=False, description="user email")
+    hashed_password: str = Field(max_length=255, nullable=False, description="hashed password")
