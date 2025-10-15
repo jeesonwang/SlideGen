@@ -44,7 +44,7 @@ class MarkdownDocument(Element):
         return self.main.text if self.main is not None else ""
 
     def __str__(self) -> str:
-        return "<MarkdownDocument title={self.title}>"
+        return f"<MarkdownDocument title={self.title}>"
 
     def __repr__(self) -> str:
         return self.__str__()
