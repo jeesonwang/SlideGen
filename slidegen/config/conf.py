@@ -8,6 +8,7 @@ from pydantic import (
     AnyUrl,
     BeforeValidator,
     MySQLDsn,
+    PostgresDsn,
     RedisDsn,
     computed_field,
 )
@@ -64,7 +65,7 @@ class Settings(BaseSettings):
     LOGGING_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     SYNC_THREAD_COUNT: int = 10
     SHOW_DOCS: bool = False
-    DB_TYPE: Literal["MYSQL"] = "MYSQL"
+    DB_TYPE: Literal["MYSQL", "POSTGRES"] = "POSTGRES"
     DB_ECHO: bool = False
 
     # [REDIS]
@@ -104,6 +105,14 @@ class Settings(BaseSettings):
     MYSQL_DB: str
     MYSQL_CHARSET: str
 
+    # [POSTGRES]
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
+    POSTGRES_CHARSET: str
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> MySQLDsn:
@@ -119,16 +128,29 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def SQLALCHEMY_ASYNC_DATABASE_URI(self) -> MySQLDsn:
-        return MySQLDsn.build(
-            scheme="mysql+aiomysql",
-            username=self.MYSQL_USER,
-            password=self.MYSQL_PASSWORD,
-            host=self.MYSQL_HOST,
-            port=self.MYSQL_PORT,
-            path=self.MYSQL_DB,
-            query=f"charset={self.MYSQL_CHARSET}",
-        )
+    def SQLALCHEMY_ASYNC_DATABASE_URI(self) -> MySQLDsn | PostgresDsn:
+        if self.DB_TYPE == "MYSQL":
+            return MySQLDsn.build(
+                scheme="mysql+aiomysql",
+                username=self.MYSQL_USER,
+                password=self.MYSQL_PASSWORD,
+                host=self.MYSQL_HOST,
+                port=self.MYSQL_PORT,
+                path=self.MYSQL_DB,
+                query=f"charset={self.MYSQL_CHARSET}",
+            )
+        elif self.DB_TYPE == "POSTGRES":
+            return PostgresDsn.build(
+                scheme="postgresql+asyncpg",
+                username=self.POSTGRES_USER,
+                password=self.POSTGRES_PASSWORD,
+                host=self.POSTGRES_HOST,
+                port=self.POSTGRES_PORT,
+                path=self.POSTGRES_DB,
+                query=f"charset={self.POSTGRES_CHARSET}",
+            )
+        else:
+            raise ValueError(f"Invalid database type: {self.DB_TYPE}")
 
     # [CELERY]
     SCHEDULE_PERIOD: int = 60
