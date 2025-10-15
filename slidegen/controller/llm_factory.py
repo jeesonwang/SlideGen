@@ -28,6 +28,7 @@ class LLMFactory:
             base_url = config.base_url
             temperature = getattr(config, "temperature", 0.7)
             max_tokens = getattr(config, "max_tokens", None)
+            top_p = getattr(config, "top_p", None)
             extra_params = getattr(config, "extra_params", {}) or {}
 
             llm_params: dict[str, Any] = {
@@ -40,6 +41,9 @@ class LLMFactory:
 
             if max_tokens:
                 llm_params["max_tokens"] = max_tokens
+
+            if top_p:
+                llm_params["top_p"] = top_p
 
             llm_params.update(extra_params)
 
