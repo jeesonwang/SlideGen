@@ -115,16 +115,29 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def SQLALCHEMY_DATABASE_URI(self) -> MySQLDsn:
-        return MySQLDsn.build(
-            scheme="mysql+pymysql",
-            username=self.MYSQL_USER,
-            password=self.MYSQL_PASSWORD,
-            host=self.MYSQL_HOST,
-            port=self.MYSQL_PORT,
-            path=self.MYSQL_DB,
-            query=f"charset={self.MYSQL_CHARSET}",
-        )
+    def SQLALCHEMY_DATABASE_URI(self) -> MySQLDsn | PostgresDsn:
+        if self.DB_TYPE == "MYSQL":
+            return MySQLDsn.build(
+                scheme="mysql+pymysql",
+                username=self.MYSQL_USER,
+                password=self.MYSQL_PASSWORD,
+                host=self.MYSQL_HOST,
+                port=self.MYSQL_PORT,
+                path=self.MYSQL_DB,
+                query=f"charset={self.MYSQL_CHARSET}",
+            )
+        elif self.DB_TYPE == "POSTGRES":
+            return PostgresDsn.build(
+                scheme="postgresql+psycopg",
+                username=self.POSTGRES_USER,
+                password=self.POSTGRES_PASSWORD,
+                host=self.POSTGRES_HOST,
+                port=self.POSTGRES_PORT,
+                path=self.POSTGRES_DB,
+                query=f"charset={self.POSTGRES_CHARSET}",
+            )
+        else:
+            raise ValueError(f"Invalid database type: {self.DB_TYPE}")
 
     @computed_field  # type: ignore[prop-decorator]
     @property
