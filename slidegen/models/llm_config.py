@@ -22,17 +22,17 @@ class LLMProvider(str, Enum):
 
 # Shared properties
 class LLMConfigBase(SQLModel):
-    name: str = Field(max_length=255, description="Configuration name")
+    name: str = Field(default="", max_length=255, description="Configuration name")
     provider: LLMProvider = Field(description="LLM provider")
-    model_id: str = Field(max_length=255, description="Model ID")
+    model_id: str = Field(..., max_length=255, description="Model ID")
     api_key: str | None = Field(default=None, max_length=500, description="API key")
     base_url: str | None = Field(default=None, max_length=500, description="API base URL")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="Temperature parameter")
-    max_tokens: int | None = Field(default=None, ge=1, description="Max tokens")
-    is_active: bool = Field(default=True, description="Whether to enable")
-    is_default: bool = Field(default=False, description="Whether to be the default configuration")
+    max_tokens: int = Field(default=4096, ge=1, description="Max tokens")
     description: str | None = Field(default=None, max_length=1000, description="Configuration description")
     extra_params: dict[str, Any] | None = Field(default=None, description="Extra parameters")
+    is_active: bool = Field(default=True, description="Whether to enable")
+    is_default: bool = Field(default=False, description="Whether to be the default configuration")
 
 
 # Properties to receive via API on creation
@@ -41,6 +41,7 @@ class LLMConfigCreate(LLMConfigBase):
 
 
 # Properties to receive via API on update
+# All fields are optional for partial updates
 class LLMConfigUpdate(SQLModel):
     name: str | None = Field(default=None, max_length=255, description="Configuration name")
     provider: LLMProvider | None = Field(default=None, description="LLM provider")
@@ -76,22 +77,13 @@ class LLMConfigsPublic(SQLModel):
 
 
 # Database model
-class LLMConfigModel(Base, table=True):
+class LLMConfigModel(Base, LLMConfigBase, table=True):
     __tablename__ = "llm_configs"
     __comment__ = "LLM configuration table"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, description="Configuration ID")
     user_id: uuid.UUID = Field(foreign_key="users.id", index=True, description="User ID")
-    name: str = Field(max_length=255, description="Configuration name")
-    provider: LLMProvider = Field(description="LLM provider")
-    model_id: str = Field(max_length=255, description="Model ID")
-    api_key: str | None = Field(default=None, max_length=500, description="API key")
-    base_url: str | None = Field(default=None, max_length=500, description="API base URL")
-    temperature: float = Field(default=0.7, description="Temperature parameter")
-    max_tokens: int | None = Field(default=None, description="Max tokens")
-    is_active: bool = Field(default=True, description="Whether to enable")
-    is_default: bool = Field(default=False, description="Whether to be the default configuration")
-    description: str | None = Field(default=None, max_length=1000, description="Configuration description")
+    # Override extra_params to use JSON column for database
     extra_params: dict[str, Any] | None = Field(sa_column=Column(JSON), default=None, description="Extra parameters")
 
 
@@ -99,8 +91,8 @@ DEFAULT_MODEL_CONFIGS = {
     LLMProvider.OPENAI: [
         {"model_id": "gpt-4o", "name": "GPT-4o"},
         {"model_id": "gpt-4o-mini", "name": "GPT-4o Mini"},
-        {"model_id": "gpt-4-turbo", "name": "GPT-4 Turbo"},
-        {"model_id": "gpt-3.5-turbo", "name": "GPT-3.5 Turbo"},
+        {"model_id": "gpt-5", "name": "GPT-5"},
+        {"model_id": "gpt-5-mini", "name": "GPT-5 Mini"},
     ],
     LLMProvider.OPENROUTER: [
         {"model_id": "openai/gpt-4o", "name": "GPT-4o (OpenRouter)"},
