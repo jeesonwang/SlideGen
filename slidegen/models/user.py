@@ -3,6 +3,8 @@ import uuid
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
 
+from .base import Base
+
 
 # Shared properties
 class UserBase(SQLModel):
@@ -66,10 +68,13 @@ class NewPassword(SQLModel):
 
 
 # Database model
-class UserModel(UserBase, table=True):
+class UserModel(Base, table=True):
     __tablename__ = "users"
     __comment__ = "user table"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, description="user id")
-    email: EmailStr = Field(unique=True, index=True, max_length=255, nullable=False, description="user email")
-    hashed_password: str = Field(max_length=255, nullable=False, description="hashed password")
+    email: str = Field(max_length=255, unique=True, index=True, description="email")
+    username: str | None = Field(default=None, max_length=255, description="username")
+    hashed_password: str = Field(max_length=255, description="hashed password")
+    is_active: bool = Field(default=True, description="is active")
+    is_superuser: bool = Field(default=False, description="is superuser")
