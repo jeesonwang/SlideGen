@@ -40,8 +40,8 @@ class MarkdownDocument(Element):
                     yield child.element_text_source
 
     @property
-    def text(self) -> str:
-        return self.main.text if self.main is not None else ""
+    def title(self) -> str:
+        return self.main.element_text if self.main and self.main.element_text is not None else ""
 
     def __str__(self) -> str:
         return f"<MarkdownDocument>{self.text}</MarkdownDocument>"
