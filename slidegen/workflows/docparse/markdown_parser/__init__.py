@@ -40,14 +40,14 @@ class MarkdownDocument(Element):
                     yield child.element_text_source
 
     @property
-    def title(self) -> str:
+    def text(self) -> str:
         return self.main.text if self.main is not None else ""
 
     def __str__(self) -> str:
-        return f"<MarkdownDocument title={self.title}>"
+        return f"<MarkdownDocument>{self.text}</MarkdownDocument>"
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return self.text
 
 
 class MarkdownParser:
