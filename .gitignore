@@ -112,6 +112,9 @@ driver
 # ruff
 .ruff_cache/
 
+# chroma
+chroma/
+
 # data
 test/data
 
