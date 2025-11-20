@@ -11,7 +11,7 @@ from agno.models.openai import OpenAILike
 from agno.models.openrouter import OpenRouter
 from loguru import logger
 
-from slidegen.models.llm_config import LLMConfigModel, LLMProvider
+from slidegen.models.llm_config import LLMConfigBase, LLMProvider
 from slidegen.schemas.llm_config import LLMConfigTest, LLMConfigTestResult
 
 
@@ -19,7 +19,7 @@ class LLMFactory:
     """LLM factory class, support creating different provider LLM instances"""
 
     @staticmethod
-    def create_llm(config: LLMConfigModel | LLMConfigTest) -> Model:
+    def create_llm(config: LLMConfigBase | LLMConfigTest) -> Model:
         """Create LLM instance based on configuration"""
         try:
             provider = config.provider
@@ -122,7 +122,7 @@ class LLMFactory:
             return LLMConfigTestResult(success=False, error=error_msg, latency=latency)
 
     @staticmethod
-    def validate_config(config: LLMConfigModel | LLMConfigTest) -> tuple[bool, str | None]:
+    def validate_config(config: LLMConfigBase | LLMConfigTest) -> tuple[bool, str | None]:
         """Validate the basic parameters of the LLM configuration"""
         try:
             provider = config.provider
