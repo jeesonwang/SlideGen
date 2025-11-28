@@ -12,15 +12,18 @@ from sqlmodel import select
 from slidegen.controller.llm_factory import LLMFactory
 from slidegen.engine.database import AsyncSessionLocal
 from slidegen.models.llm_config import LLMConfigModel
-from slidegen.schemas.gen_request import GeneratePresentationRequest
+from slidegen.schemas.gen_request import GeneratePresentationRequest, LLMConfigRequest
 from slidegen.workflows.docparse.markdown_parser import MarkdownDocument
 
+# Maximum number of sections to generate
+MAX_ITERATIONS = 35
 
-async def get_llm_instance(request: GeneratePresentationRequest) -> Model:
+
+async def get_llm_instance(request: GeneratePresentationRequest | LLMConfigRequest) -> Model:
     """Get LLM instance based on request parameters"""
     try:
         # If user ID is specified, try to get user's LLM configuration
-        if request.user_id:
+        if isinstance(request, GeneratePresentationRequest):
             async with AsyncSessionLocal() as session:
                 # Use specified configuration ID first
                 if request.llm_config_id:
@@ -37,8 +40,12 @@ async def get_llm_instance(request: GeneratePresentationRequest) -> Model:
                 config = (await session.execute(statement)).scalars().first()
                 if config:
                     return LLMFactory.create_llm(config)
+                else:
+                    raise ValueError("No active LLM configuration found")
 
-        return OpenAIChat(id="gpt-4o-mini")
+        elif isinstance(request, LLMConfigRequest):
+            return LLMFactory.create_llm(request)
+
     except Exception as e:
         logger.warning(f"Failed to get LLM instance, using default configuration: {e!s}")
         return OpenAIChat(id="gpt-4o-mini")
@@ -60,7 +67,7 @@ class SlideGenWorkflow:
         tone_instructions = {
             "default": "Use a neutral, professional tone",
             "casual": "Use a friendly, conversational tone",
-            "professional": "Use a formal, business-like tone",
+            "professional": "Use a formal, professional tone",
             "funny": "Use a humorous, engaging tone",
             "educational": "Use a clear, educational tone suitable for learning",
             "sales_pitch": "Use a persuasive, sales-oriented tone",
@@ -98,6 +105,7 @@ class SlideGenWorkflow:
                 "Must follow:\n"
                 "- Top-level (#): Use the current section title and include it exactly once\n"
                 "- Second-level (##): Split this section into 1-4 clear subsections\n"
+                "- Third-level (###): For each subsection, provide 1-4 key points based on the content's depth and relevance\n"
                 "- Output Markdown only; do not add explanations, prefixes, or unrelated text\n"
                 "Example structure (illustrative; do not copy the content):\n"
                 "# PowerPoint Title\n"
@@ -107,6 +115,7 @@ class SlideGenWorkflow:
                 "## Subsection B\n"
                 "### Key point 1\n"
                 "### Key point 2\n"
+                "### Key point 3\n"
             ),
             model=llm,
         )
@@ -123,6 +132,27 @@ class SlideGenWorkflow:
                 f"Always respond in {request.language}",
                 *base_instructions,
             ],
+            expected_output=(
+                "You must strictly maintain the original outline structure provided in the input:\n"
+                "- Keep all heading levels (##, ###) exactly as given\n"
+                "- Do NOT change, add, or remove any headings\n"
+                "- Do NOT add numbered lists or bullet points under level-3 headings (###)\n"
+                "- Write content directly as paragraph text under each heading\n"
+                "- Output Markdown only; do not add explanations, prefixes, or unrelated text\n"
+                "\n"
+                "Example:\n"
+                "Input:\n"
+                "## Section A\n"
+                "### Key point 1\n"
+                "### Key point 2\n"
+                "\n"
+                "Output:\n"
+                "## Section A\n"
+                "### Key point 1\n"
+                "Write detailed paragraph content here without using numbered lists or bullet points.\n"
+                "### Key point 2\n"
+                "Write detailed paragraph content here without using numbered lists or bullet points.\n"
+            ),
             model=llm,
         )
 
@@ -134,25 +164,35 @@ class SlideGenWorkflow:
         """Generate the outline."""
         execution_input = cast(GeneratePresentationRequest, step_input.input)
         # TODO: Input file content
-        outline = self.outline_agent.run(execution_input.content)
-        return StepOutput(content=outline, success=True)
+        outline = await self.outline_agent.arun(execution_input.content)
+        return StepOutput(content=outline.content, success=True)
 
     async def section_processor(self, step_input: StepInput) -> StepOutput:
         """Process each section in the outline."""
 
-        outline = step_input.get_step_content("Outline generation")
-        execution_input = cast(GeneratePresentationRequest, step_input.input)
-
-        # Parse the outline, extract each section
-        doc = self.parse_outline(outline)
-        sections = [section.element_text for section in doc.children]
-
-        # If the number of sections does not match the expected number, adjust it
-        if len(sections) != execution_input.n_slides:
-            logger.warning(f"Expected {execution_input.n_slides} sections, got {len(sections)}")
-
         if step_input.additional_data is None:
             step_input.additional_data = {}
+
+        # Only parse outline and extract sections on the first iteration
+        if "sections" not in step_input.additional_data:
+            outline = step_input.get_step_content("Outline generation")
+            execution_input = cast(GeneratePresentationRequest, step_input.input)
+
+            # Parse the outline, extract each section
+            doc = self.parse_outline(outline)
+            if doc.main is None:
+                return StepOutput(content="No main section found", success=False)
+            sections = [section for section in doc.main.children]
+
+            # If the number of sections does not match the expected number, adjust it
+            if len(sections) != execution_input.n_slides:
+                logger.warning(f"Expected {execution_input.n_slides} sections, got {len(sections)}")
+
+            # Save sections to additional_data for reuse
+            step_input.additional_data["sections"] = sections
+        else:
+            # Reuse parsed sections from previous iterations
+            sections = step_input.additional_data["sections"]
 
         current_index = int(step_input.additional_data.get("current_section_index", 0))
 
@@ -176,20 +216,20 @@ class SlideGenWorkflow:
 
             # Build the complete prompt
             context = "\n".join(context_parts) if context_parts else ""
-            prompt = f"{context}\n\n{current_section}."
+            prompt = f"{context}\n\n{current_section.element_text_source}\n{current_section.text}."
 
-            response = self.content_agent.run(prompt)
+            response = await self.content_agent.arun(prompt)
 
             # save the current section info
             section_data = {
-                "title": current_section,
+                "title": current_section.element_text,
                 "content": response.content if hasattr(response, "content") else str(response),
                 "index": current_index,
             }
             step_input.additional_data["completed_sections"].append(section_data)
             step_input.additional_data["current_section_index"] = current_index + 1
 
-            logger.debug(f"Completed section {current_index + 1}/{len(sections)}: {current_section}")
+            logger.debug(f"Completed section {current_index + 1}/{len(sections)}: {current_section.element_text}")
 
             return StepOutput(content=response.content, success=True)
 
@@ -232,9 +272,50 @@ class SlideGenWorkflow:
         """Check if all sections are processed"""
         if not outputs:
             return False
-        last_content = outputs[-1].content
-        text = str(last_content) if last_content is not None else ""
-        return "All sections processed" in text
+        last_output = outputs[-1]
+        if last_output.success and last_output.stop:
+            return True
+        return False
+
+    async def merge_sections_processor(self, step_input: StepInput) -> StepOutput:
+        """Merge all completed sections into a complete Markdown document"""
+        try:
+            # Get outline content
+            outline_content = step_input.get_step_content("Outline generation")
+
+            if (
+                step_input.get_step_output("Loop writing sections") is None
+                or step_input.get_step_output("Loop writing sections").steps is None
+            ):
+                return StepOutput(content="No completed sections found", success=False)
+            completed_outputs: list[StepOutput] = step_input.get_step_output("Loop writing sections").steps
+
+            # Build the complete Markdown document
+            markdown_parts = []
+
+            # Parse outline to get the title (H1)
+            doc = self.parse_outline(outline_content)
+            if doc.main and doc.main.element_text:
+                markdown_parts.append(f"{doc.main.element_text_source}\n")
+
+            # Add each section's content
+            for step in completed_outputs:
+                if step.stop:
+                    break
+                # Add a blank line between sections for better readability
+                markdown_parts.append(str(step.content))
+                markdown_parts.append("\n")
+
+            # Join all parts into a complete Markdown document
+            complete_markdown = "\n".join(markdown_parts).strip()
+
+            logger.info(f"Successfully merged {len(completed_outputs)} sections into complete Markdown document")
+
+            return StepOutput(content=complete_markdown, success=True)
+
+        except Exception as e:
+            logger.exception(f"Failed to merge sections: {e!s}")
+            return StepOutput(content=f"Failed to merge sections: {e!s}", success=False)
 
     def create_writing_workflow(self) -> Workflow:
         """Create the writing workflow"""
@@ -247,8 +328,9 @@ class SlideGenWorkflow:
                     name="Loop writing sections",
                     steps=[Step(name="Section processing", executor=self.section_processor)],
                     end_condition=self.check_completion,
-                    max_iterations=10,
+                    max_iterations=MAX_ITERATIONS,
                 ),
+                Step(name="Merge sections", executor=self.merge_sections_processor),
             ],
         )
 
@@ -259,51 +341,16 @@ async def run_slidegen_workflow(request: GeneratePresentationRequest) -> dict[st
         workflow_instance = await SlideGenWorkflow.from_request(request)
         workflow = workflow_instance.create_writing_workflow()
         result = await workflow.arun(request)
-        return {"success": True, "result": result, "message": "Workflow executed successfully"}
+        last_step_result = result.step_results[-1]
+
+        if isinstance(last_step_result, StepOutput):
+            return {"success": True, "result": last_step_result.content, "message": "Workflow executed successfully"}
+        elif isinstance(last_step_result, list):
+            return {
+                "success": True,
+                "result": last_step_result[-1].content,
+                "message": "Workflow executed successfully",
+            }
     except Exception as e:
         logger.exception("Workflow execution failed")
         return {"success": False, "error": str(e), "message": "Workflow execution failed"}
-
-
-# Example usage (for testing)
-if __name__ == "__main__":
-    from slidegen.schemas.gen_request import GeneratePresentationRequest, Tone, Verbosity
-
-    async def test_workflow() -> None:
-        """Test the workflow"""
-        request = GeneratePresentationRequest(
-            content="Python programming language introduction with detailed examples",
-            instructions="Focus on practical applications and best practices",
-            tone=Tone.EDUCATIONAL,
-            verbosity=Verbosity.STANDARD,
-            web_search=True,
-            n_slides=8,
-            language="English",
-        )
-        result = await run_slidegen_workflow(request)
-        print("Workflow execution result:", result)
-
-    # 也可以直接测试GeneratePresentationRequest的创建
-    def test_gen_request() -> None:
-        request = GeneratePresentationRequest(
-            content="Python programming language introduction",
-            instructions="Focus on practical applications",
-            tone=Tone.EDUCATIONAL,
-            verbosity=Verbosity.STANDARD,
-            n_slides=8,
-            web_search=True,
-            language="English",
-        )
-        print("GeneratePresentationRequest created successfully with parameters:")
-        print(f"  Content: {request.content}")
-        print(f"  Instructions: {request.instructions}")
-        print(f"  Tone: {request.tone}")
-        print(f"  Verbosity: {request.verbosity}")
-        print(f"  N_slides: {request.n_slides}")
-        print(f"  Web search: {request.web_search}")
-
-    print("Testing GeneratePresentationRequest...")
-    test_gen_request()
-
-    print("\nTesting workflow...")
-    # asyncio.run(test_workflow())  # 注释掉避免实际运行
