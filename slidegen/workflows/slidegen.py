@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import cast
 
 from agno.agent import Agent
 from agno.models.base import Model
@@ -283,12 +283,10 @@ class SlideGenWorkflow:
             # Get outline content
             outline_content = step_input.get_step_content("Outline generation")
 
-            if (
-                step_input.get_step_output("Loop writing sections") is None
-                or step_input.get_step_output("Loop writing sections").steps is None
-            ):
+            loop_output = step_input.get_step_output("Loop writing sections")
+            if loop_output is None or loop_output.steps is None:
                 return StepOutput(content="No completed sections found", success=False)
-            completed_outputs: list[StepOutput] = step_input.get_step_output("Loop writing sections").steps
+            completed_outputs: list[StepOutput] = loop_output.steps
 
             # Build the complete Markdown document
             markdown_parts = []
@@ -335,7 +333,7 @@ class SlideGenWorkflow:
         )
 
 
-async def run_slidegen_workflow(request: GeneratePresentationRequest) -> dict[str, Any]:
+async def run_slidegen_workflow(request: GeneratePresentationRequest) -> MarkdownDocument:
     """Run the slide generation workflow"""
     try:
         workflow_instance = await SlideGenWorkflow.from_request(request)
@@ -344,13 +342,9 @@ async def run_slidegen_workflow(request: GeneratePresentationRequest) -> dict[st
         last_step_result = result.step_results[-1]
 
         if isinstance(last_step_result, StepOutput):
-            return {"success": True, "result": last_step_result.content, "message": "Workflow executed successfully"}
+            return SlideGenWorkflow.parse_outline(str(last_step_result.content))
         elif isinstance(last_step_result, list):
-            return {
-                "success": True,
-                "result": last_step_result[-1].content,
-                "message": "Workflow executed successfully",
-            }
+            return SlideGenWorkflow.parse_outline(str(last_step_result[-1].content))
     except Exception as e:
         logger.exception("Workflow execution failed")
-        return {"success": False, "error": str(e), "message": "Workflow execution failed"}
+        raise e
