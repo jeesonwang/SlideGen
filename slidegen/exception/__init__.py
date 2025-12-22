@@ -42,6 +42,7 @@ from .error_code import (
     RequestTimeoutCode,
     ServiceUnavailableCode,
     TokenNotExistsCode,
+    UnknownErrorCode,
     UserErrorCode,
     UserLockErrorCode,
 )
@@ -90,4 +91,5 @@ __all__ = [
     "TokenNotExistsCode",
     "UserErrorCode",
     "UserLockErrorCode",
+    "UnknownErrorCode",
 ]
