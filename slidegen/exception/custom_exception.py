@@ -6,6 +6,7 @@ from slidegen.exception.error_code import (
     DataNotFoundCode,
     ExpireTokenCode,
     ExternalServerErrorCode,
+    FileParseErrorCode,
     InsideServerErrorCode,
     ParamCheckErrorCode,
     PasswordErrorCode,
@@ -86,7 +87,7 @@ class AuthDenyError(ApiError):
 
 
 class FileParseError(ApiError):
-    default_code = InsideServerErrorCode
+    default_code = FileParseErrorCode
 
 
 class FileTypeError(ApiError):

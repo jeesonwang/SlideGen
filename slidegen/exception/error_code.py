@@ -18,7 +18,7 @@ DataNotFoundCode = 1111
 DataUpdateErrorCode = 1112
 DataChangeErrorCode = 1113
 DataDelErrorCode = 1114
-
+FileParseErrorCode = 1115
 
 # 用户错误，以1200开头
 UserErrorCode = 1201
@@ -70,6 +70,7 @@ MESSAGE = {
     DataUpdateErrorCode: HttpErrorCode(message="资源更新失败", http_code=status.HTTP_400_BAD_REQUEST),
     DataChangeErrorCode: HttpErrorCode(message="资源修改失败", http_code=status.HTTP_400_BAD_REQUEST),
     DataDelErrorCode: HttpErrorCode(message="资源删除失败", http_code=status.HTTP_400_BAD_REQUEST),
+    FileParseErrorCode: HttpErrorCode(message="文件解析失败", http_code=status.HTTP_400_BAD_REQUEST),
     # 用户错误，以1200开头
     UserErrorCode: HttpErrorCode(message="用户错误", http_code=status.HTTP_400_BAD_REQUEST),
     ExpireTokenCode: HttpErrorCode(message="令牌过期或权限变动，请重新登录", http_code=status.HTTP_401_UNAUTHORIZED),
