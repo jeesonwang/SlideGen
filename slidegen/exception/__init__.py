@@ -1,8 +1,11 @@
 from .base import ApiError
 from .custom_exception import (
+    AccessDeniedError,
     AuthDenyError,
     DatasBaseError,
+    ExpireTokenError,
     FileParseError,
+    FileTypeError,
     InsideServerError,
     MarkdownDocumentError,
     NotFoundError,
@@ -11,6 +14,7 @@ from .custom_exception import (
     PermissionDenyError,
     PPTGenError,
     PPTTemplateError,
+    ServiceConnectionError,
     SystemLockError,
     TokenNotExistsError,
     UserError,
@@ -44,9 +48,12 @@ from .error_code import (
 
 __all__ = [
     "ApiError",
+    "AccessDeniedError",
     "AuthDenyError",
     "DatasBaseError",
+    "ExpireTokenError",
     "FileParseError",
+    "FileTypeError",
     "InsideServerError",
     "MarkdownDocumentError",
     "NotFoundError",
@@ -55,6 +62,7 @@ __all__ = [
     "PermissionDenyError",
     "PPTGenError",
     "PPTTemplateError",
+    "ServiceConnectionError",
     "SystemLockError",
     "TokenNotExistsError",
     "UserError",
