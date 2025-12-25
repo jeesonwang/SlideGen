@@ -3,6 +3,7 @@ from typing import Any
 import mammoth
 
 from .base import (
+    ContentType,
     DocumentParseResult,
 )
 from .html_parser import HtmlParser
@@ -16,10 +17,15 @@ class DocxParser(HtmlParser):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
+    @classmethod
+    def get_supported_content_types(self) -> list[ContentType]:
+        return [ContentType.DOCX]
+
     def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
         # Bail if not a DOCX
-        extension = kwargs.get("file_extension", "")
-        if extension.lower() != ".docx":
+        extension = kwargs.get("file_extension", "").lower()
+        supported_extensions = [ct.value for ct in DocxParser.get_supported_content_types()]
+        if extension not in supported_extensions:
             return None
 
         result = None

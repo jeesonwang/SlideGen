@@ -3,7 +3,7 @@ from typing import Any
 from bs4 import BeautifulSoup
 
 from ._markdownify import CustomMarkdownify
-from .base import DocumentParser, DocumentParseResult
+from .base import ContentType, DocumentParser, DocumentParseResult
 
 
 class HtmlParser(DocumentParser):
@@ -11,10 +11,15 @@ class HtmlParser(DocumentParser):
         super().__init__(**kwargs)
         self.html_table = kwargs.get("html_table", True)
 
+    @classmethod
+    def get_supported_content_types(self) -> list[ContentType]:
+        return [ContentType.HTML, ContentType.HTM]
+
     def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
         # Bail if not html
-        extension = kwargs.get("file_extension", "")
-        if extension.lower() not in [".html", ".htm"]:
+        extension = kwargs.get("file_extension", "").lower()
+        supported_extensions = [ct.value for ct in HtmlParser.get_supported_content_types()]
+        if extension not in supported_extensions:
             return None
 
         result = None
