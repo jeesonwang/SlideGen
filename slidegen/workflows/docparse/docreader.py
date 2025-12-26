@@ -10,8 +10,7 @@ import puremagic
 from loguru import logger
 
 from slidegen.exception import FileParseError, FileTypeError
-
-from .reader import (
+from slidegen.workflows.docparse.reader import (
     DocumentParser,
     DocumentParseResult,
     DocxParser,
