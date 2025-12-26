@@ -6,7 +6,7 @@ from .base import (
     ContentType,
     DocumentParseResult,
 )
-from .html_parser import HtmlParser
+from .html_reader import HtmlParser
 
 
 class DocxParser(HtmlParser):

@@ -1,4 +1,4 @@
-from .docparser import MarkdownConverter
+from .docreader import DocumentReader
 from .markdown_document import MarkdownDocument, MarkdownParser
 
-__all__ = ["MarkdownConverter", "MarkdownDocument", "MarkdownParser"]
+__all__ = ["DocumentReader", "MarkdownDocument", "MarkdownParser"]

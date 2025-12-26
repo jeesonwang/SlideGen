@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 from loguru import logger
 
-from slidegen.workflows.docparse.docparser import MarkdownConverter
-from slidegen.workflows.docparse.parsers import (
+from slidegen.workflows.docparse import DocumentReader
+from slidegen.workflows.docparse.reader import (
     DocumentParseResult,
     PdfParser,
     TextParser,
@@ -153,13 +153,13 @@ class TestPdfParser:
         logger.info("Successfully created pdf parser with password")
 
 
-class TestMarkdownConverter:
-    """Test MarkdownConverter integration"""
+class TestDocumentReader:
+    """Test DocumentReader integration"""
 
     @pytest.fixture
     def converter(self):
-        """Create MarkdownConverter instance"""
-        return MarkdownConverter()
+        """Create DocumentReader instance"""
+        return DocumentReader()
 
     @pytest.fixture
     def test_txt_file(self):
@@ -189,7 +189,7 @@ class TestMarkdownConverter:
         assert result is not None
         assert isinstance(result, DocumentParseResult)
         assert len(result.text_content) > 0
-        logger.info("MarkdownConverter successfully converted txt file")
+        logger.info("DocumentReader successfully converted txt file")
 
     def test_convert_pdf_file_with_converter(self, converter, test_pdf_file):
         """Test using converter to convert pdf file"""
@@ -201,7 +201,7 @@ class TestMarkdownConverter:
         assert result is not None
         assert isinstance(result, DocumentParseResult)
         assert len(result.text_content) > 0
-        logger.info("MarkdownConverter successfully converted pdf file")
+        logger.info("DocumentReader successfully converted pdf file")
 
     def test_convert_with_path_object(self, converter, test_txt_file):
         """Test using Path object to convert"""
@@ -213,7 +213,7 @@ class TestMarkdownConverter:
 
         assert result is not None
         assert isinstance(result, DocumentParseResult)
-        logger.info("MarkdownConverter successfully handled Path object")
+        logger.info("DocumentReader successfully handled Path object")
 
     def test_convert_multiple_files(self, converter, test_txt_file, test_pdf_file):
         """Test converting multiple different types of files"""
@@ -244,7 +244,7 @@ class TestMarkdownConverter:
         assert result is not None
         assert isinstance(result, DocumentParseResult)
         assert len(result.text_content) > 0
-        logger.info("MarkdownConverter successfully used stream to convert file")
+        logger.info("DocumentReader successfully used stream to convert file")
 
     def test_parser_registration_order(self, converter):
         """Test parser registration order"""
@@ -314,7 +314,7 @@ class TestParserEdgeCases:
 
     def test_converter_with_unsupported_extension(self):
         """Test unsupported file extension"""
-        converter = MarkdownConverter()
+        converter = DocumentReader()
 
         with pytest.raises(Exception):  # Should raise an exception
             converter.convert_local("/tmp/unsupported.xyz")

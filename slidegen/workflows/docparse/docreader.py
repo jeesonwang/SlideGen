@@ -11,7 +11,7 @@ from loguru import logger
 
 from slidegen.exception import FileParseError, FileTypeError
 
-from .parsers import (
+from .reader import (
     DocumentParser,
     DocumentParseResult,
     DocxParser,
@@ -23,7 +23,7 @@ from .parsers import (
 )
 
 
-class MarkdownConverter:
+class DocumentReader:
     """Convert file to markdown"""
 
     def __init__(self) -> None:

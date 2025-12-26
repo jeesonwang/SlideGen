@@ -3,7 +3,7 @@ from typing import Any
 import pandas as pd
 
 from .base import ContentType, DocumentParseResult
-from .html_parser import HtmlParser
+from .html_reader import HtmlParser
 
 
 class ExcelParser(HtmlParser):
