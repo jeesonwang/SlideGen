@@ -40,7 +40,7 @@ class GeneratePresentationRequest(BaseModel):
     template: str = Field(default="general", description="Template to use for the presentation")
     include_table_of_contents: bool = Field(default=False, description="Whether to include a table of contents")
     include_title_slide: bool = Field(default=True, description="Whether to include a title slide")
-    files: list[str] | None = Field(default=None, description="Files to use for the presentation")
+    files: list[str] | None = Field(default=None, description="File IDs to use for the presentation")
     export_as: Literal["pptx", "pdf"] = Field(default="pptx", description="Export format")
 
     # User and configuration related fields
