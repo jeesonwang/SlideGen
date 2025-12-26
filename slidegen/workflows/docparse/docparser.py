@@ -17,6 +17,7 @@ from .parsers import (
     DocxParser,
     ExcelParser,
     HtmlParser,
+    MarkdownParser,
     PdfParser,
     TextParser,
 )
@@ -35,6 +36,7 @@ class MarkdownConverter:
             self.register_parser(DocxParser())
             self.register_parser(HtmlParser())
             self.register_parser(ExcelParser())
+            self.register_parser(MarkdownParser())
             self.register_parser(PdfParser())
             self.register_parser(TextParser())
             # TODO: Add more parsers here
