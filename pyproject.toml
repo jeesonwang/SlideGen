@@ -58,6 +58,8 @@ dependencies = [
     "ollama>=0.6.0",
     "passlib[bcrypt]<2.0.0,>=1.7.4",
     "agno>=2.1.5",
+    "python-docx",
+    "pypdf"
 ]
 
 [dependency-groups]
