@@ -46,6 +46,7 @@ class GeneratePresentationRequest(BaseModel):
     # User and configuration related fields
     user_id: uuid.UUID = Field(..., description="User ID, for getting the LLM config")
     llm_config_id: uuid.UUID | None = Field(default=None, description="LLM config ID")
+    embedding_config_id: uuid.UUID | None = Field(default=None, description="Embedding config ID")
 
 
 class LLMConfigRequest(LLMConfigTest):
