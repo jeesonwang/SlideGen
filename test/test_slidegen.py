@@ -8,10 +8,10 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__f
 
 from pptx import Presentation
 
-from slidegen.core.docparse import MarkdownDocument
-from slidegen.core.docparse.markdown_parser.elements import Heading
-from slidegen.core.pptgen.pptgen import PPTGen
-from slidegen.core.pptgen.pptpages import CatalogPage, ChapterContentPage, ChapterHomePage, CoverPage
+from slidegen.services.document import MarkdownDocument
+from slidegen.services.document.markdown.elements import Heading
+from slidegen.services.presentation.converter import MarkdownToPresentation
+from slidegen.services.presentation.pages import CatalogPage, ChapterContentPage, ChapterHomePage, CoverPage
 
 
 class TestSlideGen:
@@ -93,7 +93,7 @@ class TestSlideGen:
 
     def test_ppt_generation(self, presentation, markdown_document):
         """测试PPT生成功能"""
-        ppt_gen = PPTGen()
+        ppt_gen = MarkdownToPresentation()
         template_prs = Presentation(os.path.join(os.path.dirname(__file__), "data", "template_0.pptx"))
         ppt_gen.generate(template_prs, markdown_document)
         temp_output = os.path.join(os.path.dirname(__file__), "test_ppt.pptx")

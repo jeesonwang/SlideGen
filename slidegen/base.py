@@ -8,8 +8,7 @@ from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 
 from slidegen.api.main import api_router
-from slidegen.common import logger_init
-from slidegen.config import settings
+from slidegen.core import logger_init, settings
 from slidegen.middleware.exception import register_exception_handler
 
 

@@ -5,11 +5,11 @@ from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
 from slidegen.api.deps import CurrentUser, SessionDep
-from slidegen.common.security import create_access_token, get_password_hash
-from slidegen.common.user_center import UserCenter
-from slidegen.config import settings
-from slidegen.exception.custom_exception import ExpireTokenError, PasswordError, UserLockError, UserNotExistsError
+from slidegen.core.config import settings
+from slidegen.core.security import create_access_token, get_password_hash
+from slidegen.exceptions import ExpireTokenError, PasswordError, UserLockError, UserNotExistsError
 from slidegen.models.user import Message, NewPassword, Token, UserPublic
+from slidegen.services.user import UserCenter
 from slidegen.utils import verify_password_reset_token
 
 router = APIRouter()

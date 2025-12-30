@@ -1,6 +1,6 @@
 from celery import Celery
 
-from slidegen.core import Config
+from slidegen.core.celery_config import Config
 
 celery_app = Celery()
 celery_app.config_from_object(Config)

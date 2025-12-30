@@ -9,9 +9,8 @@ from slidegen.api.deps import (
     SessionDep,
     get_current_active_superuser,
 )
-from slidegen.common.security import get_password_hash, verify_password
-from slidegen.common.user_center import UserCenter
-from slidegen.exception.custom_exception import (
+from slidegen.core.security import get_password_hash, verify_password
+from slidegen.exceptions import (
     NotFoundError,
     ParamsCheckError,
     PasswordError,
@@ -28,6 +27,7 @@ from slidegen.models.user import (
     UsersPublic,
     UserUpdate,
 )
+from slidegen.services.user.auth import UserCenter
 
 router = APIRouter(tags=["User"])
 

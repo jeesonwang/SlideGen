@@ -8,10 +8,10 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from slidegen.common import security
-from slidegen.config import settings
-from slidegen.engine.database import get_db_session, get_sync_db_session
-from slidegen.exception.custom_exception import AuthDenyError, PermissionDenyError, UserLockError, UserNotExistsError
+from slidegen.core import security
+from slidegen.core.config import settings
+from slidegen.core.database import get_db_session, get_sync_db_session
+from slidegen.exceptions import AuthDenyError, PermissionDenyError, UserLockError, UserNotExistsError
 from slidegen.models.user import TokenPayload, UserModel
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")

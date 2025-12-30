@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__f
 
 from pptx import Presentation
 
-from slidegen.core.pptgen.components import components_manager
+from slidegen.services.presentation.components import components_manager
 
 
 def test_components_manager():

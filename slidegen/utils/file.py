@@ -11,9 +11,9 @@ from slidegen.exceptions import FileTypeError
 
 
 class FileManager:
-    """管理上传文件的存储和检索"""
+    """Manage file upload and retrieval"""
 
-    # 允许的文件扩展名
+    # allowed file extensions
     ALLOWED_EXTENSIONS = {
         ".docx",
         ".doc",
@@ -25,7 +25,7 @@ class FileManager:
         ".md",
     }
 
-    # 允许的MIME类型
+    # allowed MIME types
     ALLOWED_MIME_TYPES = {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
         "application/msword",  # .doc
@@ -36,21 +36,21 @@ class FileManager:
         "text/markdown",  # .md
     }
 
-    # 单个文件最大大小 (10MB)
+    # max file size (10MB)
     MAX_FILE_SIZE = 10 * 1024 * 1024
 
-    # 所有文件总大小限制 (50MB)
+    # max total size (50MB)
     MAX_TOTAL_SIZE = 50 * 1024 * 1024
 
     def __init__(self, upload_dir: str | Path | None = None):
         """
-        初始化文件管理器
+        Initialize file manager
 
         Args:
-            upload_dir: 上传文件存储目录,默认为 PROJECT_ROOT/outputs/uploads
+            upload_dir: upload directory, default is PROJECT_ROOT/outputs/uploads
         """
         if upload_dir is None:
-            # 使用项目根目录下的 outputs/uploads
+            # use PROJECT_ROOT/outputs/uploads
             project_root = Path(__file__).parent.parent.parent
             upload_dir = project_root / "outputs" / "uploads"
 
@@ -60,31 +60,31 @@ class FileManager:
 
     def generate_file_id(self) -> str:
         """
-        生成唯一的文件ID
+        Generate a unique file ID
 
         Returns:
-            UUID格式的文件ID
+            UUID format file ID
         """
         return str(uuid.uuid4())
 
     def validate_file_type(self, filename: str, content: bytes | None = None) -> bool:
         """
-        验证文件类型是否允许
+        Validate file type
 
         Args:
-            filename: 文件名
-            content: 文件内容(可选,用于更精确的验证)
+            filename: file name
+            content: file content (optional, used for more precise validation)
 
         Returns:
-            是否允许该文件类型
+            bool: whether the file type is allowed
 
         Raises:
-            FileTypeError: 文件类型不被支持
+            FileTypeError: file type not supported
         """
-        # 检查文件扩展名
+        # check file extension
         ext = Path(filename).suffix.lower()
         if ext not in self.ALLOWED_EXTENSIONS:
-            raise FileTypeError(f"不支持的文件类型: {ext}. 支持的类型: {', '.join(self.ALLOWED_EXTENSIONS)}")
+            raise FileTypeError(f"Unsupported file type: {ext}. Supported types: {', '.join(self.ALLOWED_EXTENSIONS)}")
 
         return True
 
@@ -93,20 +93,20 @@ class FileManager:
         清理文件名,防止路径遍历攻击
 
         Args:
-            filename: 原始文件名
+            filename: original file name
 
         Returns:
-            安全的文件名
+            sanitized file name
         """
-        # 只保留文件名部分,去除路径
+        # only keep file name, remove path
         filename = Path(filename).name
 
-        # 移除危险字符
+        # remove unsafe characters
         unsafe_chars = ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]
         for char in unsafe_chars:
             filename = filename.replace(char, "_")
 
-        # 确保文件名不为空
+        # ensure file name is not empty
         if not filename:
             filename = "unnamed_file"
 
@@ -119,40 +119,40 @@ class FileManager:
         user_id: str | None = None,
     ) -> tuple[str, str]:
         """
-        保存上传的文件
+        Save uploaded file
 
         Args:
-            file_content: 文件内容流
-            filename: 原始文件名
-            user_id: 用户ID(可选)
+            file_content: file content stream
+            filename: original file name
+            user_id: user ID (optional)
 
         Returns:
-            (file_id, file_path) 元组
+            (file_id, file_path) tuple
 
         Raises:
-            FileTypeError: 文件类型不被支持
-            ValueError: 文件大小超过限制
+            FileTypeError: file type not supported
+            ValueError: file size exceeds limit
         """
-        # 清理文件名
+        # sanitize file name
         safe_filename = self.sanitize_filename(filename)
 
-        # 读取文件内容
+        # read file content
         content = file_content.read()
         file_size = len(content)
 
-        # 验证文件大小
+        # validate file size
         if file_size > self.MAX_FILE_SIZE:
             raise ValueError(
-                f"文件大小 ({file_size / 1024 / 1024:.2f}MB) 超过限制 ({self.MAX_FILE_SIZE / 1024 / 1024:.2f}MB)"
+                f"File size ({file_size / 1024 / 1024:.2f}MB) exceeds limit ({self.MAX_FILE_SIZE / 1024 / 1024:.2f}MB)"
             )
 
-        # 验证文件类型
+        # validate file type
         self.validate_file_type(safe_filename, content)
 
-        # 生成文件ID
+        # generate file ID
         file_id = self.generate_file_id()
 
-        # 创建用户特定的目录(如果提供了user_id)
+        # create user-specific directory if user_id is provided
         if user_id:
             user_dir = self.upload_dir / str(user_id)
             user_dir.mkdir(parents=True, exist_ok=True)
@@ -160,11 +160,11 @@ class FileManager:
         else:
             base_dir = self.upload_dir
 
-        # 构建文件路径: {file_id}_{original_filename}
+        # build file path: {file_id}_{original_filename}
         final_filename = f"{file_id}_{safe_filename}"
         file_path = base_dir / final_filename
 
-        # 保存文件
+        # save file
         with open(file_path, "wb") as f:
             f.write(content)
 
@@ -174,22 +174,22 @@ class FileManager:
 
     def get_file_path(self, file_id: str, user_id: str | None = None) -> str | None:
         """
-        根据文件ID获取文件路径
+        Get file path by file ID
 
         Args:
-            file_id: 文件ID
-            user_id: 用户ID(可选)
+            file_id: file ID
+            user_id: user ID (optional)
 
         Returns:
-            文件路径,如果文件不存在则返回None
+            file path if found, otherwise None
         """
-        # 搜索目录
+        # search directories
         search_dirs = []
         if user_id:
             search_dirs.append(self.upload_dir / str(user_id))
         search_dirs.append(self.upload_dir)
 
-        # 在各个目录中搜索文件
+        # search files in directories
         for search_dir in search_dirs:
             if not search_dir.exists():
                 continue
@@ -203,14 +203,14 @@ class FileManager:
 
     def delete_file(self, file_id: str, user_id: str | None = None) -> bool:
         """
-        删除文件
+        Delete file
 
         Args:
-            file_id: 文件ID
-            user_id: 用户ID(可选)
+            file_id: file ID
+            user_id: user ID (optional)
 
         Returns:
-            是否成功删除
+            whether the file was successfully deleted
         """
         file_path = self.get_file_path(file_id, user_id)
         if file_path is None:
@@ -226,13 +226,13 @@ class FileManager:
 
     def cleanup_old_files(self, days: int = 7) -> int:
         """
-        清理过期的文件
+        Clean up expired files
 
         Args:
-            days: 文件保留天数,超过这个天数的文件将被删除
+            days: number of days to keep files, files older than this will be deleted
 
         Returns:
-            删除的文件数量
+            number of files deleted
         """
         cutoff_time = datetime.now() - timedelta(days=days)
         deleted_count = 0
@@ -242,7 +242,7 @@ class FileManager:
                 continue
 
             try:
-                # 获取文件修改时间
+                # get file modification time
                 mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
                 if mtime < cutoff_time:
                     os.remove(file_path)
@@ -256,13 +256,13 @@ class FileManager:
 
     def get_file_hash(self, file_path: str) -> str:
         """
-        计算文件的SHA256哈希值
+        Calculate the SHA256 hash of a file
 
         Args:
-            file_path: 文件路径
+            file_path: file path
 
         Returns:
-            文件的SHA256哈希值
+            SHA256 hash of the file
         """
         sha256_hash = hashlib.sha256()
         with open(file_path, "rb") as f:
@@ -272,20 +272,20 @@ class FileManager:
 
     def validate_total_size(self, file_sizes: list[int]) -> bool:
         """
-        验证文件总大小是否超过限制
+        Validate total file size
 
         Args:
-            file_sizes: 文件大小列表(字节)
+            file_sizes: list of file sizes in bytes
 
         Returns:
-            是否在限制内
+            whether the total size is within the limit
 
         Raises:
-            ValueError: 总大小超过限制
+            ValueError: total size exceeds limit
         """
         total_size = sum(file_sizes)
         if total_size > self.MAX_TOTAL_SIZE:
             raise ValueError(
-                f"文件总大小 ({total_size / 1024 / 1024:.2f}MB) 超过限制 ({self.MAX_TOTAL_SIZE / 1024 / 1024:.2f}MB)"
+                f"Total file size ({total_size / 1024 / 1024:.2f}MB) exceeds limit ({self.MAX_TOTAL_SIZE / 1024 / 1024:.2f}MB)"
             )
         return True
