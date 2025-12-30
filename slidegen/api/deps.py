@@ -8,8 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from slidegen.core import security
-from slidegen.core.config import settings
+from slidegen.core import security, settings
 from slidegen.core.database import get_db_session, get_sync_db_session
 from slidegen.exceptions import AuthDenyError, PermissionDenyError, UserLockError, UserNotExistsError
 from slidegen.models.user import TokenPayload, UserModel

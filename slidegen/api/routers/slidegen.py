@@ -10,8 +10,8 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 from slidegen.api.deps import CurrentUser
-from slidegen.factories.presentation_factory import PresentationController
 from slidegen.schemas.gen_request import GeneratePresentationRequest, Tone, Verbosity
+from slidegen.services.presentation.generator import PresentationGenerator
 
 router = APIRouter(tags=["SlideGen"])
 
@@ -20,8 +20,8 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "outputs" / "presentations"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# 初始化PresentationController
-presentation_controller = PresentationController()
+# 初始化PresentationGenerator
+presentation_generator = PresentationGenerator()
 
 
 class SlideGenTask(BaseModel):
@@ -100,9 +100,9 @@ async def generate_slides(task: SlideGenTask, current_user: CurrentUser) -> Any:
             llm_config_id=task.llm_config_id,
         )
 
-        # 使用PresentationController生成PPTX
+        # 使用PresentationGenerator生成PPTX
         logger.info(f"Generating presentation for user {current_user.id}: {task.topic}")
-        result_path = await presentation_controller.generate_presentation(
+        result_path = await presentation_generator.generate_presentation(
             request=request,
             output_path=output_path,
             template_path=template_path,

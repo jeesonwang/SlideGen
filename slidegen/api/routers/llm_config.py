@@ -7,7 +7,6 @@ from sqlmodel import col, func, select
 
 from slidegen.api.deps import CurrentUser, SessionDep
 from slidegen.exceptions import NotFoundError, ParamsCheckError
-from slidegen.factories.llm_factory import LLMFactory
 from slidegen.models.llm_config import (
     DEFAULT_MODEL_CONFIGS,
     LLMConfigCreate,
@@ -25,6 +24,7 @@ from slidegen.schemas.llm_config import (
     LLMConfigTestResult,
     LLMProvidersInfo,
 )
+from slidegen.services.factories.llm_factory import LLMFactory
 
 router = APIRouter(tags=["LLM Config"])
 

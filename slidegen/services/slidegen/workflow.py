@@ -13,13 +13,12 @@ from loguru import logger
 from sqlmodel import select
 
 from slidegen.core.database import AsyncSessionLocal
-from slidegen.factories.embedding_factory import EmbeddingFactory
-from slidegen.factories.llm_factory import LLMFactory
 from slidegen.models.embedding_config import EmbeddingConfigModel
 from slidegen.models.llm_config import LLMConfigModel
 from slidegen.schemas.gen_request import GeneratePresentationRequest, LLMConfigRequest
 from slidegen.services.document.file_processor import FileProcessor
 from slidegen.services.document.markdown import MarkdownDocument
+from slidegen.services.factories import EmbeddingFactory, LLMFactory
 from slidegen.services.knowledge.kb_manager import KnowledgeBaseManager
 
 # Maximum number of sections to generate

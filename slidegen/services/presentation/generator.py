@@ -10,19 +10,19 @@ from slidegen.services.presentation.converter import MarkdownToPresentation
 from slidegen.services.slidegen.workflow import run_slidegen_workflow
 
 
-class PresentationController:
-    """Controller for generating PowerPoint presentations from user requests"""
+class PresentationGenerator:
+    """Generator for creating PowerPoint presentations from user requests"""
 
     def __init__(self, default_template_path: str | None = None):
         """
-        Initialize the presentation controller
+        Initialize the presentation generator
 
         Args:
             default_template_path: Default template path to use if not specified in request
         """
         if default_template_path is None:
             # Use project root to locate default template
-            project_root = Path(__file__).parent.parent.parent
+            project_root = Path(__file__).parent.parent.parent.parent
             default_template_path = str(project_root / "test" / "data" / "template_0.pptx")
 
         self.default_template_path = default_template_path

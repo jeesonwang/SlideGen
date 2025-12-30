@@ -4,7 +4,7 @@
 
 import asyncio
 
-from slidegen.factories.llm_factory import LLMFactory
+from slidegen.services.factories.llm_factory import LLMFactory
 from slidegen.models.llm_config import LLMProvider
 from slidegen.schemas.llm_config import LLMConfigTest
 

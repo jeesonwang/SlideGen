@@ -7,7 +7,6 @@ from sqlmodel import col, func, select
 
 from slidegen.api.deps import CurrentUser, SessionDep
 from slidegen.exceptions import NotFoundError, ParamsCheckError
-from slidegen.factories.embedding_factory import EmbeddingFactory
 from slidegen.models.embedding_config import (
     DEFAULT_EMBEDDING_CONFIGS,
     EmbeddingConfigCreate,
@@ -25,6 +24,7 @@ from slidegen.schemas.embedding_config import (
     EmbeddingConfigTestResult,
     EmbeddingProvidersInfo,
 )
+from slidegen.services.factories.embedding_factory import EmbeddingFactory
 
 router = APIRouter(tags=["Embedding Config"])
 
