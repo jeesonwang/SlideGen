@@ -99,17 +99,21 @@ class SlideGenWorkflow:
         self.kb_manager = kb_manager
 
     @classmethod
-    async def from_request(cls, request: GeneratePresentationRequest) -> "SlideGenWorkflow":
+    async def from_request(
+        cls, request: GeneratePresentationRequest, llm: Model | None = None, embedder: Embedder | None = None
+    ) -> "SlideGenWorkflow":
         """Create workflow instance from GeneratePresentationRequest"""
 
-        llm = await get_llm_instance(request)
+        if llm is None:
+            llm = await get_llm_instance(request)
 
         # create knowledge base manager(if there are files)
         kb_manager = None
         if request.files and len(request.files) > 0:
             session_id = str(uuid.uuid4())
             # Get embedder instance
-            embedder = await get_embedding_instance(request)
+            if embedder is None:
+                embedder = await get_embedding_instance(request)
             kb_manager = KnowledgeBaseManager(user_id=str(request.user_id), session_id=session_id, embedder=embedder)
 
             # extract file content and index to knowledge base
