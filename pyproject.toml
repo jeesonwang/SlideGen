@@ -59,7 +59,8 @@ dependencies = [
     "passlib[bcrypt]<2.0.0,>=1.7.4",
     "agno>=2.1.5",
     "python-docx",
-    "pypdf"
+    "pypdf",
+    "ipykernel>=7.1.0",
 ]
 
 [dependency-groups]
