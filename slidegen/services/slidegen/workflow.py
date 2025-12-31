@@ -1,5 +1,4 @@
 import traceback
-import uuid
 from typing import Any, cast
 
 from agno.agent import Agent
@@ -100,27 +99,47 @@ class SlideGenWorkflow:
 
     @classmethod
     async def from_request(
-        cls, request: GeneratePresentationRequest, llm: Model | None = None, embedder: Embedder | None = None
+        cls,
+        request: GeneratePresentationRequest,
+        llm: Model | None = None,
+        embedder: Embedder | None = None,
     ) -> "SlideGenWorkflow":
-        """Create workflow instance from GeneratePresentationRequest"""
+        """
+        Create workflow instance from GeneratePresentationRequest
+
+        Args:
+            request: Presentation generation request
+            session_id: Session ID (from validated SessionModel)
+            llm: Optional LLM instance
+            embedder: Optional embedder instance
+
+        Returns:
+            SlideGenWorkflow instance
+        """
 
         if llm is None:
             llm = await get_llm_instance(request)
-
+        session_id = request.session_id
         # create knowledge base manager(if there are files)
         kb_manager = None
         if request.files and len(request.files) > 0:
-            session_id = str(uuid.uuid4())
+            # Use persisted session ID instead of random UUID
             # Get embedder instance
             if embedder is None:
                 embedder = await get_embedding_instance(request)
-            kb_manager = KnowledgeBaseManager(user_id=str(request.user_id), session_id=session_id, embedder=embedder)
+            kb_manager = KnowledgeBaseManager(
+                user_id=str(request.user_id), session_id=str(session_id) if session_id else None, embedder=embedder
+            )
 
             # extract file content and index to knowledge base
-            file_processor = FileProcessor()
+            file_processor = FileProcessor(session_id=str(session_id) if session_id else None)
             try:
-                await file_processor.extract_and_index_content(request, kb_manager, str(request.user_id))
-                logger.info(f"Successfully indexed {len(request.files)} files to knowledge base")
+                await file_processor.extract_and_index_content(
+                    request, kb_manager, str(request.user_id), str(session_id) if session_id else None
+                )
+                logger.info(
+                    f"Successfully indexed {len(request.files)} files to knowledge base for session {session_id}"
+                )
             except Exception as e:
                 logger.error(f"Failed to index files to knowledge base: {e}")
                 raise ValueError(f"Failed to parse and index uploaded files: {e}") from e

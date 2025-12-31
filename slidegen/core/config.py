@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     DB_TYPE: Literal["MYSQL", "POSTGRES"] = "POSTGRES"
     DB_ECHO: bool = False
 
+    # [SESSION]
+    MAX_ACTIVE_SESSIONS_PER_USER: int = 10
+    SESSION_SOFT_DELETE_RETENTION_DAYS: int = 30
+
     # [REDIS]
     REDIS_HOST: str
     REDIS_PORT: int = 6379

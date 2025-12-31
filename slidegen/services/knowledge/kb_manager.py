@@ -23,8 +23,8 @@ class KnowledgeBaseManager:
         self.user_id = user_id
         self.session_id = session_id or str(uuid.uuid4())
 
-        # Create collection name: user_{user_id}_session_{session_id}
-        self.collection_name = f"user_{user_id}_{self.session_id}"
+        # Create collection name: user_{user_id[:8]}_session_{session_id[:8]}
+        self.collection_name = f"user_{user_id[:8]}_{self.session_id[:8]}"
 
         # Set ChromaDB path
         chroma_path = Path("chroma") / "knowledge"

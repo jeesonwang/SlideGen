@@ -11,46 +11,48 @@ from slidegen.utils.file import FileManager
 
 
 class FileProcessor:
-    """处理上传文件的解析和内容提取"""
+    """Process uploaded files and extract content"""
 
-    def __init__(self, file_manager: FileManager | None = None):
+    def __init__(self, file_manager: FileManager | None = None, session_id: str | None = None):
         """
-        初始化文件处理器
+        Initialize file processor
 
         Args:
-            file_manager: 文件管理器实例,如果为None则创建新实例
+            file_manager: File manager instance, if None, a new instance will be created
+            session_id: Session ID (optional), for session-scoped file lookup
         """
         self.file_manager = file_manager or FileManager()
         self.markdown_converter = DocumentReader()
-        logger.info("FileProcessor initialized")
+        self.session_id = session_id
+        logger.info(f"FileProcessor initialized with session_id: {session_id}")
 
     def parse_file(self, file_path: str) -> ParsedFileContent:
         """
-        解析单个文件并返回Markdown内容
+        Parse a single file and return Markdown content
 
         Args:
-            file_path: 文件路径
+            file_path: File path
 
         Returns:
-            ParsedFileContent对象,包含解析后的内容
+            ParsedFileContent object, containing parsed content
 
         Raises:
-            FileParseError: 文件解析失败
+            FileParseError: File parsing failed
         """
         try:
             logger.info(f"Parsing file: {file_path}")
 
-            # 使用DocumentReader解析文件
+            # Use DocumentReader to parse file
             result = self.markdown_converter.convert(file_path)
 
-            # 提取文件名和ID
+            # Extract file name and ID
             path = Path(file_path)
             filename = path.name
 
-            # 尝试从文件名解析file_id (格式: {file_id}_{original_filename})
+            # Try to parse file_id from filename (format: {file_id}_{original_filename})
             file_id = filename.split("_")[0] if "_" in filename else filename
 
-            # 统计字数
+            # Count words
             word_count = len(result.text_content)
 
             parsed_content = ParsedFileContent(
@@ -66,20 +68,20 @@ class FileProcessor:
 
         except Exception as e:
             logger.error(f"Failed to parse file {file_path}: {e}")
-            raise FileParseError(f"无法解析文件 {Path(file_path).name}: {str(e)}")
+            raise FileParseError(f"Failed to parse file {Path(file_path).name}: {str(e)}")
 
     def parse_files(self, file_paths: list[str]) -> str:
         """
-        解析多个文件并合并内容
+        Parse multiple files and merge content
 
         Args:
-            file_paths: 文件路径列表
+            file_paths: File path list
 
         Returns:
-            合并后的Markdown内容
+            Merged Markdown content
 
         Raises:
-            FileParseError: 文件解析失败
+            FileParseError: File parsing failed
         """
         if not file_paths:
             return ""
@@ -91,7 +93,7 @@ class FileProcessor:
             try:
                 parsed = self.parse_file(file_path)
 
-                # 添加文件来源标记
+                # Add file source marker
                 file_header = f"\n\n## 📄 来自文件: {parsed.filename}\n\n"
                 merged_content.append(file_header)
                 merged_content.append(parsed.content)
@@ -100,11 +102,11 @@ class FileProcessor:
 
             except FileParseError as e:
                 logger.warning(f"Skipping file due to parse error: {e}")
-                # 继续处理其他文件,不中断整个流程
-                merged_content.append(f"\n\n⚠️ 文件解析失败: {Path(file_path).name}\n")
+                # Continue processing other files, without interrupting the entire process
+                merged_content.append(f"\n\n⚠️ File parsing failed: {Path(file_path).name}\n")
 
         if parsed_count == 0:
-            raise FileParseError("所有文件解析均失败")
+            raise FileParseError("All files parsing failed")
 
         result = "".join(merged_content)
         logger.info(f"Merged content from {parsed_count}/{len(file_paths)} files")
@@ -115,37 +117,47 @@ class FileProcessor:
         self,
         request: GeneratePresentationRequest,
         user_id: str | None = None,
+        session_id: str | None = None,
     ) -> str:
         """
-        从GeneratePresentationRequest中提取文件内容
+        Extract file content from GeneratePresentationRequest
 
         Args:
-            request: 演示文稿生成请求
-            user_id: 用户ID(可选)
+            request: Presentation generation request
+            user_id: User ID (optional, for old user-scoped lookup)
+            session_id: Session ID (optional, for new session-scoped lookup)
 
         Returns:
-            提取的文件内容(Markdown格式)
+            Extracted file content (Markdown format)
 
         Raises:
-            FileNotFoundError: 文件不存在
-            FileParseError: 文件解析失败
+            FileNotFoundError: File not found
+            FileParseError: File parsing failed
         """
-        # 检查是否有文件ID
+        # Check if there are file IDs
         if not request.files or len(request.files) == 0:
             logger.info("No files provided in request")
             return ""
 
         logger.info(f"Extracting content from {len(request.files)} files")
 
-        # 获取文件路径
+        # Use session_id from instance or parameter
+        session_id = session_id or self.session_id
+
         file_paths = []
         for file_id in request.files:
-            file_path = self.file_manager.get_file_path(file_id, user_id)
+            # Use session-scoped lookup if session_id is provided
+            if session_id:
+                file_path = self.file_manager.get_session_file_path(file_id, session_id)
+            else:
+                # Fallback to user-scoped lookup for backwards compatibility
+                file_path = self.file_manager.get_file_path(file_id, user_id)
+
             if file_path is None:
-                raise FileNotFoundError(f"文件不存在: {file_id}")
+                raise FileNotFoundError(f"File not found: {file_id}")
             file_paths.append(file_path)
 
-        # 解析所有文件并合并内容
+        # Parse all files and merge content
         content = self.parse_files(file_paths)
 
         logger.info(f"Extracted {len(content)} characters from files")
@@ -153,14 +165,14 @@ class FileProcessor:
 
     def merge_content_with_topic(self, file_content: str, topic: str) -> str:
         """
-        将文件内容与主题合并
+        Merge file content with topic
 
         Args:
-            file_content: 从文件提取的内容
-            topic: 用户提供的主题
+            file_content: Extracted file content
+            topic: User provided topic
 
         Returns:
-            合并后的内容
+            Merged content
         """
         if not file_content:
             return topic
@@ -168,17 +180,17 @@ class FileProcessor:
         if not topic or topic.strip() == "":
             return file_content
 
-        # 合并格式
-        merged = f"""# 演示文稿主题
+        # Merge format
+        merged = f"""# Presentation topic
 
-{topic}
+                {topic}
 
----
+                ---
 
-# 参考文档内容
+                # Reference document content
 
-{file_content}
-"""
+                {file_content}
+                """
         return merged
 
     async def extract_and_index_content(
@@ -186,39 +198,49 @@ class FileProcessor:
         request: GeneratePresentationRequest,
         kb_manager: KnowledgeBaseManager,
         user_id: str | None = None,
+        session_id: str | None = None,
     ) -> list[ParsedFileContent]:
         """
-        从请求中提取文件内容并索引到知识库
+        Extract file content from request and index to knowledge base
 
         Args:
-            request: 演示文稿生成请求
-            kb_manager: 知识库管理器实例
-            user_id: 用户ID(可选)
+            request: Presentation generation request
+            kb_manager: Knowledge base manager instance
+            user_id: User ID (optional, for old user-scoped lookup)
+            session_id: Session ID (optional, for new session-scoped lookup)
 
         Returns:
-            解析后的文件内容列表
+            Parsed file content list
 
         Raises:
-            FileNotFoundError: 文件不存在
-            FileParseError: 文件解析失败
+            FileNotFoundError: File not found
+            FileParseError: File parsing failed
         """
 
-        # 检查是否有文件ID
         if not request.files or len(request.files) == 0:
             logger.info("No files provided in request")
             return []
 
         logger.info(f"Extracting and indexing content from {len(request.files)} files")
 
-        # 获取文件路径
+        # Use session_id from instance or parameter
+        session_id = session_id or self.session_id
+
+        # Get file paths
         file_paths = []
         for file_id in request.files:
-            file_path = self.file_manager.get_file_path(file_id, user_id)
+            # Use session-scoped lookup if session_id is provided
+            if session_id:
+                file_path = self.file_manager.get_session_file_path(file_id, session_id)
+            else:
+                # Fallback to user-scoped lookup for backwards compatibility
+                file_path = self.file_manager.get_file_path(file_id, user_id)
+
             if file_path is None:
-                raise FileNotFoundError(f"文件不存在: {file_id}")
+                raise FileNotFoundError(f"File not found: {file_id}")
             file_paths.append(file_path)
 
-        # 解析所有文件
+        # Parse all files
         parsed_files: list[ParsedFileContent] = []
         for file_path in file_paths:
             try:
@@ -229,9 +251,9 @@ class FileProcessor:
                 continue
 
         if len(parsed_files) == 0:
-            raise FileParseError("所有文件解析均失败")
+            raise FileParseError("All files parsing failed")
 
-        # 索引到知识库
+        # Index to knowledge base
         for parsed in parsed_files:
             metadata = {
                 "file_id": parsed.file_id,
@@ -248,7 +270,7 @@ class FileProcessor:
                 logger.info(f"Indexed file to knowledge base: {parsed.filename}")
             except Exception as e:
                 logger.error(f"Failed to index file {parsed.filename}: {e}")
-                # 继续索引其他文件
+                # Continue indexing other files
 
         logger.info(f"Successfully indexed {len(parsed_files)} files to knowledge base")
         return parsed_files

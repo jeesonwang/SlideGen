@@ -155,6 +155,40 @@ async def upload_multiple_files(
         raise HTTPException(status_code=500, detail=f"Batch upload failed: {str(e)}")
 
 
+@router.get("/", response_model=list[FileMetadata])
+async def list_user_files(
+    current_user: CurrentUser,
+) -> Any:
+    """
+    List all files uploaded by the current user
+
+    Args:
+        current_user: current user
+
+    Returns:
+        list[FileMetadata]: list of file metadata
+    """
+    try:
+        logger.info(f"Listing files for user {current_user.id}")
+        files = file_manager.list_user_files(str(current_user.id))
+
+        return [
+            FileMetadata(
+                file_id=file["file_id"],
+                filename=file["filename"],
+                file_size=file["file_size"],
+                file_path=file["file_path"],
+                upload_time=file["upload_time"],
+                user_id=str(current_user.id),
+            )
+            for file in files
+        ]
+
+    except Exception as e:
+        logger.exception(f"Failed to list files for user {current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list files: {str(e)}")
+
+
 @router.get("/{file_id}", response_model=FileMetadata)
 async def get_file_metadata(
     file_id: str,

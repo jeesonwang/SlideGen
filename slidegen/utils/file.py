@@ -3,7 +3,7 @@ import os
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 from loguru import logger
 
@@ -223,6 +223,45 @@ class FileManager:
             logger.error(f"Failed to delete file {file_path}: {e}")
             return False
 
+    def list_user_files(self, user_id: str) -> list[dict[str, Any]]:
+        """
+        List all files uploaded by a specific user.
+
+        Args:
+            user_id: user ID
+
+        Returns:
+            list of file metadata dicts
+        """
+        user_dir = self.upload_dir / str(user_id)
+        if not user_dir.exists() or not user_dir.is_dir():
+            logger.info(f"No files found for user {user_id}")
+            return []
+
+        files: list[dict[str, Any]] = []
+        for file_path in sorted(user_dir.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True):
+            if not file_path.is_file():
+                continue
+
+            parts = file_path.name.split("_", 1)
+            file_id = parts[0]
+            original_filename = parts[1] if len(parts) > 1 else file_path.name
+
+            stat = file_path.stat()
+
+            files.append(
+                {
+                    "file_id": file_id,
+                    "filename": original_filename,
+                    "file_size": stat.st_size,
+                    "file_path": str(file_path),
+                    "upload_time": datetime.fromtimestamp(stat.st_mtime),
+                    "user_id": str(user_id),
+                }
+            )
+
+        return files
+
     def cleanup_old_files(self, days: int = 7) -> int:
         """
         Clean up expired files
@@ -288,6 +327,187 @@ class FileManager:
                 f"Total file size ({total_size / 1024 / 1024:.2f}MB) exceeds limit ({self.MAX_TOTAL_SIZE / 1024 / 1024:.2f}MB)"
             )
         return True
+
+    # ========== Session-Scoped Methods (New) ==========
+
+    def save_uploaded_file_to_session(
+        self,
+        file_content: BinaryIO,
+        filename: str,
+        session_id: str,
+        user_id: str | None = None,
+    ) -> tuple[str, str]:
+        """
+        Save uploaded file to session directory
+
+        Storage path: {UPLOAD_DIR}/{session_id}/{file_id}_{filename}
+
+        Args:
+            file_content: file content stream
+            filename: original file name
+            session_id: session ID
+            user_id: user ID (optional, for logging purposes)
+
+        Returns:
+            (file_id, file_path) tuple
+
+        Raises:
+            FileTypeError: file type not supported
+            ValueError: file size exceeds limit
+        """
+        # Sanitize file name
+        safe_filename = self.sanitize_filename(filename)
+
+        # Read file content
+        content = file_content.read()
+        file_size = len(content)
+
+        # Validate file size
+        if file_size > self.MAX_FILE_SIZE:
+            raise ValueError(
+                f"File size ({file_size / 1024 / 1024:.2f}MB) exceeds limit ({self.MAX_FILE_SIZE / 1024 / 1024:.2f}MB)"
+            )
+
+        # Validate file type
+        self.validate_file_type(safe_filename, content)
+
+        # Generate file ID
+        file_id = self.generate_file_id()
+
+        # Create session directory: {UPLOAD_DIR}/{session_id}/
+        session_dir = self.upload_dir / str(session_id)
+        session_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build file path
+        final_filename = f"{file_id}_{safe_filename}"
+        file_path = session_dir / final_filename
+
+        # Save file
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        logger.info(f"File saved to session {session_id}: {file_path} (size: {file_size} bytes)")
+
+        return file_id, str(file_path)
+
+    def get_session_file_path(self, file_id: str, session_id: str) -> str | None:
+        """
+        Get file path from session directory
+
+        Args:
+            file_id: file ID
+            session_id: session ID
+
+        Returns:
+            file path if found, otherwise None
+        """
+        session_dir = self.upload_dir / str(session_id)
+        if not session_dir.exists():
+            logger.warning(f"Session directory not found: {session_id}")
+            return None
+
+        for file_path in session_dir.glob(f"{file_id}_*"):
+            if file_path.is_file():
+                return str(file_path)
+
+        logger.warning(f"File not found in session {session_id}: {file_id}")
+        return None
+
+    def delete_session_file(self, file_id: str, session_id: str) -> bool:
+        """
+        Delete file from session directory
+
+        Args:
+            file_id: file ID
+            session_id: session ID
+
+        Returns:
+            whether the file was successfully deleted
+        """
+        file_path = self.get_session_file_path(file_id, session_id)
+        if file_path is None:
+            return False
+
+        try:
+            os.remove(file_path)
+            logger.info(f"Deleted session file: {file_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete file {file_path}: {e}")
+            return False
+
+    def delete_session_directory(self, session_id: str) -> int:
+        """
+        Delete entire session directory and all files
+
+        Args:
+            session_id: session ID
+
+        Returns:
+            Number of files deleted
+        """
+        session_dir = self.upload_dir / str(session_id)
+        if not session_dir.exists():
+            logger.info(f"Session directory does not exist: {session_id}")
+            return 0
+
+        count = 0
+        for file_path in session_dir.glob("*"):
+            if file_path.is_file():
+                try:
+                    os.remove(file_path)
+                    count += 1
+                except Exception as e:
+                    logger.error(f"Failed to delete {file_path}: {e}")
+
+        # Remove directory if empty
+        try:
+            session_dir.rmdir()
+            logger.info(f"Deleted session directory: {session_dir}")
+        except Exception as e:
+            logger.warning(f"Could not remove directory {session_dir}: {e}")
+
+        logger.info(f"Deleted {count} files from session {session_id}")
+        return count
+
+    def list_session_files(self, session_id: str) -> list[dict[str, Any]]:
+        """
+        List all files in a specific session
+
+        Args:
+            session_id: session ID
+
+        Returns:
+            list of file metadata dicts
+        """
+        session_dir = self.upload_dir / str(session_id)
+        if not session_dir.exists() or not session_dir.is_dir():
+            logger.info(f"No files found for session {session_id}")
+            return []
+
+        files: list[dict[str, Any]] = []
+        for file_path in sorted(session_dir.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True):
+            if not file_path.is_file():
+                continue
+
+            parts = file_path.name.split("_", 1)
+            file_id = parts[0]
+            original_filename = parts[1] if len(parts) > 1 else file_path.name
+
+            stat = file_path.stat()
+
+            files.append(
+                {
+                    "file_id": file_id,
+                    "filename": original_filename,
+                    "file_size": stat.st_size,
+                    "file_path": str(file_path),
+                    "upload_time": datetime.fromtimestamp(stat.st_mtime),
+                    "session_id": str(session_id),
+                }
+            )
+
+        return files
 
 
 file_manager = FileManager()

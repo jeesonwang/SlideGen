@@ -26,6 +26,12 @@ class Verbosity(str, Enum):
 class GeneratePresentationRequest(BaseModel):
     """Generate presentation request"""
 
+    # Session related fields
+    session_id: uuid.UUID | None = Field(
+        default=None,
+        description="Session ID for this generation task. If None, a new session will be created automatically.",
+    )
+
     # Content related fields
     content: str = Field(..., description="The content for generating the presentation")
     slides_markdown: list[str] | None = Field(default=None, description="The markdown for the slides")
