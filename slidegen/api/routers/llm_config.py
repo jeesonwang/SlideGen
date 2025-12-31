@@ -26,7 +26,7 @@ from slidegen.schemas.llm_config import (
 )
 from slidegen.services.factories.llm_factory import LLMFactory
 
-router = APIRouter(tags=["LLM Config"])
+router = APIRouter()
 
 
 @router.get("/providers", response_model=LLMProvidersInfo)

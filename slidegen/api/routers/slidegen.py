@@ -13,7 +13,7 @@ from slidegen.api.deps import CurrentUser
 from slidegen.schemas.gen_request import GeneratePresentationRequest, Tone, Verbosity
 from slidegen.services.presentation.generator import PresentationGenerator
 
-router = APIRouter(tags=["SlideGen"])
+router = APIRouter()
 
 # 配置输出目录
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent

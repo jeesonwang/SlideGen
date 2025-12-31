@@ -26,7 +26,7 @@ from slidegen.schemas.embedding_config import (
 )
 from slidegen.services.factories.embedding_factory import EmbeddingFactory
 
-router = APIRouter(tags=["Embedding Config"])
+router = APIRouter()
 
 
 @router.get("/providers", response_model=EmbeddingProvidersInfo)

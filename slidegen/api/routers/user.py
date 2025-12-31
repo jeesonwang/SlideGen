@@ -29,7 +29,7 @@ from slidegen.models.user import (
 )
 from slidegen.services.user.auth import UserCenter
 
-router = APIRouter(tags=["User"])
+router = APIRouter()
 
 
 @router.get(
