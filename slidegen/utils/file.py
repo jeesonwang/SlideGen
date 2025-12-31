@@ -7,6 +7,7 @@ from typing import BinaryIO
 
 from loguru import logger
 
+from slidegen.core.constants import UPLOAD_DIR
 from slidegen.exceptions import FileTypeError
 
 
@@ -47,12 +48,10 @@ class FileManager:
         Initialize file manager
 
         Args:
-            upload_dir: upload directory, default is PROJECT_ROOT/outputs/uploads
+            upload_dir: upload directory, default is UPLOAD_DIR
         """
         if upload_dir is None:
-            # use PROJECT_ROOT/outputs/uploads
-            project_root = Path(__file__).parent.parent.parent
-            upload_dir = project_root / "outputs" / "uploads"
+            upload_dir = UPLOAD_DIR
 
         self.upload_dir = Path(upload_dir)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
@@ -90,7 +89,7 @@ class FileManager:
 
     def sanitize_filename(self, filename: str) -> str:
         """
-        清理文件名,防止路径遍历攻击
+        Sanitize file name, prevent path traversal attack
 
         Args:
             filename: original file name
@@ -98,7 +97,7 @@ class FileManager:
         Returns:
             sanitized file name
         """
-        # only keep file name, remove path
+        # only keep file name, remove directory path
         filename = Path(filename).name
 
         # remove unsafe characters
@@ -106,7 +105,7 @@ class FileManager:
         for char in unsafe_chars:
             filename = filename.replace(char, "_")
 
-        # ensure file name is not empty
+        # ensure file name is not empty and valid
         if not filename:
             filename = "unnamed_file"
 
@@ -289,3 +288,6 @@ class FileManager:
                 f"Total file size ({total_size / 1024 / 1024:.2f}MB) exceeds limit ({self.MAX_TOTAL_SIZE / 1024 / 1024:.2f}MB)"
             )
         return True
+
+
+file_manager = FileManager()
