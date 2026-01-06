@@ -503,10 +503,23 @@ class SlideGenWorkflow:
         )
 
 
-async def run_slidegen_workflow(request: GeneratePresentationRequest) -> MarkdownDocument:
-    """Run the slide generation workflow"""
+async def run_slidegen_workflow(
+    request: GeneratePresentationRequest,
+    llm: Model | None = None,
+    embedder: Embedder | None = None,
+) -> MarkdownDocument:
+    """Run the slide generation workflow
+
+    Args:
+        request: Presentation generation request
+        llm: Optional LLM instance to use
+        embedder: Optional embedder instance to use
+
+    Returns:
+        MarkdownDocument containing the generated presentation
+    """
     try:
-        workflow_instance = await SlideGenWorkflow.from_request(request)
+        workflow_instance = await SlideGenWorkflow.from_request(request, llm=llm, embedder=embedder)
         workflow = workflow_instance.create_writing_workflow()
         result = await workflow.arun(request)
         last_step_result = result.step_results[-1]
