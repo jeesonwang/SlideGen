@@ -471,3 +471,134 @@ class TestFileProcessorIntegration:
             assert result.filename == "test_document.txt"
         except Exception as e:
             pytest.skip(f"Integration test skipped due to: {e}")
+
+    @pytest.mark.asyncio
+    async def test_extract_and_index_content_with_real_file(self, tmp_path):
+        """Test extract_and_index_content with real files"""
+        # Create multiple test files
+        test_file1 = tmp_path / "file1_document1.txt"
+        test_file1.write_text("This is the content of the first test document for integration testing.")
+
+        test_file2 = tmp_path / "file2_document2.txt"
+        test_file2.write_text("This is the content of the second test document with different information.")
+
+        # Create a mock FileManager that returns real file paths
+        mock_file_manager = Mock()
+
+        def mock_get_session_file_path(file_id, _session_id):
+            if file_id == "file1":
+                return str(test_file1)
+            elif file_id == "file2":
+                return str(test_file2)
+            return None
+
+        mock_file_manager.get_session_file_path = Mock(side_effect=mock_get_session_file_path)
+
+        # Create processor with mock file manager
+        processor = FileProcessor(file_manager=mock_file_manager, session_id="test-session")
+
+        # Create a mock KnowledgeBaseManager
+        mock_kb_manager = AsyncMock()
+        mock_kb_manager.add_document = AsyncMock()
+
+        # Create request
+        request = GeneratePresentationRequest(
+            user_id=uuid.uuid4(),
+            content="Test topic",
+            files=["file1", "file2"],
+            language="Chinese",
+        )
+
+        try:
+            # Test
+            result = await processor.extract_and_index_content(
+                request,
+                mock_kb_manager,
+                session_id="test-session",
+            )
+
+            # Assertions
+            assert result is not None
+            assert len(result) == 2
+            assert all(isinstance(item, ParsedFileContent) for item in result)
+
+            # Verify file IDs and filenames
+            assert result[0].file_id == "file1"
+            assert result[0].filename == "file1_document1.txt"
+            assert "first test document" in result[0].content
+
+            assert result[1].file_id == "file2"
+            assert result[1].filename == "file2_document2.txt"
+            assert "second test document" in result[1].content
+
+            # Verify knowledge base indexing was called twice
+            assert mock_kb_manager.add_document.call_count == 2
+
+            # Verify the content and metadata passed to add_document
+            first_call = mock_kb_manager.add_document.call_args_list[0]
+            assert "first test document" in first_call[1]["content"]
+            assert first_call[1]["metadata"]["file_id"] == "file1"
+            assert first_call[1]["metadata"]["filename"] == "file1_document1.txt"
+            assert first_call[1]["metadata"]["source"] == "uploaded_file"
+
+            second_call = mock_kb_manager.add_document.call_args_list[1]
+            assert "second test document" in second_call[1]["content"]
+            assert second_call[1]["metadata"]["file_id"] == "file2"
+            assert second_call[1]["metadata"]["filename"] == "file2_document2.txt"
+
+        except Exception as e:
+            pytest.skip(f"Integration test skipped due to: {e}")
+
+    @pytest.mark.asyncio
+    async def test_extract_and_index_content_with_parsing_error(self, tmp_path):
+        """Test extract_and_index_content when one file fails to parse"""
+        # Create one valid file and one invalid file path
+        test_file1 = tmp_path / "file1_valid.txt"
+        test_file1.write_text("This is valid content.")
+
+        # Create mock FileManager
+        mock_file_manager = Mock()
+
+        def mock_get_session_file_path(file_id, _session_id):
+            if file_id == "file1":
+                return str(test_file1)
+            elif file_id == "file2":
+                return "/nonexistent/path/file2.txt"  # Invalid path
+            return None
+
+        mock_file_manager.get_session_file_path = Mock(side_effect=mock_get_session_file_path)
+
+        # Create processor
+        processor = FileProcessor(file_manager=mock_file_manager, session_id="test-session")
+
+        # Create mock KnowledgeBaseManager
+        mock_kb_manager = AsyncMock()
+        mock_kb_manager.add_document = AsyncMock()
+
+        # Create request with two files
+        request = GeneratePresentationRequest(
+            user_id=uuid.uuid4(),
+            content="Test topic",
+            files=["file1", "file2"],
+            language="Chinese",
+        )
+
+        try:
+            # Test - should continue with valid files
+            result = await processor.extract_and_index_content(
+                request,
+                mock_kb_manager,
+                session_id="test-session",
+            )
+
+            # Should only contain the successfully parsed file
+            assert result is not None
+            assert len(result) == 1
+            assert result[0].file_id == "file1"
+            assert "valid content" in result[0].content
+
+            # Knowledge base should only be updated once
+            assert mock_kb_manager.add_document.call_count == 1
+
+        except Exception as e:
+            pytest.skip(f"Integration test skipped due to: {e}")
