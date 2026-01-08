@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from loguru import logger
@@ -13,34 +12,64 @@ from slidegen.services.slidegen.workflow import run_slidegen_workflow
 class PresentationGenerator:
     """Generator for creating PowerPoint presentations from user requests"""
 
-    def __init__(self, default_template_path: str | None = None):
+    def __init__(self, templates_dir: str | None = None):
         """
         Initialize the presentation generator
 
         Args:
-            default_template_path: Default template path to use if not specified in request
+            templates_dir: Directory containing template files. If not provided, uses default location.
         """
-        if default_template_path is None:
-            # Use project root to locate default template
+        if templates_dir is None:
+            # Use project root to locate templates directory
             project_root = Path(__file__).parent.parent.parent.parent
-            default_template_path = str(project_root / "test" / "data" / "template_0.pptx")
+            templates_dir = str(project_root / "components" / "templates")
 
-        self.default_template_path = default_template_path
+        self.templates_dir = Path(templates_dir)
         self.converter = MarkdownToPresentation()
+
+    def get_template_path(self, template_name: str) -> str:
+        """
+        Get the full path for a template by name.
+
+        Args:
+            template_name: Template name (e.g., "general", "purple")
+
+        Returns:
+            Full path to the template file
+
+        Raises:
+            FileNotFoundError: If template file does not exist
+        """
+        template_file = self.templates_dir / f"template_{template_name}.pptx"
+        if not template_file.exists():
+            raise FileNotFoundError(f"Template '{template_name}' not found at: {template_file}")
+        return str(template_file)
+
+    def list_templates(self) -> list[str]:
+        """
+        List all available template names.
+
+        Returns:
+            List of template names (without 'template_' prefix and '.pptx' suffix)
+        """
+        templates = []
+        for file in self.templates_dir.glob("template_*.pptx"):
+            # Extract template name from filename (e.g., "template_general.pptx" -> "general")
+            name = file.stem.replace("template_", "")
+            templates.append(name)
+        return sorted(templates)
 
     async def generate_presentation(
         self,
         request: GeneratePresentationRequest,
         output_path: str,
-        template_path: str | None = None,
     ) -> str:
         """
         Generate a PowerPoint presentation from a request
 
         Args:
-            request: The presentation generation request
+            request: The presentation generation request (uses request.template for template selection)
             output_path: Path where the generated PPTX will be saved
-            template_path: Optional custom template path. If not provided, uses default template
 
         Returns:
             Path to the generated PPTX file
@@ -50,11 +79,8 @@ class PresentationGenerator:
             Exception: If workflow execution or presentation generation fails
         """
         try:
-            # Use provided template or fall back to default
-            template = template_path or self.default_template_path
-
-            if not os.path.exists(template):
-                raise FileNotFoundError(f"Template file not found: {template}")
+            # Get template path from request.template field
+            template = self.get_template_path(request.template)
 
             logger.info(f"Starting presentation generation with template: {template}")
 
@@ -80,3 +106,6 @@ class PresentationGenerator:
         except Exception as e:
             logger.exception(f"Failed to generate presentation: {e}")
             raise
+
+
+presentation_generator = PresentationGenerator()

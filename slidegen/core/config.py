@@ -14,8 +14,7 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-BASE_DIR = Path(__file__).parent.parent
-# sys.path.insert(0, BASE_DIR)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 
 def parse_cors(v: Any) -> list[str] | str:
@@ -51,9 +50,10 @@ class Settings(BaseSettings):
     # [BASE]
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "SlideGen"
-    COMPONENTS_BASE_PATH: Path = BASE_DIR.parent / "components"
+    COMPONENTS_BASE_PATH: Path = PROJECT_ROOT / "components"
     COMPONENTS_PATH: Path = COMPONENTS_BASE_PATH / "shapes" / "shapes.json"
-    LOG_DIR: str = (BASE_DIR / "logs").as_posix()
+    LOG_DIR: str = (PROJECT_ROOT / "logs").as_posix()
+    OUTPUT_DIR: Path = PROJECT_ROOT / "outputs" / "presentations"
 
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8

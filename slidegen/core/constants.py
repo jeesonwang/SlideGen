@@ -1,5 +1,5 @@
-from .config import BASE_DIR
+from .config import PROJECT_ROOT
 
-LOG_DIR = "./logs"
-FILE_DIR = "./data"
-UPLOAD_DIR = BASE_DIR / "uploads"
+LOG_DIR = PROJECT_ROOT / "logs"
+FILE_DIR = PROJECT_ROOT / "data"
+UPLOAD_DIR = PROJECT_ROOT / "uploads"
