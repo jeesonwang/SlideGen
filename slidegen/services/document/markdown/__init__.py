@@ -314,8 +314,9 @@ class MarkdownParser:
             else:
                 parent = self.previous_heading.parent
                 while isinstance(parent, Heading) and parent.level >= level:
-                    parent = parent.parent  # type: ignore
-                parent.append(cur_heading)  # type: ignore
+                    parent = parent.parent
+                assert parent is not None
+                parent.append(cur_heading)
         if cur_heading.level == 1:
             self.document.main = cur_heading
         self.previous_heading = cur_heading
