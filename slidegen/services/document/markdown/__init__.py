@@ -313,7 +313,7 @@ class MarkdownParser:
                 self.previous_heading.append(cur_heading)
             else:
                 parent = self.previous_heading.parent
-                while parent.level >= level:  # type: ignore
+                while isinstance(parent, Heading) and parent.level >= level:
                     parent = parent.parent  # type: ignore
                 parent.append(cur_heading)  # type: ignore
         if cur_heading.level == 1:
