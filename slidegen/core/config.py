@@ -35,13 +35,13 @@ def parse_timezone(v: str) -> tzinfo:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # 验证默认值是否正确
+        # validate default value
         validate_default=False,
-        # 优先级：后面文件的配置会覆盖前面文件的配置
+        # priority: the configuration in the later file will override the configuration in the earlier file
         env_file=[".env"],
         env_ignore_empty=True,
         env_file_encoding="utf-8",
-        # 忽略未定义的配置
+        # ignore undefined configuration
         extra="ignore",
     )
 
@@ -57,10 +57,10 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
-    # 设置 dockerfile 中的环境变量
+    # set environment variables in dockerfile
     UIDGID: str = "1101:1100"
     DEBUG: bool = False
-    # 设置 dockerfile 中的环境变量
+    # set environment variables in dockerfile
     TZ: Annotated[tzinfo, BeforeValidator(parse_timezone)] = pytz.timezone("Asia/Shanghai")
     LOGGING_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     SYNC_THREAD_COUNT: int = 10
@@ -102,20 +102,20 @@ class Settings(BaseSettings):
         )
 
     # [MYSQL]
-    MYSQL_HOST: str
+    MYSQL_HOST: str = "192.168.1.144"
     MYSQL_PORT: int = 3306
-    MYSQL_USER: str
-    MYSQL_PASSWORD: str
-    MYSQL_DB: str
-    MYSQL_CHARSET: str
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = "123456"
+    MYSQL_DB: str = "slidegen"
+    MYSQL_CHARSET: str = "utf8mb4"
 
     # [POSTGRES]
-    POSTGRES_HOST: str
+    POSTGRES_HOST: str = "192.168.1.144"
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
-    POSTGRES_CHARSET: str
+    POSTGRES_USER: str = "root"
+    POSTGRES_PASSWORD: str = "123456"
+    POSTGRES_DB: str = "slidegen"
+    POSTGRES_CHARSET: str = "utf8mb4"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
