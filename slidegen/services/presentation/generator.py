@@ -1,12 +1,37 @@
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 from loguru import logger
 from pptx import Presentation
 
 from slidegen.schemas.gen_request import GeneratePresentationRequest
+from slidegen.schemas.stream_event import (
+    ContentGeneratedEvent,
+    LoopProgressEvent,
+    ProgressEvent,
+    StepCompletedEvent,
+    StepErrorEvent,
+    StepStartedEvent,
+    WorkflowCompletedEvent,
+    WorkflowErrorEvent,
+    WorkflowStartedEvent,
+)
 from slidegen.services.document.markdown import MarkdownDocument
 from slidegen.services.presentation.converter import MarkdownToPresentation
-from slidegen.services.slidegen.workflow import run_slidegen_workflow
+from slidegen.services.slidegen.workflow import run_slidegen_workflow, run_slidegen_workflow_stream
+
+# Type alias for all possible stream events
+StreamEvent = (
+    ProgressEvent
+    | StepStartedEvent
+    | StepCompletedEvent
+    | StepErrorEvent
+    | WorkflowStartedEvent
+    | WorkflowCompletedEvent
+    | WorkflowErrorEvent
+    | ContentGeneratedEvent
+    | LoopProgressEvent
+)
 
 
 class PresentationGenerator:
@@ -106,6 +131,105 @@ class PresentationGenerator:
         except Exception as e:
             logger.exception(f"Failed to generate presentation: {e}")
             raise
+
+    async def generate_presentation_stream(
+        self,
+        request: GeneratePresentationRequest,
+        output_path: str,
+    ) -> AsyncGenerator[StreamEvent, None]:
+        """
+        Generate a PowerPoint presentation with streaming progress events
+
+        Args:
+            request: The presentation generation request
+            output_path: Path where the generated PPTX will be saved
+
+        Yields:
+            Stream events for content generation and PPTX conversion progress
+        """
+        try:
+            # Get template path
+            template = self.get_template_path(request.template)
+            logger.info(f"Starting streaming presentation generation with template: {template}")
+
+            # Track the final content for PPTX generation
+            final_content: str | None = None
+            markdown_doc: MarkdownDocument | None = None
+
+            # Stream content generation events
+            async for event in run_slidegen_workflow_stream(request):
+                # Pass through all workflow events
+                yield event
+
+                # Capture final content from WorkflowCompletedEvent
+                if isinstance(event, WorkflowCompletedEvent) and event.content:
+                    final_content = event.content
+
+            # If we got content, proceed with PPTX generation
+            if final_content:
+                # Parse the markdown content
+                markdown_doc = MarkdownDocument(final_content)
+
+                # Emit PPTX conversion start event
+                yield StepStartedEvent(
+                    step_name="PPTX Conversion",
+                    message="Converting content to PowerPoint format...",
+                )
+
+                yield ProgressEvent(
+                    stage="pptx_conversion",
+                    progress=0.0,
+                    message="Loading template...",
+                )
+
+                # Load template
+                template_prs = Presentation(template)
+
+                yield ProgressEvent(
+                    stage="pptx_conversion",
+                    progress=30.0,
+                    message="Converting markdown to slides...",
+                )
+
+                # Convert to PPTX
+                presentation = await self.converter.generate(template_prs, markdown_doc)
+
+                yield ProgressEvent(
+                    stage="pptx_conversion",
+                    progress=80.0,
+                    message="Saving presentation file...",
+                )
+
+                # Save the presentation
+                presentation.save(output_path)
+
+                yield ProgressEvent(
+                    stage="pptx_conversion",
+                    progress=100.0,
+                    message="Presentation saved successfully",
+                )
+
+                # Emit completion event with file info
+                yield StepCompletedEvent(
+                    step_name="PPTX Conversion",
+                    content=output_path,
+                    message="PowerPoint file generated successfully",
+                )
+
+                logger.info(f"Successfully generated presentation: {output_path}")
+
+            else:
+                yield WorkflowErrorEvent(
+                    error="No content generated from workflow",
+                    message="Content generation failed",
+                )
+
+        except Exception as e:
+            logger.exception(f"Failed to generate presentation: {e}")
+            yield WorkflowErrorEvent(
+                error=str(e),
+                message="Presentation generation failed",
+            )
 
 
 presentation_generator = PresentationGenerator()

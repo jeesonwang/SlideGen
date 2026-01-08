@@ -531,3 +531,177 @@ async def run_slidegen_workflow(
     except Exception as e:
         logger.exception("Workflow execution failed")
         raise e
+
+
+async def run_slidegen_workflow_stream(
+    request: GeneratePresentationRequest,
+    llm: Model | None = None,
+    embedder: Embedder | None = None,
+):
+    """Run the slide generation workflow with streaming output
+
+    Args:
+        request: Presentation generation request
+        llm: Optional LLM instance to use
+        embedder: Optional embedder instance to use
+
+    Yields:
+        Stream events containing workflow progress and generated content
+    """
+    from agno.run.workflow import (
+        LoopExecutionCompletedEvent,
+        LoopExecutionStartedEvent,
+        LoopIterationCompletedEvent,
+        LoopIterationStartedEvent,
+    )
+    from agno.run.workflow import StepCompletedEvent as AgnoStepCompletedEvent
+    from agno.run.workflow import StepStartedEvent as AgnoStepStartedEvent
+    from agno.run.workflow import WorkflowCompletedEvent as AgnoWorkflowCompletedEvent
+    from agno.run.workflow import WorkflowErrorEvent as AgnoWorkflowErrorEvent
+    from agno.run.workflow import WorkflowStartedEvent as AgnoWorkflowStartedEvent
+
+    from slidegen.schemas.stream_event import (
+        ContentGeneratedEvent,
+        LoopProgressEvent,
+        ProgressEvent,
+        StepCompletedEvent,
+        StepStartedEvent,
+        WorkflowCompletedEvent,
+        WorkflowErrorEvent,
+        WorkflowStartedEvent,
+    )
+
+    try:
+        workflow_instance = await SlideGenWorkflow.from_request(request, llm=llm, embedder=embedder)
+        workflow = workflow_instance.create_writing_workflow()
+
+        # Run workflow with streaming enabled
+        event_stream = await workflow.arun(request, stream=True, stream_intermediate_steps=True)
+
+        final_content: str | None = None
+        current_loop_total = request.n_slides  # Expected number of sections
+
+        async for event in event_stream:
+            # Convert agno events to our custom event types
+            if isinstance(event, AgnoWorkflowStartedEvent):
+                yield WorkflowStartedEvent(
+                    workflow_name=event.workflow_name,
+                    run_id=event.run_id,
+                    message="Starting presentation generation...",
+                )
+
+            elif isinstance(event, AgnoStepStartedEvent):
+                step_name = event.step_name or "Unknown"
+                message = _get_step_message(step_name, "started")
+                yield StepStartedEvent(
+                    step_name=step_name,
+                    step_index=event.step_index if isinstance(event.step_index, int) else None,
+                    message=message,
+                )
+
+            elif isinstance(event, AgnoStepCompletedEvent):
+                step_name = event.step_name or "Unknown"
+                content = str(event.content) if event.content else None
+                message = _get_step_message(step_name, "completed")
+
+                # If this is the outline generation step, emit content event
+                if step_name == "Outline generation" and content:
+                    yield ContentGeneratedEvent(
+                        content_type="outline",
+                        content=content,
+                        message="Outline generated successfully",
+                    )
+
+                yield StepCompletedEvent(
+                    step_name=step_name,
+                    step_index=event.step_index if isinstance(event.step_index, int) else None,
+                    content=content,
+                    message=message,
+                )
+
+            elif isinstance(event, LoopExecutionStartedEvent):
+                yield ProgressEvent(
+                    stage="section_generation",
+                    progress=0.0,
+                    message=f"Starting to generate {current_loop_total} sections...",
+                )
+
+            elif isinstance(event, LoopIterationStartedEvent):
+                iteration = event.iteration
+                progress = (iteration / current_loop_total) * 100 if current_loop_total > 0 else 0
+                yield ProgressEvent(
+                    stage="section_generation",
+                    progress=progress,
+                    message=f"Generating section {iteration + 1} of {current_loop_total}...",
+                )
+
+            elif isinstance(event, LoopIterationCompletedEvent):
+                iteration = event.iteration
+                progress = ((iteration + 1) / current_loop_total) * 100 if current_loop_total > 0 else 0
+
+                # Extract section content from iteration results
+                section_content = None
+                section_title = None
+                if event.iteration_results:
+                    last_result = event.iteration_results[-1]
+                    if hasattr(last_result, "content") and last_result.content:
+                        section_content = str(last_result.content)
+                    if hasattr(last_result, "step_name"):
+                        section_title = last_result.step_name
+
+                yield LoopProgressEvent(
+                    iteration=iteration,
+                    total=current_loop_total,
+                    section_title=section_title,
+                    content=section_content,
+                    message=f"Section {iteration + 1} completed",
+                )
+
+            elif isinstance(event, LoopExecutionCompletedEvent):
+                yield ProgressEvent(
+                    stage="section_generation",
+                    progress=100.0,
+                    message=f"All {event.total_iterations} sections generated",
+                )
+
+            elif isinstance(event, AgnoWorkflowCompletedEvent):
+                final_content = str(event.content) if event.content else None
+                yield WorkflowCompletedEvent(
+                    content=final_content,
+                    message="Presentation content generated successfully",
+                )
+
+            elif isinstance(event, AgnoWorkflowErrorEvent):
+                yield WorkflowErrorEvent(
+                    error=event.error or "Unknown error",
+                    message="Workflow failed",
+                )
+
+    except Exception as e:
+        logger.exception("Streaming workflow execution failed")
+        yield WorkflowErrorEvent(
+            error=str(e),
+            message="Workflow execution failed",
+        )
+
+
+def _get_step_message(step_name: str, status: str) -> str:
+    """Get human-readable message for step events"""
+    step_messages = {
+        "Outline generation": {
+            "started": "Generating presentation outline...",
+            "completed": "Outline generation completed",
+        },
+        "Section processing": {
+            "started": "Processing section content...",
+            "completed": "Section content processed",
+        },
+        "Merge sections": {
+            "started": "Merging all sections...",
+            "completed": "All sections merged successfully",
+        },
+    }
+
+    if step_name in step_messages:
+        return step_messages[step_name].get(status, f"{step_name} {status}")
+    return f"{step_name} {status}"

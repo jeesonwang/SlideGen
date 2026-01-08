@@ -5,12 +5,10 @@ from kombu import Queue
 from slidegen.core.config import settings
 
 # Queue
-backend_doc_process_queue = "doc_process"
-backend_kb_process_queue = "kb_process"
+backend_slidegen_queue = "slidegen"
 
 # Task
-parse_add_to_kb = "parse_add_to_kb"
-add_to_kb = "add_to_kb"
+generate_presentation = "generate_presentation"
 
 
 class Config:
@@ -44,14 +42,10 @@ class Config:
         "max_retries": 0,
     }
 
-    task_queues = (
-        Queue(backend_doc_process_queue),
-        Queue(backend_kb_process_queue),
-    )
+    task_queues = (Queue(backend_slidegen_queue),)
 
     task_routes = {
-        "parse_add_to_kb": {"queue": backend_doc_process_queue},
-        "add_to_kb": {"queue": backend_kb_process_queue},
+        "generate_presentation": {"queue": backend_slidegen_queue},
     }
 
     beat_schedule: dict[str, Any] = {}
