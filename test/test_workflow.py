@@ -1,47 +1,74 @@
-"""测试SlideGen工作流"""
+"""Test SlideGen workflow"""
 
-import os
 import uuid
-from unittest.mock import AsyncMock, patch
 
 import pytest
-from agno.models.openrouter import OpenRouter
+from agno.knowledge.embedder.openai import OpenAIEmbedder
+from agno.models.google.gemini import Gemini
+from agno.models.message import Message
+from agno.models.response import ModelResponse
 from loguru import logger
 
 from slidegen.schemas.gen_request import GeneratePresentationRequest, Tone, Verbosity
+from slidegen.services.document.markdown import MarkdownDocument
 from slidegen.services.slidegen.workflow import SlideGenWorkflow, run_slidegen_workflow
 
-# 测试用的固定 UUID
+# Fixed UUID for testing
 TEST_USER_ID = uuid.UUID("12345678-1234-5678-1234-567812345678")
 
 
 class TestSlideGenWorkflow:
-    """SlideGen工作流测试类"""
+    """SlideGen workflow test class"""
 
     @pytest.fixture
     def llm(self):
-        llm = OpenRouter(id="z-ai/glm-4.5-air:free", api_key=os.getenv("OPENROUTER_API_KEY"), max_tokens=7896)
+        """Create a real LLM instance for testing"""
+        llm = Gemini(id="gemini-3-flash-preview")
         return llm
 
     @pytest.fixture
-    def mock_get_llm_instance(self, llm):
-        """Mock get_llm_instance 函数"""
-        with patch(
-            "slidegen.services.slidegen.workflow.get_llm_instance",
-            new_callable=AsyncMock,
-            return_value=llm,
-        ) as mock:
-            yield mock
+    def embedder(self):
+        """Create a real embedder instance for testing (optional)"""
+        # You can configure this with your preferred embedder
+        # For example, using OpenAI embedder:
+        return OpenAIEmbedder(api_key="dummy", id="null", base_url="http://192.168.1.144:8000/v1")
+
+    # test embedder
+    async def test_embedder(self, embedder: OpenAIEmbedder):
+        """Test embedder instance creation"""
+        try:
+            result = embedder.get_embedding("Hello, world!")
+            assert result is not None
+            assert isinstance(result, list)
+            assert len(result) > 0
+            logger.info("Embedder test passed")
+        except Exception:
+            logger.exception("Embedder test failed")
+            pytest.fail("Embedder test failed")
+
+    # test llm
+    async def test_llm(self, llm: Gemini):
+        """Test LLM instance creation"""
+        try:
+            message = Message(role="user", content="Hello, world!")
+            result = llm.response([message])
+            assert result is not None
+            assert isinstance(result, ModelResponse)
+            assert len(result.content) > 0
+            logger.info("LLM test passed")
+        except Exception:
+            logger.exception("LLM test failed")
+            pytest.fail("LLM test failed")
 
     @pytest.fixture
     def basic_request(self) -> GeneratePresentationRequest:
-        """创建基础的演示文稿生成请求"""
+        """Create a basic presentation generation request"""
         return GeneratePresentationRequest(
             content="Python编程语言介绍，包括详细的示例",
             instructions="专注于实际应用和最佳实践",
             tone=Tone.EDUCATIONAL,
             verbosity=Verbosity.STANDARD,
-            web_search=False,  # 测试时关闭网络搜索以加快速度
+            web_search=False,  # Disable web search for faster testing
             n_slides=5,
             language="Chinese",
             user_id=TEST_USER_ID,
@@ -49,7 +76,7 @@ class TestSlideGenWorkflow:
 
     @pytest.fixture
     def web_search_request(self) -> GeneratePresentationRequest:
-        """创建启用网络搜索的请求"""
+        """Create a request with web search enabled"""
         return GeneratePresentationRequest(
             content="人工智能的最新发展趋势",
             instructions="包含最新的技术动态和实际应用案例",
@@ -63,7 +90,7 @@ class TestSlideGenWorkflow:
 
     @pytest.fixture
     def concise_request(self) -> GeneratePresentationRequest:
-        """创建简洁风格的请求"""
+        """Create a concise style request"""
         return GeneratePresentationRequest(
             content="敏捷开发方法论",
             tone=Tone.PROFESSIONAL,
@@ -74,25 +101,25 @@ class TestSlideGenWorkflow:
             user_id=TEST_USER_ID,
         )
 
-    async def test_workflow_creation(self, basic_request, mock_get_llm_instance):
-        """测试工作流实例创建"""
+    async def test_workflow_creation(self, basic_request, llm):
+        """Test workflow instance creation"""
         try:
-            workflow_instance = await SlideGenWorkflow.from_request(basic_request)
+            workflow_instance = await SlideGenWorkflow.from_request(basic_request, llm=llm)
             assert workflow_instance is not None
             assert workflow_instance.outline_agent is not None
             assert workflow_instance.content_agent is not None
-            # 没有知识库时，summary_agent应该为None
+            # When there is no knowledge base, summary_agent should be None
             assert workflow_instance.summary_agent is None
             assert workflow_instance.kb_manager is None
-            logger.info("工作流实例创建成功")
-            # 验证 mock 被调用
-            mock_get_llm_instance.assert_called_once_with(basic_request)
+            logger.info("Workflow instance created successfully")
         except Exception as e:
-            logger.exception("工作流实例创建失败")
-            pytest.fail(f"工作流创建失败: {e!s}")
+            logger.exception("Workflow instance creation failed")
+            pytest.fail(f"Workflow creation failed: {e!s}")
 
-    async def test_workflow_with_knowledge_base(self, mock_get_llm_instance):
-        """测试包含知识库的工作流创建"""
+    async def test_workflow_with_knowledge_base(self, llm, embedder):
+        """test workflow creation with a knowledge base"""
+        from unittest.mock import AsyncMock, patch
+
         request = GeneratePresentationRequest(
             content="Python编程语言介绍",
             tone=Tone.EDUCATIONAL,
@@ -101,7 +128,7 @@ class TestSlideGenWorkflow:
             n_slides=5,
             language="Chinese",
             user_id=TEST_USER_ID,
-            files=["dummy_file_id_1", "dummy_file_id_2"],  # 模拟有文件
+            files=["dummy_file_id_1", "dummy_file_id_2"],  # simulate having files
         )
 
         # Mock file processor to avoid actual file processing
@@ -111,21 +138,21 @@ class TestSlideGenWorkflow:
             mock_instance.extract_and_index_content = AsyncMock()
 
             try:
-                workflow_instance = await SlideGenWorkflow.from_request(request)
+                workflow_instance = await SlideGenWorkflow.from_request(request, llm=llm, embedder=embedder)
                 assert workflow_instance is not None
                 assert workflow_instance.outline_agent is not None
                 assert workflow_instance.content_agent is not None
-                # 有知识库时，summary_agent应该被创建
+                # when there is a knowledge base, summary_agent should be created
                 assert workflow_instance.summary_agent is not None
                 assert workflow_instance.kb_manager is not None
-                logger.info("包含知识库的工作流实例创建成功")
-                logger.info("Summary agent已创建用于处理知识库内容")
+                logger.info("Workflow instance with knowledge base created successfully")
+                logger.info("Summary agent created for handling knowledge base content")
             except Exception as e:
-                logger.exception("包含知识库的工作流实例创建失败")
-                pytest.fail(f"工作流创建失败: {e!s}")
+                logger.exception("Workflow instance with knowledge base creation failed")
+                pytest.fail(f"Workflow creation failed: {e!s}")
 
     async def test_parse_outline(self):
-        """测试大纲解析功能"""
+        """test outline parsing functionality"""
         # 测试字符串格式的大纲
         outline_str = """
         # Python编程语言介绍
@@ -139,7 +166,7 @@ class TestSlideGenWorkflow:
         doc = SlideGenWorkflow.parse_outline(outline_str)
         sections = [section.text for section in doc.children]
         assert len(sections) > 0
-        logger.info(f"解析到 {len(sections)} 个章节")
+        logger.info(f"Parsed {len(sections)} sections")
 
         # 测试字典格式的大纲
         outline_dict = {
@@ -149,66 +176,69 @@ class TestSlideGenWorkflow:
         sections_dict = SlideGenWorkflow.parse_outline(outline_dict)
         assert len(sections_dict) > 0
 
-        # 测试空大纲 - parse_outline返回的是MarkdownDocument对象，不是空列表
         from slidegen.services.document.markdown import MarkdownDocument
 
         empty_doc = SlideGenWorkflow.parse_outline(None)
         assert isinstance(empty_doc, MarkdownDocument)
         assert len(empty_doc.contents) == 0
 
-    async def test_basic_workflow_execution(self, basic_request, mock_get_llm_instance):
-        """测试基础工作流执行"""
+    async def test_basic_workflow_execution(self, basic_request, llm):
+        """test basic workflow execution"""
         try:
-            result = await run_slidegen_workflow(basic_request)
+            result = await run_slidegen_workflow(basic_request, llm=llm)
 
+            # Verify result is a MarkdownDocument
             assert result is not None
-            assert "success" in result
-            assert result["success"] is True
-            assert "result" in result
+            assert isinstance(result, MarkdownDocument)
 
-            logger.info(f"工作流执行成功: {result['message']}")
+            # Verify the document has content
+            assert len(result.contents) > 0 or result.children
 
-            # 验证结果包含预期的步骤输出
-            if result["result"]:
-                logger.info(f"工作流结果: {result['result']}")
+            logger.info("Basic workflow execution passed")
+            logger.info(f"Generated document length: {len(result.text)} characters")
+            logger.info(f"Contains {len(result.contents)} content blocks")
 
         except Exception as e:
-            logger.exception("基础工作流执行失败")
-            pytest.fail(f"工作流执行失败: {e!s}")
+            logger.exception("Basic workflow execution failed")
+            pytest.fail(f"Workflow execution failed: {e!s}")
 
     @pytest.mark.slow
-    async def test_web_search_workflow_execution(self, web_search_request, mock_get_llm_instance):
-        """测试启用网络搜索的工作流执行（标记为慢速测试）"""
+    async def test_web_search_workflow_execution(self, web_search_request, llm):
+        """test web search workflow execution (marked as slow test)"""
         try:
-            result = await run_slidegen_workflow(web_search_request)
+            result = await run_slidegen_workflow(web_search_request, llm=llm)
 
             assert result is not None
-            assert "success" in result
-            assert result["success"] is True
+            assert isinstance(result, MarkdownDocument)
+            assert len(result.contents) > 0 or result.children
 
-            logger.info("启用网络搜索的工作流执行成功")
+            logger.info("Web search workflow execution passed")
+            logger.info(f"Generated document length: {len(result.text)} characters")
+            logger.info(f"Contains {len(result.contents)} content blocks")
 
         except Exception as e:
-            logger.exception("网络搜索工作流执行失败")
-            pytest.fail(f"工作流执行失败: {e!s}")
+            logger.exception("Web search workflow execution failed")
+            pytest.fail(f"Workflow execution failed: {e!s}")
 
-    async def test_concise_workflow_execution(self, concise_request, mock_get_llm_instance):
-        """测试简洁风格的工作流执行"""
+    async def test_concise_workflow_execution(self, concise_request, llm):
+        """test concise style workflow execution"""
         try:
-            result = await run_slidegen_workflow(concise_request)
+            result = await run_slidegen_workflow(concise_request, llm=llm)
 
             assert result is not None
-            assert "success" in result
-            assert result["success"] is True
+            assert isinstance(result, MarkdownDocument)
+            assert len(result.contents) > 0 or result.children
 
-            logger.info("简洁风格工作流执行成功")
+            logger.info("Concise style workflow execution passed")
+            logger.info(f"Generated document length: {len(result.text)} characters")
+            logger.info(f"Contains {len(result.contents)} content blocks")
 
         except Exception as e:
-            logger.exception("简洁风格工作流执行失败")
-            pytest.fail(f"工作流执行失败: {e!s}")
+            logger.exception("Concise style workflow execution failed")
+            pytest.fail(f"Workflow execution failed: {e!s}")
 
-    async def test_different_tones(self, mock_get_llm_instance):
-        """测试不同的语气风格"""
+    async def test_different_tones(self, llm):
+        """test different tones"""
         tones_to_test = [Tone.CASUAL, Tone.PROFESSIONAL, Tone.EDUCATIONAL]
 
         for tone in tones_to_test:
@@ -223,15 +253,16 @@ class TestSlideGenWorkflow:
             )
 
             try:
-                result = await run_slidegen_workflow(request)
-                assert result["success"] is True
-                logger.info(f"语气风格 {tone.value} 测试通过")
+                result = await run_slidegen_workflow(request, llm=llm)
+                assert result is not None
+                assert isinstance(result, MarkdownDocument)
+                logger.info(f"Tone {tone.value} test passed")
             except Exception as e:
-                logger.exception(f"语气风格 {tone.value} 测试失败")
-                pytest.fail(f"语气风格 {tone.value} 测试失败: {e!s}")
+                logger.exception(f"Tone {tone.value} test failed")
+                pytest.fail(f"Tone {tone.value} test failed: {e!s}")
 
-    async def test_different_verbosity_levels(self, mock_get_llm_instance):
-        """测试不同的详细程度"""
+    async def test_different_verbosity_levels(self, llm):
+        """test different verbosity levels"""
         verbosity_levels = [Verbosity.CONCISE, Verbosity.STANDARD, Verbosity.TEXT_HEAVY]
 
         for verbosity in verbosity_levels:
@@ -246,34 +277,35 @@ class TestSlideGenWorkflow:
             )
 
             try:
-                result = await run_slidegen_workflow(request)
-                assert result["success"] is True
-                logger.info(f"详细程度 {verbosity.value} 测试通过")
+                result = await run_slidegen_workflow(request, llm=llm)
+                assert result is not None
+                assert isinstance(result, MarkdownDocument)
+                logger.info(f"Verbosity {verbosity.value} test passed")
             except Exception as e:
-                logger.exception(f"详细程度 {verbosity.value} 测试失败")
-                pytest.fail(f"详细程度 {verbosity.value} 测试失败: {e!s}")
+                logger.exception(f"Verbosity {verbosity.value} test failed")
+                pytest.fail(f"Verbosity {verbosity.value} test failed: {e!s}")
 
-    async def test_workflow_error_handling(self, mock_get_llm_instance):
-        """测试工作流的错误处理"""
-        # 测试无效的请求（比如slides数量为0）
+    async def test_workflow_error_handling(self, llm):
+        """test workflow error handling"""
+        # test invalid request (like slides number is 0)
         invalid_request = GeneratePresentationRequest(
-            content="测试内容",
-            n_slides=0,  # 可能会导致问题
+            content="Test content",
+            n_slides=0,  # may cause problems
             language="Chinese",
             user_id=TEST_USER_ID,
         )
 
         try:
-            result = await run_slidegen_workflow(invalid_request)
-            # 即使参数不理想，工作流也应该返回结果
+            result = await run_slidegen_workflow(invalid_request, llm=llm)
+            # even if the parameters are not ideal, the workflow should return a result
             assert result is not None
-            assert "success" in result
-            logger.info("错误处理测试完成")
+            assert isinstance(result, MarkdownDocument)
+            logger.info("Error handling test completed")
         except Exception as e:
-            logger.warning(f"工作流处理异常输入: {e!s}")
+            logger.warning(f"Workflow processing exception input: {e!s}")
 
-    async def test_workflow_with_instructions(self, mock_get_llm_instance):
-        """测试包含自定义指令的工作流"""
+    async def test_workflow_with_instructions(self, llm):
+        """test workflow with custom instructions"""
         request = GeneratePresentationRequest(
             content="云计算技术",
             instructions="强调安全性和成本优化，包含实际案例",
@@ -286,38 +318,60 @@ class TestSlideGenWorkflow:
         )
 
         try:
-            result = await run_slidegen_workflow(request)
-            assert result["success"] is True
-            logger.info("自定义指令工作流测试通过")
+            result = await run_slidegen_workflow(request, llm=llm)
+            assert result is not None
+            assert isinstance(result, MarkdownDocument)
+            logger.info("Custom instructions workflow test passed")
         except Exception as e:
-            logger.exception("自定义指令工作流测试失败")
-            pytest.fail(f"测试失败: {e!s}")
+            logger.exception("Custom instructions workflow test failed")
+            pytest.fail(f"Test failed: {e!s}")
+
+    async def test_workflow_with_real_embedder_and_llm(self, llm, embedder):
+        """test workflow execution with real embedder and llm"""
+        request = GeneratePresentationRequest(
+            content="深度学习基础知识介绍",
+            instructions="包含神经网络的基本概念和应用场景",
+            tone=Tone.EDUCATIONAL,
+            verbosity=Verbosity.STANDARD,
+            web_search=False,
+            n_slides=5,
+            language="Chinese",
+            user_id=TEST_USER_ID,
+        )
+
+        try:
+            result = await run_slidegen_workflow(request, llm=llm, embedder=embedder)
+
+            assert result is not None
+            assert isinstance(result, MarkdownDocument)
+            assert len(result.contents) > 0 or result.children
+
+            logger.info("workflow execution with real embedder and llm passed")
+            logger.info(f"generated document length: {len(result.text)} characters")
+            logger.info(f"contains {len(result.contents)} content blocks")
+
+        except Exception as e:
+            logger.exception("workflow execution with real embedder and llm failed")
+            pytest.fail(f"workflow execution failed: {e!s}")
 
 
 @pytest.mark.integration
 class TestWorkflowIntegration:
-    """工作流集成测试"""
+    """workflow integration test"""
 
     @pytest.fixture
     def llm(self):
-        llm = OpenRouter(
-            id="z-ai/glm-4.5-air:free",
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-        )
+        """Create a real LLM instance for integration testing"""
+        llm = Gemini(id="gemini-3-flash-preview")
         return llm
 
     @pytest.fixture
-    def mock_get_llm_instance(self, llm):
-        """Mock get_llm_instance 函数"""
-        with patch(
-            "slidegen.services.slidegen.workflow.get_llm_instance",
-            new_callable=AsyncMock,
-            return_value=llm,
-        ) as mock:
-            yield mock
+    def embedder(self):
+        """Create a real embedder instance for integration testing (optional)"""
+        return OpenAIEmbedder(api_key="dummy", id="null", base_url="http://192.168.1.144:8000/v1")
 
-    async def test_end_to_end_workflow(self, mock_get_llm_instance):
-        """端到端工作流测试"""
+    async def test_end_to_end_workflow(self, llm):
+        """end to end workflow test"""
         request = GeneratePresentationRequest(
             content="机器学习入门：从理论到实践",
             instructions="包含代码示例和可视化说明",
@@ -330,39 +384,17 @@ class TestWorkflowIntegration:
         )
 
         try:
-            result = await run_slidegen_workflow(request)
+            result = await run_slidegen_workflow(request, llm=llm)
 
-            # 验证结果结构
+            # verify result structure
             assert result is not None
-            assert result["success"] is True
-            assert "result" in result
-            assert "message" in result
+            assert isinstance(result, MarkdownDocument)
+            assert len(result.contents) > 0 or result.children
 
-            logger.info("端到端工作流测试成功")
-            logger.info(f"生成结果: {result['message']}")
+            logger.info("End to end workflow test passed")
+            logger.info(f"Generated document length: {len(result.text)} characters")
+            logger.info(f"Contains {len(result.contents)} content blocks")
 
         except Exception as e:
-            logger.exception("端到端工作流测试失败")
-            pytest.fail(f"集成测试失败: {e!s}")
-
-
-if __name__ == "__main__":
-    # 可以直接运行此文件进行快速测试
-    import asyncio
-
-    async def quick_test():
-        """快速测试"""
-        request = GeneratePresentationRequest(
-            content="Python编程语言介绍",
-            tone=Tone.EDUCATIONAL,
-            verbosity=Verbosity.STANDARD,
-            web_search=False,
-            n_slides=5,
-            language="Chinese",
-            user_id=TEST_USER_ID,
-        )
-
-        result = await run_slidegen_workflow(request)
-        logger.info(f"测试结果: {result}")
-
-    asyncio.run(quick_test())
+            logger.exception("End to end workflow test failed")
+            pytest.fail(f"Integration test failed: {e!s}")
