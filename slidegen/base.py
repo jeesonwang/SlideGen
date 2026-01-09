@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from slidegen.api.main import api_router
 from slidegen.core import logger_init, settings
-from slidegen.middleware.exception import register_exception_handler
+from slidegen.middleware import register_exception_handler
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
