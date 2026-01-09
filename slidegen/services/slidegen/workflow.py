@@ -12,6 +12,7 @@ from agno.workflow.types import StepInput, StepOutput
 from loguru import logger
 from sqlmodel import select
 
+from slidegen.core import settings
 from slidegen.core.database import AsyncSessionLocal
 from slidegen.models.embedding_config import EmbeddingConfigModel
 from slidegen.models.llm_config import LLMConfigModel
@@ -27,13 +28,9 @@ from slidegen.schemas.stream_event import (
     WorkflowErrorEvent,
     WorkflowStartedEvent,
 )
-from slidegen.services.document.file_processor import FileProcessor
-from slidegen.services.document.markdown import MarkdownDocument
+from slidegen.services.document import FileProcessor, MarkdownDocument
 from slidegen.services.factories import EmbeddingFactory, LLMFactory
-from slidegen.services.knowledge.kb_manager import KnowledgeBaseManager
-
-# Maximum number of sections to generate
-MAX_ITERATIONS = 35
+from slidegen.services.knowledge import KnowledgeBaseManager
 
 
 async def get_llm_instance(request: GeneratePresentationRequest | LLMConfigRequest) -> Model:
@@ -508,7 +505,7 @@ class SlideGenWorkflow:
                     name="Loop writing sections",
                     steps=[Step(name="Section processing", executor=self.section_processor)],
                     end_condition=self.check_completion,
-                    max_iterations=MAX_ITERATIONS,
+                    max_iterations=settings.MAX_ITERATIONS,
                 ),
                 Step(name="Merge sections", executor=self.merge_sections_processor),
             ],

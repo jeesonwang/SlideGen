@@ -172,5 +172,9 @@ class Settings(BaseSettings):
     # [CELERY]
     SCHEDULE_PERIOD: int = 60
 
+    # [SLIDEGEN]
+    # Maximum number of sections to generate
+    MAX_ITERATIONS: int = 35
+
 
 settings: Settings = Settings()  # type: ignore
