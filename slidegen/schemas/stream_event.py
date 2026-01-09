@@ -119,3 +119,16 @@ class ProgressEvent(BaseModel):
     stage: str = Field(..., description="Current stage")
     progress: float = Field(..., description="Progress percentage (0-100)")
     message: str | None = Field(default=None, description="Progress message")
+
+
+# Type alias for all possible stream events
+StreamEventT = (
+    ProgressEvent
+    | StepStartedEvent
+    | StepCompletedEvent
+    | WorkflowStartedEvent
+    | WorkflowCompletedEvent
+    | WorkflowErrorEvent
+    | ContentGeneratedEvent
+    | LoopProgressEvent
+)

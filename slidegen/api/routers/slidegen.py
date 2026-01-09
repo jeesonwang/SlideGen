@@ -1,5 +1,6 @@
 import json
 import uuid
+from collections.abc import AsyncGenerator
 from datetime import datetime
 from typing import Any, Literal
 
@@ -192,7 +193,7 @@ async def generate_slides_stream(task: SlideGenTask, current_user: CurrentUser) 
         llm_config_id=task.llm_config_id,
     )
 
-    async def event_generator():
+    async def event_generator() -> AsyncGenerator[str, None]:
         """Generate SSE events from workflow stream"""
         try:
             async for event in run_slidegen_workflow_stream(request):
@@ -282,7 +283,7 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
         llm_config_id=task.llm_config_id,
     )
 
-    async def event_generator():
+    async def event_generator() -> AsyncGenerator[str, None]:
         """Generate SSE events from full presentation generation stream"""
         try:
             async for event in presentation_generator.generate_presentation_stream(request, output_path):

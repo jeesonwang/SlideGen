@@ -6,32 +6,16 @@ from pptx import Presentation
 
 from slidegen.schemas.gen_request import GeneratePresentationRequest
 from slidegen.schemas.stream_event import (
-    ContentGeneratedEvent,
-    LoopProgressEvent,
     ProgressEvent,
     StepCompletedEvent,
-    StepErrorEvent,
     StepStartedEvent,
+    StreamEventT,
     WorkflowCompletedEvent,
     WorkflowErrorEvent,
-    WorkflowStartedEvent,
 )
 from slidegen.services.document.markdown import MarkdownDocument
 from slidegen.services.presentation.converter import MarkdownToPresentation
 from slidegen.services.slidegen.workflow import run_slidegen_workflow, run_slidegen_workflow_stream
-
-# Type alias for all possible stream events
-StreamEvent = (
-    ProgressEvent
-    | StepStartedEvent
-    | StepCompletedEvent
-    | StepErrorEvent
-    | WorkflowStartedEvent
-    | WorkflowCompletedEvent
-    | WorkflowErrorEvent
-    | ContentGeneratedEvent
-    | LoopProgressEvent
-)
 
 
 class PresentationGenerator:
@@ -136,7 +120,7 @@ class PresentationGenerator:
         self,
         request: GeneratePresentationRequest,
         output_path: str,
-    ) -> AsyncGenerator[StreamEvent, None]:
+    ) -> AsyncGenerator[StreamEventT, None]:
         """
         Generate a PowerPoint presentation with streaming progress events
 

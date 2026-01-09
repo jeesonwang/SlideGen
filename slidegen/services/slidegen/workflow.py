@@ -1,4 +1,5 @@
 import traceback
+from collections.abc import AsyncGenerator
 from typing import Any, cast
 
 from agno.agent import Agent
@@ -15,6 +16,17 @@ from slidegen.core.database import AsyncSessionLocal
 from slidegen.models.embedding_config import EmbeddingConfigModel
 from slidegen.models.llm_config import LLMConfigModel
 from slidegen.schemas.gen_request import GeneratePresentationRequest, LLMConfigRequest
+from slidegen.schemas.stream_event import (
+    ContentGeneratedEvent,
+    LoopProgressEvent,
+    ProgressEvent,
+    StepCompletedEvent,
+    StepStartedEvent,
+    StreamEventT,
+    WorkflowCompletedEvent,
+    WorkflowErrorEvent,
+    WorkflowStartedEvent,
+)
 from slidegen.services.document.file_processor import FileProcessor
 from slidegen.services.document.markdown import MarkdownDocument
 from slidegen.services.factories import EmbeddingFactory, LLMFactory
@@ -537,7 +549,7 @@ async def run_slidegen_workflow_stream(
     request: GeneratePresentationRequest,
     llm: Model | None = None,
     embedder: Embedder | None = None,
-):
+) -> AsyncGenerator[StreamEventT, None]:
     """Run the slide generation workflow with streaming output
 
     Args:
@@ -559,17 +571,6 @@ async def run_slidegen_workflow_stream(
     from agno.run.workflow import WorkflowCompletedEvent as AgnoWorkflowCompletedEvent
     from agno.run.workflow import WorkflowErrorEvent as AgnoWorkflowErrorEvent
     from agno.run.workflow import WorkflowStartedEvent as AgnoWorkflowStartedEvent
-
-    from slidegen.schemas.stream_event import (
-        ContentGeneratedEvent,
-        LoopProgressEvent,
-        ProgressEvent,
-        StepCompletedEvent,
-        StepStartedEvent,
-        WorkflowCompletedEvent,
-        WorkflowErrorEvent,
-        WorkflowStartedEvent,
-    )
 
     try:
         workflow_instance = await SlideGenWorkflow.from_request(request, llm=llm, embedder=embedder)
