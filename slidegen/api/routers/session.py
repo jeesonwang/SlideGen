@@ -4,6 +4,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 from loguru import logger
 from sqlalchemy import func
+from sqlalchemy.orm import aliased
 from sqlmodel import select
 
 from slidegen.api.deps import CurrentUser, SessionDep
@@ -129,15 +130,15 @@ async def create_session(
         raise
     except Exception as e:
         logger.exception(f"Failed to create session: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/", response_model=SessionsPublic)
 async def list_sessions(
     db_session: SessionDep,
     current_user: CurrentUser,
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
     status: SessionStatus | None = None,
     search: str | None = Query(None, description="Search in title/topic"),
 ) -> Any:
@@ -150,45 +151,66 @@ async def list_sessions(
     - Ordered by create_time DESC
     """
     try:
-        # Build query
-        statement = select(SessionModel).where(SessionModel.user_id == current_user.id)
+        # Build base query for total count
+        base_statement = select(SessionModel).where(SessionModel.user_id == current_user.id)
 
-        # Filter by status
+        # Apply filters
         if status:
-            statement = statement.where(SessionModel.status == status)
+            base_statement = base_statement.where(SessionModel.status == status)
 
-        # Search in title/topic
         if search:
-            search_pattern = f"%{search}%"
-            statement = statement.where(
+            search_escaped = search.replace("%", r"\%").replace("_", r"\_")
+            search_pattern = f"%{search_escaped}%"
+            base_statement = base_statement.where(
                 (SessionModel.title.ilike(search_pattern)) | (SessionModel.topic.ilike(search_pattern))  # type: ignore
             )
 
         # Get total count
-        count_statement = select(func.count()).select_from(statement.subquery())
+        count_statement = select(func.count()).select_from(base_statement.subquery())
         total = (await db_session.execute(count_statement)).scalar_one()
 
-        # Order and paginate
-        statement = statement.order_by(SessionModel.create_time.desc()).offset(skip).limit(limit)  # type: ignore
+        # Create aliases for counting files and messages
+        file_alias = aliased(FileMetadataModel)
+        msg_alias = aliased(ChatMessageModel)
 
-        # Execute query
-        result = await db_session.execute(statement)
-        sessions = result.scalars().all()
+        # Build optimized query with LEFT JOIN and aggregations to avoid N+1
+        count_query = (
+            select(
+                SessionModel,
+                func.count(func.distinct(file_alias.id)).label("file_count"),
+                func.count(func.distinct(msg_alias.id)).label("message_count"),
+            )
+            .outerjoin(file_alias, SessionModel.id == file_alias.session_id)  # type: ignore
+            .outerjoin(msg_alias, SessionModel.id == msg_alias.session_id)  # type: ignore
+            .where(SessionModel.user_id == current_user.id)
+        )
 
-        # Get file and message counts for each session
+        # Apply the same filters to count_query
+        if status:
+            count_query = count_query.where(SessionModel.status == status)
+
+        if search:
+            search_escaped = search.replace("%", r"\%").replace("_", r"\_")
+            search_pattern = f"%{search_escaped}%"
+            count_query = count_query.where(
+                (SessionModel.title.ilike(search_pattern)) | (SessionModel.topic.ilike(search_pattern))  # type: ignore
+            )
+
+        # Group by session, order, and paginate
+        count_query = (
+            count_query.group_by(SessionModel.id).order_by(SessionModel.create_time.desc()).offset(skip).limit(limit)  # type: ignore
+        )
+
+        # Execute the optimized query
+        result = await db_session.execute(count_query)
+        rows = result.all()
+
+        # Build response with counts from the query
         session_publics = []
-        for session in sessions:
-            # Count files
-            file_count_stmt = (
-                select(func.count()).select_from(FileMetadataModel).where(FileMetadataModel.session_id == session.id)
-            )
-            file_count = (await db_session.execute(file_count_stmt)).scalar_one()
-
-            # Count messages
-            msg_count_stmt = (
-                select(func.count()).select_from(ChatMessageModel).where(ChatMessageModel.session_id == session.id)
-            )
-            message_count = (await db_session.execute(msg_count_stmt)).scalar_one()
+        for row in rows:
+            session = row[0]
+            file_count = row[1]
+            message_count = row[2]
 
             session_publics.append(
                 SessionPublic(

@@ -14,6 +14,18 @@ from slidegen.services import presentation_generator
 
 OUTPUT_DIR = settings.OUTPUT_DIR
 
+# Shared event loop for Celery tasks to avoid creating/destroying loops repeatedly
+_event_loop: asyncio.AbstractEventLoop | None = None
+
+
+def get_event_loop() -> asyncio.AbstractEventLoop:
+    """Get or create a shared event loop for Celery tasks"""
+    global _event_loop
+    if _event_loop is None or _event_loop.is_closed():
+        _event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_event_loop)
+    return _event_loop
+
 
 @shared_task(name=task_name, bind=True)  # type: ignore
 def generate_presentation_task(self: Any, task_data: dict[str, Any]) -> dict[str, Any]:
@@ -85,8 +97,9 @@ def generate_presentation_task(self: Any, task_data: dict[str, Any]) -> dict[str
 
         logger.info(f"[Celery Task {self.request.id}] Generating presentation: {topic}")
 
-        # Run async function in sync context
-        result_path = asyncio.run(
+        # Run async function using shared event loop to avoid resource leaks
+        loop = get_event_loop()
+        result_path = loop.run_until_complete(
             presentation_generator.generate_presentation(
                 request=request,
                 output_path=output_path,

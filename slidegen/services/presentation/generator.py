@@ -97,17 +97,21 @@ class PresentationGenerator:
             logger.info("Running slide generation workflow...")
             markdown_doc: MarkdownDocument = await run_slidegen_workflow(request)
 
-            # Step 2: Load the template PPTX
+            # Step 2: Load the template PPTX (run in executor to avoid blocking)
             logger.info("Loading template presentation...")
-            template_prs = Presentation(template)
+            import asyncio
+            from functools import partial
+
+            loop = asyncio.get_event_loop()
+            template_prs = await loop.run_in_executor(None, Presentation, template)
 
             # Step 3: Convert Markdown to PPTX using the template
             logger.info("Converting Markdown to PowerPoint...")
             presentation = await self.converter.generate(template_prs, markdown_doc)
 
-            # Step 4: Save the result
+            # Step 4: Save the result (run in executor to avoid blocking)
             logger.info(f"Saving presentation to: {output_path}")
-            presentation.save(output_path)
+            await loop.run_in_executor(None, partial(presentation.save, output_path))
 
             logger.info(f"Successfully generated presentation: {output_path}")
             return output_path
@@ -166,8 +170,12 @@ class PresentationGenerator:
                     message="Loading template...",
                 )
 
-                # Load template
-                template_prs = Presentation(template)
+                # Load template (run in executor to avoid blocking)
+                import asyncio
+                from functools import partial
+
+                loop = asyncio.get_event_loop()
+                template_prs = await loop.run_in_executor(None, Presentation, template)
 
                 yield ProgressEvent(
                     stage="pptx_conversion",
@@ -184,8 +192,8 @@ class PresentationGenerator:
                     message="Saving presentation file...",
                 )
 
-                # Save the presentation
-                presentation.save(output_path)
+                # Save the presentation (run in executor to avoid blocking)
+                await loop.run_in_executor(None, partial(presentation.save, output_path))
 
                 yield ProgressEvent(
                     stage="pptx_conversion",

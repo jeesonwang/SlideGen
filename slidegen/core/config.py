@@ -102,18 +102,18 @@ class Settings(BaseSettings):
         )
 
     # [MYSQL]
-    MYSQL_HOST: str = "192.168.1.144"
+    MYSQL_HOST: str
     MYSQL_PORT: int = 3306
-    MYSQL_USER: str = "root"
-    MYSQL_PASSWORD: str = "123456"
+    MYSQL_USER: str
+    MYSQL_PASSWORD: str
     MYSQL_DB: str = "slidegen"
     MYSQL_CHARSET: str = "utf8mb4"
 
     # [POSTGRES]
-    POSTGRES_HOST: str = "192.168.1.144"
+    POSTGRES_HOST: str
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str = "root"
-    POSTGRES_PASSWORD: str = "123456"
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
     POSTGRES_DB: str = "slidegen"
     POSTGRES_CHARSET: str = "utf8mb4"
 

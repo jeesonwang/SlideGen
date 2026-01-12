@@ -4,18 +4,24 @@ from collections.abc import AsyncGenerator
 from datetime import datetime
 from typing import Any, Literal
 
-from fastapi import APIRouter
+from celery.result import AsyncResult
+from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse, StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, Field
+from sqlmodel import select
 
-from slidegen.api.deps import CurrentUser
+from slidegen.api.deps import CurrentUser, SessionDep
 from slidegen.core.config import settings
 from slidegen.exceptions import AccessDeniedError, InsideServerError, NotFoundError, PPTTemplateError
+from slidegen.middleware.rate_limiter import sse_rate_limiter
+from slidegen.models.task_ownership import TaskOwnership
 from slidegen.schemas.async_task import AsyncTaskResponse
 from slidegen.schemas.gen_request import GeneratePresentationRequest, Tone, Verbosity
 from slidegen.schemas.template import Template
 from slidegen.services import presentation_generator
+from slidegen.tasks import celery_app
+from slidegen.tasks.slidegen_tasks import generate_presentation_task
 
 router = APIRouter()
 
@@ -112,10 +118,10 @@ async def generate_slides(task: SlideGenTask, current_user: CurrentUser) -> Any:
 
 
 @router.post("/generate-async", response_model=AsyncTaskResponse)
-async def generate_slides_async(task: SlideGenTask, current_user: CurrentUser) -> AsyncTaskResponse:
+async def generate_slides_async(
+    task: SlideGenTask, current_user: CurrentUser, db_session: SessionDep
+) -> AsyncTaskResponse:
     """async generate presentation (return task ID)"""
-    from slidegen.tasks.slidegen_tasks import generate_presentation_task
-
     # Prepare task data (convert to JSON-serializable dict)
     task_data = {
         "topic": task.topic,
@@ -139,6 +145,14 @@ async def generate_slides_async(task: SlideGenTask, current_user: CurrentUser) -
     # Submit task to Celery
     celery_task = generate_presentation_task.delay(task_data)
 
+    # Store task ownership for access control
+    task_ownership = TaskOwnership(
+        task_id=celery_task.id,
+        user_id=current_user.id,
+    )
+    db_session.add(task_ownership)
+    await db_session.commit()
+
     return AsyncTaskResponse(
         task_id=celery_task.id,
         status="pending",
@@ -146,7 +160,11 @@ async def generate_slides_async(task: SlideGenTask, current_user: CurrentUser) -
     )
 
 
-@router.post("/generate-stream", description="Stream content generation with SSE (without PPTX)")
+@router.post(
+    "/generate-stream",
+    description="Stream content generation with SSE (without PPTX)",
+    dependencies=[Depends(sse_rate_limiter)],
+)
 async def generate_slides_stream(task: SlideGenTask, current_user: CurrentUser) -> StreamingResponse:
     """Stream content generation progress via Server-Sent Events (SSE)
 
@@ -226,7 +244,11 @@ async def generate_slides_stream(task: SlideGenTask, current_user: CurrentUser) 
     )
 
 
-@router.post("/generate-stream-full", description="Stream full presentation generation with SSE")
+@router.post(
+    "/generate-stream-full",
+    description="Stream full presentation generation with SSE",
+    dependencies=[Depends(sse_rate_limiter)],
+)
 async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentUser) -> StreamingResponse:
     """Stream full presentation generation progress via Server-Sent Events (SSE)
 
@@ -329,11 +351,18 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
 
 
 @router.get("/task/{task_id}", response_model=AsyncTaskResponse)
-async def get_task_status(task_id: str) -> AsyncTaskResponse:
+async def get_task_status(task_id: str, current_user: CurrentUser, db_session: SessionDep) -> AsyncTaskResponse:
     """query async task status"""
-    from celery.result import AsyncResult
 
-    from slidegen.tasks import celery_app
+    task_ownership_stmt = select(TaskOwnership).where(
+        TaskOwnership.task_id == task_id, TaskOwnership.user_id == current_user.id
+    )
+    task_ownership = (await db_session.execute(task_ownership_stmt)).scalar_one_or_none()
+
+    if not task_ownership:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Task not found")
 
     task_result = AsyncResult(task_id, app=celery_app)
 

@@ -11,10 +11,14 @@ from slidegen.core.constants import UPLOAD_DIR
 from slidegen.exceptions import FileTypeError
 
 
+def _format_size_mb(size_bytes: int) -> str:
+    """Format byte size as MB string with 2 decimal places."""
+    return f"{size_bytes / 1024 / 1024:.2f}MB"
+
+
 class FileManager:
     """Manage file upload and retrieval"""
 
-    # allowed file extensions
     ALLOWED_EXTENSIONS = {
         ".docx",
         ".doc",
@@ -24,9 +28,9 @@ class FileManager:
         ".htm",
         ".txt",
         ".md",
+        ".pdf",
     }
 
-    # allowed MIME types
     ALLOWED_MIME_TYPES = {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
         "application/msword",  # .doc
@@ -35,81 +39,90 @@ class FileManager:
         "text/html",  # .html
         "text/plain",  # .txt
         "text/markdown",  # .md
+        "application/pdf",  # .pdf
     }
 
-    # max file size (10MB)
-    MAX_FILE_SIZE = 10 * 1024 * 1024
-
-    # max total size (50MB)
-    MAX_TOTAL_SIZE = 50 * 1024 * 1024
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    MAX_TOTAL_SIZE = 50 * 1024 * 1024  # 50MB
 
     def __init__(self, upload_dir: str | Path | None = None):
-        """
-        Initialize file manager
-
-        Args:
-            upload_dir: upload directory, default is UPLOAD_DIR
-        """
-        if upload_dir is None:
-            upload_dir = UPLOAD_DIR
-
-        self.upload_dir = Path(upload_dir)
+        self.upload_dir = Path(upload_dir) if upload_dir else Path(UPLOAD_DIR)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"FileManager initialized with upload directory: {self.upload_dir}")
 
     def generate_file_id(self) -> str:
-        """
-        Generate a unique file ID
-
-        Returns:
-            UUID format file ID
-        """
+        """Generate a unique file ID in UUID format."""
         return str(uuid.uuid4())
 
     def validate_file_type(self, filename: str, content: bytes | None = None) -> bool:
         """
-        Validate file type
-
-        Args:
-            filename: file name
-            content: file content (optional, used for more precise validation)
-
-        Returns:
-            bool: whether the file type is allowed
+        Validate file type by extension.
 
         Raises:
-            FileTypeError: file type not supported
+            FileTypeError: if file type is not supported
         """
-        # check file extension
         ext = Path(filename).suffix.lower()
         if ext not in self.ALLOWED_EXTENSIONS:
-            raise FileTypeError(f"Unsupported file type: {ext}. Supported types: {', '.join(self.ALLOWED_EXTENSIONS)}")
-
+            raise FileTypeError(
+                f"Unsupported file type: {ext}. Supported types: {', '.join(self.ALLOWED_EXTENSIONS)}"
+            )
         return True
 
     def sanitize_filename(self, filename: str) -> str:
-        """
-        Sanitize file name, prevent path traversal attack
-
-        Args:
-            filename: original file name
-
-        Returns:
-            sanitized file name
-        """
-        # only keep file name, remove directory path
-        filename = Path(filename).name
-
-        # remove unsafe characters
+        """Sanitize file name to prevent path traversal attacks."""
+        name = Path(filename).name
         unsafe_chars = ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]
         for char in unsafe_chars:
-            filename = filename.replace(char, "_")
+            name = name.replace(char, "_")
+        return name or "unnamed_file"
 
-        # ensure file name is not empty and valid
-        if not filename:
-            filename = "unnamed_file"
+    def _validate_file_size(self, file_size: int) -> None:
+        """
+        Validate file size against MAX_FILE_SIZE limit.
 
-        return filename
+        Raises:
+            ValueError: if file size exceeds limit
+        """
+        if file_size > self.MAX_FILE_SIZE:
+            raise ValueError(
+                f"File size ({_format_size_mb(file_size)}) exceeds limit ({_format_size_mb(self.MAX_FILE_SIZE)})"
+            )
+
+    def _validate_file_size_before_read(self, file_content: BinaryIO) -> None:
+        """
+        Validate file size before reading by seeking to end.
+        Silently skips validation if the stream does not support seeking.
+
+        Raises:
+            ValueError: if file size exceeds limit
+        """
+        try:
+            file_content.seek(0, 2)
+            file_size = file_content.tell()
+            file_content.seek(0)
+            self._validate_file_size(file_size)
+        except (OSError, AttributeError):
+            pass  # Non-seekable stream; validation deferred to after read
+
+    def _read_and_validate_content(self, file_content: BinaryIO, filename: str) -> tuple[bytes, str]:
+        """
+        Read file content, validate size and type.
+
+        Returns:
+            Tuple of (content bytes, sanitized filename)
+
+        Raises:
+            FileTypeError: if file type not supported
+            ValueError: if file size exceeds limit
+        """
+        safe_filename = self.sanitize_filename(filename)
+        self._validate_file_size_before_read(file_content)
+
+        content = file_content.read()
+        self._validate_file_size(len(content))
+        self.validate_file_type(safe_filename, content)
+
+        return content, safe_filename
 
     def save_uploaded_file(
         self,
@@ -118,103 +131,53 @@ class FileManager:
         user_id: str | None = None,
     ) -> tuple[str, str]:
         """
-        Save uploaded file
-
-        Args:
-            file_content: file content stream
-            filename: original file name
-            user_id: user ID (optional)
+        Save uploaded file.
 
         Returns:
             (file_id, file_path) tuple
 
         Raises:
-            FileTypeError: file type not supported
-            ValueError: file size exceeds limit
+            FileTypeError: if file type not supported
+            ValueError: if file size exceeds limit
         """
-        # sanitize file name
-        safe_filename = self.sanitize_filename(filename)
-
-        # read file content
-        content = file_content.read()
-        file_size = len(content)
-
-        # validate file size
-        if file_size > self.MAX_FILE_SIZE:
-            raise ValueError(
-                f"File size ({file_size / 1024 / 1024:.2f}MB) exceeds limit ({self.MAX_FILE_SIZE / 1024 / 1024:.2f}MB)"
-            )
-
-        # validate file type
-        self.validate_file_type(safe_filename, content)
-
-        # generate file ID
+        content, safe_filename = self._read_and_validate_content(file_content, filename)
         file_id = self.generate_file_id()
 
-        # create user-specific directory if user_id is provided
         if user_id:
-            user_dir = self.upload_dir / str(user_id)
-            user_dir.mkdir(parents=True, exist_ok=True)
-            base_dir = user_dir
+            base_dir = self.upload_dir / str(user_id)
+            base_dir.mkdir(parents=True, exist_ok=True)
         else:
             base_dir = self.upload_dir
 
-        # build file path: {file_id}_{original_filename}
-        final_filename = f"{file_id}_{safe_filename}"
-        file_path = base_dir / final_filename
+        file_path = base_dir / f"{file_id}_{safe_filename}"
+        file_path.write_bytes(content)
 
-        # save file
-        with open(file_path, "wb") as f:
-            f.write(content)
-
-        logger.info(f"File saved: {file_path} (size: {file_size} bytes)")
-
+        logger.info(f"File saved: {file_path} (size: {len(content)} bytes)")
         return file_id, str(file_path)
 
+    def _find_file_in_dir(self, directory: Path, file_id: str) -> str | None:
+        """Find a file by ID prefix in the given directory."""
+        if not directory.exists():
+            return None
+        for file_path in directory.glob(f"{file_id}_*"):
+            if file_path.is_file():
+                return str(file_path)
+        return None
+
     def get_file_path(self, file_id: str, user_id: str | None = None) -> str | None:
-        """
-        Get file path by file ID
-
-        Args:
-            file_id: file ID
-            user_id: user ID (optional)
-
-        Returns:
-            file path if found, otherwise None
-        """
-        # search directories
-        search_dirs = []
-        if user_id:
-            search_dirs.append(self.upload_dir / str(user_id))
+        """Get file path by file ID. Returns None if not found."""
+        search_dirs = [self.upload_dir / str(user_id)] if user_id else []
         search_dirs.append(self.upload_dir)
 
-        # search files in directories
         for search_dir in search_dirs:
-            if not search_dir.exists():
-                continue
-
-            for file_path in search_dir.glob(f"{file_id}_*"):
-                if file_path.is_file():
-                    return str(file_path)
+            if result := self._find_file_in_dir(search_dir, file_id):
+                return result
 
         logger.warning(f"File not found: {file_id}")
         return None
 
-    def delete_file(self, file_id: str, user_id: str | None = None) -> bool:
-        """
-        Delete file
-
-        Args:
-            file_id: file ID
-            user_id: user ID (optional)
-
-        Returns:
-            whether the file was successfully deleted
-        """
-        file_path = self.get_file_path(file_id, user_id)
-        if file_path is None:
-            return False
-
+    def _delete_file_at_path(self, file_path: str) -> bool:
+        """Attempt to delete a file at the given path."""
         try:
             os.remove(file_path)
             logger.info(f"File deleted: {file_path}")
@@ -223,64 +186,67 @@ class FileManager:
             logger.error(f"Failed to delete file {file_path}: {e}")
             return False
 
-    def list_user_files(self, user_id: str) -> list[dict[str, Any]]:
+    def delete_file(self, file_id: str, user_id: str | None = None) -> bool:
+        """Delete file by ID. Returns True if successfully deleted."""
+        file_path = self.get_file_path(file_id, user_id)
+        if file_path is None:
+            return False
+        return self._delete_file_at_path(file_path)
+
+    def _list_files_in_dir(
+        self, directory: Path, context_key: str, context_value: str
+    ) -> list[dict[str, Any]]:
         """
-        List all files uploaded by a specific user.
+        List all files in a directory with metadata.
 
         Args:
-            user_id: user ID
-
-        Returns:
-            list of file metadata dicts
+            directory: directory to list files from
+            context_key: key name for the context identifier (e.g., "user_id" or "session_id")
+            context_value: value for the context identifier
         """
-        user_dir = self.upload_dir / str(user_id)
-        if not user_dir.exists() or not user_dir.is_dir():
-            logger.info(f"No files found for user {user_id}")
+        if not directory.exists() or not directory.is_dir():
             return []
 
         files: list[dict[str, Any]] = []
-        for file_path in sorted(user_dir.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True):
+        sorted_paths = sorted(directory.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True)
+
+        for file_path in sorted_paths:
             if not file_path.is_file():
                 continue
 
             parts = file_path.name.split("_", 1)
             file_id = parts[0]
             original_filename = parts[1] if len(parts) > 1 else file_path.name
-
             stat = file_path.stat()
 
-            files.append(
-                {
-                    "file_id": file_id,
-                    "filename": original_filename,
-                    "file_size": stat.st_size,
-                    "file_path": str(file_path),
-                    "upload_time": datetime.fromtimestamp(stat.st_mtime),
-                    "user_id": str(user_id),
-                }
-            )
+            files.append({
+                "file_id": file_id,
+                "filename": original_filename,
+                "file_size": stat.st_size,
+                "file_path": str(file_path),
+                "upload_time": datetime.fromtimestamp(stat.st_mtime),
+                context_key: context_value,
+            })
 
         return files
 
+    def list_user_files(self, user_id: str) -> list[dict[str, Any]]:
+        """List all files uploaded by a specific user."""
+        user_dir = self.upload_dir / str(user_id)
+        files = self._list_files_in_dir(user_dir, "user_id", str(user_id))
+        if not files:
+            logger.info(f"No files found for user {user_id}")
+        return files
+
     def cleanup_old_files(self, days: int = 7) -> int:
-        """
-        Clean up expired files
-
-        Args:
-            days: number of days to keep files, files older than this will be deleted
-
-        Returns:
-            number of files deleted
-        """
+        """Clean up files older than the specified number of days."""
         cutoff_time = datetime.now() - timedelta(days=days)
         deleted_count = 0
 
         for file_path in self.upload_dir.rglob("*"):
             if not file_path.is_file():
                 continue
-
             try:
-                # get file modification time
                 mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
                 if mtime < cutoff_time:
                     os.remove(file_path)
@@ -293,15 +259,7 @@ class FileManager:
         return deleted_count
 
     def get_file_hash(self, file_path: str) -> str:
-        """
-        Calculate the SHA256 hash of a file
-
-        Args:
-            file_path: file path
-
-        Returns:
-            SHA256 hash of the file
-        """
+        """Calculate the SHA256 hash of a file."""
         sha256_hash = hashlib.sha256()
         with open(file_path, "rb") as f:
             for byte_block in iter(lambda: f.read(4096), b""):
@@ -310,25 +268,30 @@ class FileManager:
 
     def validate_total_size(self, file_sizes: list[int]) -> bool:
         """
-        Validate total file size
-
-        Args:
-            file_sizes: list of file sizes in bytes
-
-        Returns:
-            whether the total size is within the limit
+        Validate that total file size is within limit.
 
         Raises:
-            ValueError: total size exceeds limit
+            ValueError: if total size exceeds limit
         """
         total_size = sum(file_sizes)
         if total_size > self.MAX_TOTAL_SIZE:
             raise ValueError(
-                f"Total file size ({total_size / 1024 / 1024:.2f}MB) exceeds limit ({self.MAX_TOTAL_SIZE / 1024 / 1024:.2f}MB)"
+                f"Total file size ({_format_size_mb(total_size)}) exceeds limit ({_format_size_mb(self.MAX_TOTAL_SIZE)})"
             )
         return True
 
-    # ========== Session-Scoped Methods (New) ==========
+    # ========== Session-Scoped Methods ==========
+
+    def _cleanup_empty_directory(self, directory: Path, was_created: bool) -> None:
+        """Remove directory if it was newly created and is empty."""
+        if not was_created or not directory.exists():
+            return
+        try:
+            if not any(directory.iterdir()):
+                directory.rmdir()
+                logger.info(f"Cleaned up empty directory after failure: {directory}")
+        except Exception as e:
+            logger.warning(f"Failed to cleanup directory {directory}: {e}")
 
     def save_uploaded_file_to_session(
         self,
@@ -338,114 +301,56 @@ class FileManager:
         user_id: str | None = None,
     ) -> tuple[str, str]:
         """
-        Save uploaded file to session directory
+        Save uploaded file to session directory.
 
         Storage path: {UPLOAD_DIR}/{session_id}/{file_id}_{filename}
-
-        Args:
-            file_content: file content stream
-            filename: original file name
-            session_id: session ID
-            user_id: user ID (optional, for logging purposes)
 
         Returns:
             (file_id, file_path) tuple
 
         Raises:
-            FileTypeError: file type not supported
-            ValueError: file size exceeds limit
+            FileTypeError: if file type not supported
+            ValueError: if file size exceeds limit
         """
-        # Sanitize file name
-        safe_filename = self.sanitize_filename(filename)
-
-        # Read file content
-        content = file_content.read()
-        file_size = len(content)
-
-        # Validate file size
-        if file_size > self.MAX_FILE_SIZE:
-            raise ValueError(
-                f"File size ({file_size / 1024 / 1024:.2f}MB) exceeds limit ({self.MAX_FILE_SIZE / 1024 / 1024:.2f}MB)"
-            )
-
-        # Validate file type
-        self.validate_file_type(safe_filename, content)
-
-        # Generate file ID
+        content, safe_filename = self._read_and_validate_content(file_content, filename)
         file_id = self.generate_file_id()
 
-        # Create session directory: {UPLOAD_DIR}/{session_id}/
         session_dir = self.upload_dir / str(session_id)
-        session_dir.mkdir(parents=True, exist_ok=True)
+        session_dir_created = not session_dir.exists()
 
-        # Build file path
-        final_filename = f"{file_id}_{safe_filename}"
-        file_path = session_dir / final_filename
+        try:
+            session_dir.mkdir(parents=True, exist_ok=True)
+            file_path = session_dir / f"{file_id}_{safe_filename}"
+            file_path.write_bytes(content)
 
-        # Save file
-        with open(file_path, "wb") as f:
-            f.write(content)
-
-        logger.info(f"File saved to session {session_id}: {file_path} (size: {file_size} bytes)")
-
-        return file_id, str(file_path)
+            logger.info(f"File saved to session {session_id}: {file_path} (size: {len(content)} bytes)")
+            return file_id, str(file_path)
+        except Exception:
+            self._cleanup_empty_directory(session_dir, session_dir_created)
+            raise
 
     def get_session_file_path(self, file_id: str, session_id: str) -> str | None:
-        """
-        Get file path from session directory
-
-        Args:
-            file_id: file ID
-            session_id: session ID
-
-        Returns:
-            file path if found, otherwise None
-        """
+        """Get file path from session directory. Returns None if not found."""
         session_dir = self.upload_dir / str(session_id)
         if not session_dir.exists():
             logger.warning(f"Session directory not found: {session_id}")
             return None
 
-        for file_path in session_dir.glob(f"{file_id}_*"):
-            if file_path.is_file():
-                return str(file_path)
+        if result := self._find_file_in_dir(session_dir, file_id):
+            return result
 
         logger.warning(f"File not found in session {session_id}: {file_id}")
         return None
 
     def delete_session_file(self, file_id: str, session_id: str) -> bool:
-        """
-        Delete file from session directory
-
-        Args:
-            file_id: file ID
-            session_id: session ID
-
-        Returns:
-            whether the file was successfully deleted
-        """
+        """Delete file from session directory. Returns True if successfully deleted."""
         file_path = self.get_session_file_path(file_id, session_id)
         if file_path is None:
             return False
-
-        try:
-            os.remove(file_path)
-            logger.info(f"Deleted session file: {file_path}")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to delete file {file_path}: {e}")
-            return False
+        return self._delete_file_at_path(file_path)
 
     def delete_session_directory(self, session_id: str) -> int:
-        """
-        Delete entire session directory and all files
-
-        Args:
-            session_id: session ID
-
-        Returns:
-            Number of files deleted
-        """
+        """Delete entire session directory and all files. Returns number of files deleted."""
         session_dir = self.upload_dir / str(session_id)
         if not session_dir.exists():
             logger.info(f"Session directory does not exist: {session_id}")
@@ -471,42 +376,11 @@ class FileManager:
         return count
 
     def list_session_files(self, session_id: str) -> list[dict[str, Any]]:
-        """
-        List all files in a specific session
-
-        Args:
-            session_id: session ID
-
-        Returns:
-            list of file metadata dicts
-        """
+        """List all files in a specific session."""
         session_dir = self.upload_dir / str(session_id)
-        if not session_dir.exists() or not session_dir.is_dir():
+        files = self._list_files_in_dir(session_dir, "session_id", str(session_id))
+        if not files:
             logger.info(f"No files found for session {session_id}")
-            return []
-
-        files: list[dict[str, Any]] = []
-        for file_path in sorted(session_dir.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True):
-            if not file_path.is_file():
-                continue
-
-            parts = file_path.name.split("_", 1)
-            file_id = parts[0]
-            original_filename = parts[1] if len(parts) > 1 else file_path.name
-
-            stat = file_path.stat()
-
-            files.append(
-                {
-                    "file_id": file_id,
-                    "filename": original_filename,
-                    "file_size": stat.st_size,
-                    "file_path": str(file_path),
-                    "upload_time": datetime.fromtimestamp(stat.st_mtime),
-                    "session_id": str(session_id),
-                }
-            )
-
         return files
 
 
