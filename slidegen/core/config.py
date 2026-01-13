@@ -1,16 +1,19 @@
 import secrets
+import warnings
 from datetime import tzinfo
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
 import pytz
 from pydantic import (
     AnyUrl,
     BeforeValidator,
+    EmailStr,
     MySQLDsn,
     PostgresDsn,
     RedisDsn,
     computed_field,
+    model_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -54,15 +57,7 @@ class Settings(BaseSettings):
     COMPONENTS_PATH: Path = COMPONENTS_BASE_PATH / "shapes" / "shapes.json"
     LOG_DIR: str = (PROJECT_ROOT / "logs").as_posix()
     OUTPUT_DIR: Path = PROJECT_ROOT / "outputs" / "presentations"
-
-    # [ICONS]
-    ICONS_JSON_PATH: Path = PROJECT_ROOT / "components" / "icons.json"
-    ICONS_DIR: Path = PROJECT_ROOT / "components" / "icons" / "bold"
-
-    # [CHROMA]
-    CHROMA_BASE_PATH: Path = PROJECT_ROOT / "chroma"
-    CHROMA_MODELS_PATH: Path = PROJECT_ROOT / "chroma" / "models"
-    CHROMA_KNOWLEDGE_PATH: Path = PROJECT_ROOT / "chroma" / "knowledge"
+    ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
@@ -76,6 +71,14 @@ class Settings(BaseSettings):
     SHOW_DOCS: bool = False
     DB_TYPE: Literal["MYSQL", "POSTGRES"] = "POSTGRES"
     DB_ECHO: bool = False
+    # [ICONS]
+    ICONS_JSON_PATH: Path = PROJECT_ROOT / "components" / "icons.json"
+    ICONS_DIR: Path = PROJECT_ROOT / "components" / "icons" / "bold"
+
+    # [CHROMA]
+    CHROMA_BASE_PATH: Path = PROJECT_ROOT / "chroma"
+    CHROMA_MODELS_PATH: Path = PROJECT_ROOT / "chroma" / "models"
+    CHROMA_KNOWLEDGE_PATH: Path = PROJECT_ROOT / "chroma" / "knowledge"
 
     # [SESSION]
     MAX_ACTIVE_SESSIONS_PER_USER: int = 10
@@ -182,6 +185,29 @@ class Settings(BaseSettings):
     # [SLIDEGEN]
     # Maximum number of sections to generate
     MAX_ITERATIONS: int = 35
+
+    # [USER]
+    EMAIL_TEST_USER: EmailStr = "test@example.com"
+    FIRST_SUPERUSER: EmailStr
+    FIRST_SUPERUSER_PASSWORD: str
+
+    def _check_default_secret(self, var_name: str, value: str | None) -> None:
+        if value == "changethis":
+            message = (
+                f'The value of {var_name} is "changethis", for security, please change it, at least for deployments.'
+            )
+            if self.ENVIRONMENT == "local":
+                warnings.warn(message, stacklevel=1)
+            else:
+                raise ValueError(message)
+
+    @model_validator(mode="after")
+    def _enforce_non_default_secrets(self) -> Self:
+        self._check_default_secret("SECRET_KEY", self.SECRET_KEY)
+        self._check_default_secret("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD)
+        self._check_default_secret("FIRST_SUPERUSER_PASSWORD", self.FIRST_SUPERUSER_PASSWORD)
+
+        return self
 
 
 settings: Settings = Settings()  # type: ignore
