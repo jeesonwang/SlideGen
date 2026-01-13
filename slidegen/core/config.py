@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     LOG_DIR: str = (PROJECT_ROOT / "logs").as_posix()
     OUTPUT_DIR: Path = PROJECT_ROOT / "outputs" / "presentations"
 
+    # [ICONS]
+    ICONS_JSON_PATH: Path = PROJECT_ROOT / "components" / "icons.json"
+    ICONS_DIR: Path = PROJECT_ROOT / "components" / "icons" / "bold"
+
+    # [CHROMA]
+    CHROMA_BASE_PATH: Path = PROJECT_ROOT / "chroma"
+    CHROMA_MODELS_PATH: Path = PROJECT_ROOT / "chroma" / "models"
+    CHROMA_KNOWLEDGE_PATH: Path = PROJECT_ROOT / "chroma" / "knowledge"
+
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     # set environment variables in dockerfile

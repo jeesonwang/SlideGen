@@ -7,6 +7,8 @@ from agno.knowledge.knowledge import Knowledge
 from agno.vectordb.chroma import ChromaDb
 from loguru import logger
 
+from slidegen.core.config import settings
+
 
 class KnowledgeBaseManager:
     """Knowledge Base Manager, using agno.knowledge.Knowledge"""
@@ -27,7 +29,7 @@ class KnowledgeBaseManager:
         self.collection_name = f"user_{user_id[:8]}_{self.session_id[:8]}"
 
         # Set ChromaDB path
-        chroma_path = Path("chroma") / "knowledge"
+        chroma_path = settings.CHROMA_KNOWLEDGE_PATH
         chroma_path.mkdir(parents=True, exist_ok=True)
 
         # Use provided embedder or default
