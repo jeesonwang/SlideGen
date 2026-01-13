@@ -1,3 +1,4 @@
-from slidegen.services.knowledge.kb_manager import KnowledgeBaseManager
+from .kb_manager import KnowledgeBaseManager
+from .onnx_embedder import ONNXEmbedder
 
-__all__ = ["KnowledgeBaseManager"]
+__all__ = ["KnowledgeBaseManager", "ONNXEmbedder"]
