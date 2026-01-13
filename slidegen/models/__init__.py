@@ -1,6 +1,8 @@
 from .base import Base
 from .chat_message import ChatMessageModel, MessageRole
+from .embedding_config import EmbeddingConfigModel, EmbeddingProvider
 from .file_metadata import FileMetadataModel
+from .image_asset import ImageAsset
 from .llm_config import LLMConfigModel, LLMProvider
 from .session import SessionModel, SessionStatus
 from .task import CeleryTask, CeleryTaskSet
@@ -12,7 +14,10 @@ __all__ = [
     "CeleryTask",
     "CeleryTaskSet",
     "ChatMessageModel",
+    "EmbeddingConfigModel",
+    "EmbeddingProvider",
     "FileMetadataModel",
+    "ImageAsset",
     "LLMConfigModel",
     "LLMProvider",
     "MessageRole",

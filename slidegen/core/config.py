@@ -147,7 +147,6 @@ class Settings(BaseSettings):
                 host=self.POSTGRES_HOST,
                 port=self.POSTGRES_PORT,
                 path=self.POSTGRES_DB,
-                query=f"charset={self.POSTGRES_CHARSET}",
             )
         else:
             raise ValueError(f"Invalid database type: {self.DB_TYPE}")
@@ -173,7 +172,6 @@ class Settings(BaseSettings):
                 host=self.POSTGRES_HOST,
                 port=self.POSTGRES_PORT,
                 path=self.POSTGRES_DB,
-                query=f"charset={self.POSTGRES_CHARSET}",
             )
         else:
             raise ValueError(f"Invalid database type: {self.DB_TYPE}")
