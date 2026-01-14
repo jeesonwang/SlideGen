@@ -63,7 +63,8 @@ async def init_app_data() -> None:
 
         # Create first superuser
         await create_first_superuser()
-
+        # Ensure output directory exists
+        settings.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         logger.info("Application data initialization completed")
     except Exception as e:
         logger.error(f"Failed to initialize application data: {e}")
