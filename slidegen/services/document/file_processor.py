@@ -4,7 +4,7 @@ from loguru import logger
 
 from slidegen.exceptions import FileParseError
 from slidegen.schemas.file_upload import ParsedFileContent
-from slidegen.schemas.gen_request import GeneratePresentationRequest
+from slidegen.schemas.gen_request import BaseGenerationRequest
 from slidegen.services.document import DocumentReader
 from slidegen.services.knowledge.kb_manager import KnowledgeBaseManager
 from slidegen.utils.file import FileManager
@@ -115,15 +115,15 @@ class FileProcessor:
 
     def extract_content_from_request(
         self,
-        request: GeneratePresentationRequest,
+        request: BaseGenerationRequest,
         user_id: str | None = None,
         session_id: str | None = None,
     ) -> str:
         """
-        Extract file content from GeneratePresentationRequest
+        Extract file content from generation request
 
         Args:
-            request: Presentation generation request
+            request: Generation request (GeneratePresentationRequest or GenerateMarkdownRequest)
             user_id: User ID (optional, for old user-scoped lookup)
             session_id: Session ID (optional, for new session-scoped lookup)
 
@@ -195,7 +195,7 @@ class FileProcessor:
 
     async def extract_and_index_content(
         self,
-        request: GeneratePresentationRequest,
+        request: BaseGenerationRequest,
         kb_manager: KnowledgeBaseManager,
         user_id: str | None = None,
         session_id: str | None = None,
@@ -204,7 +204,7 @@ class FileProcessor:
         Extract file content from request and index to knowledge base
 
         Args:
-            request: Presentation generation request
+            request: Generation request (GeneratePresentationRequest or GenerateMarkdownRequest)
             kb_manager: Knowledge base manager instance
             user_id: User ID (optional, for old user-scoped lookup)
             session_id: Session ID (optional, for new session-scoped lookup)

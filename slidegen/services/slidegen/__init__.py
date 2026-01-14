@@ -1,3 +1,7 @@
-from slidegen.services.slidegen.workflow import SlideGenWorkflow, run_slidegen_workflow
+from slidegen.services.slidegen.workflow import (
+    SlideGenWorkflow,
+    run_slidegen_workflow,
+    run_slidegen_workflow_stream,
+)
 
-__all__ = ["SlideGenWorkflow", "run_slidegen_workflow"]
+__all__ = ["SlideGenWorkflow", "run_slidegen_workflow", "run_slidegen_workflow_stream"]

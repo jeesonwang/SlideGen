@@ -2,6 +2,7 @@ import asyncio
 from collections.abc import AsyncGenerator
 from functools import partial
 from pathlib import Path
+from typing import Literal
 
 from loguru import logger
 from pptx import Presentation
@@ -70,6 +71,140 @@ class PresentationGenerator:
 
         logger.info(f"Successfully generated presentation: {output_path}")
         return output_path
+
+    async def generate_from_markdown(
+        self,
+        markdown_content: str,
+        template_name: str,
+        output_path: str,
+        export_as: Literal["pptx", "pdf"] = "pptx",
+    ) -> str:
+        """Generate a PowerPoint presentation directly from markdown content.
+
+        Args:
+            markdown_content: The markdown content to convert to PPT
+            template_name: Name of the template to use
+            output_path: Path to save the generated PPT
+            export_as: Export format ("pptx" supported, "pdf" not yet supported)
+
+        Returns:
+            The output path of the generated presentation
+        """
+        if export_as != "pptx":
+            raise ValueError(f"Unsupported export_as={export_as!r}; only 'pptx' is currently supported")
+
+        template = self.get_template_path(template_name)
+        logger.info(f"Starting presentation generation from markdown with template: {template}")
+
+        # Parse markdown content
+        markdown_doc = MarkdownDocument(markdown_content)
+
+        # Load template
+        loop = asyncio.get_event_loop()
+        template_prs = await loop.run_in_executor(None, Presentation, template)
+
+        # Convert to PPT
+        logger.info("Converting Markdown to PowerPoint...")
+        presentation = await self.converter.generate(template_prs, markdown_doc)
+
+        # Save
+        logger.info(f"Saving presentation to: {output_path}")
+        await loop.run_in_executor(None, partial(presentation.save, output_path))
+
+        logger.info(f"Successfully generated presentation from markdown: {output_path}")
+        return output_path
+
+    async def generate_from_markdown_stream(
+        self,
+        markdown_content: str,
+        template_name: str,
+        output_path: str,
+        export_as: Literal["pptx", "pdf"] = "pptx",
+    ) -> AsyncGenerator[StreamEventT, None]:
+        """Generate a PowerPoint presentation from markdown with streaming progress events.
+
+        Args:
+            markdown_content: The markdown content to convert to PPT
+            template_name: Name of the template to use
+            output_path: Path to save the generated PPT
+            export_as: Export format ("pptx" supported, "pdf" not yet supported)
+
+        Yields:
+            Stream events containing conversion progress
+        """
+        try:
+            if export_as != "pptx":
+                yield WorkflowErrorEvent(
+                    error=f"Unsupported export_as={export_as!r}; only 'pptx' is currently supported",
+                    message="Unsupported export format",
+                )
+                return
+
+            template = self.get_template_path(template_name)
+            logger.info(f"Starting streaming presentation generation from markdown with template: {template}")
+
+            yield StepStartedEvent(
+                step_name="PPTX Conversion",
+                message="Converting markdown to PowerPoint format...",
+            )
+
+            yield ProgressEvent(
+                stage="pptx_conversion",
+                progress=0.0,
+                message="Loading template...",
+            )
+
+            # Load template
+            loop = asyncio.get_event_loop()
+            template_prs = await loop.run_in_executor(None, Presentation, template)
+
+            yield ProgressEvent(
+                stage="pptx_conversion",
+                progress=20.0,
+                message="Parsing markdown content...",
+            )
+
+            # Parse markdown
+            markdown_doc = MarkdownDocument(markdown_content)
+
+            yield ProgressEvent(
+                stage="pptx_conversion",
+                progress=40.0,
+                message="Converting markdown to slides...",
+            )
+
+            # Convert to PPT
+            presentation = await self.converter.generate(template_prs, markdown_doc)
+
+            yield ProgressEvent(
+                stage="pptx_conversion",
+                progress=80.0,
+                message="Saving presentation file...",
+            )
+
+            # Save
+            await loop.run_in_executor(None, partial(presentation.save, output_path))
+
+            yield ProgressEvent(
+                stage="pptx_conversion",
+                progress=100.0,
+                message="Presentation saved successfully",
+            )
+
+            yield StepCompletedEvent(
+                step_name="PPTX Conversion",
+                content=output_path,
+                message="PowerPoint file generated successfully",
+            )
+
+            logger.info(f"Successfully generated presentation from markdown: {output_path}")
+
+        except Exception as e:
+            logger.exception(f"Failed to generate presentation from markdown: {e}")
+            yield WorkflowErrorEvent(
+                error=str(e),
+                message="Presentation generation from markdown failed",
+            )
 
     async def generate_presentation_stream(
         self,

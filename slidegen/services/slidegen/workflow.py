@@ -16,7 +16,7 @@ from slidegen.core import settings
 from slidegen.core.database import AsyncSessionLocal
 from slidegen.models.embedding_config import EmbeddingConfigModel
 from slidegen.models.llm_config import LLMConfigModel
-from slidegen.schemas.gen_request import GeneratePresentationRequest, LLMConfigRequest
+from slidegen.schemas.gen_request import BaseGenerationRequest, LLMConfigRequest
 from slidegen.schemas.stream_event import (
     ContentGeneratedEvent,
     LoopProgressEvent,
@@ -33,11 +33,11 @@ from slidegen.services.factories import EmbeddingFactory, LLMFactory
 from slidegen.services.knowledge import KnowledgeBaseManager
 
 
-async def get_llm_instance(request: GeneratePresentationRequest | LLMConfigRequest) -> Model:
+async def get_llm_instance(request: BaseGenerationRequest | LLMConfigRequest) -> Model:
     """Get LLM instance based on request parameters"""
     try:
         # If user ID is specified, try to get user's LLM configuration
-        if isinstance(request, GeneratePresentationRequest):
+        if isinstance(request, BaseGenerationRequest):
             async with AsyncSessionLocal() as session:
                 # Use specified configuration ID first
                 if request.llm_config_id:
@@ -65,7 +65,7 @@ async def get_llm_instance(request: GeneratePresentationRequest | LLMConfigReque
         return OpenAIChat(id="gpt-4o-mini")
 
 
-async def get_embedding_instance(request: GeneratePresentationRequest) -> Embedder | None:
+async def get_embedding_instance(request: BaseGenerationRequest) -> Embedder | None:
     """Get embedder instance based on request parameters"""
     try:
         async with AsyncSessionLocal() as session:
@@ -109,16 +109,15 @@ class SlideGenWorkflow:
     @classmethod
     async def from_request(
         cls,
-        request: GeneratePresentationRequest,
+        request: BaseGenerationRequest,
         llm: Model | None = None,
         embedder: Embedder | None = None,
     ) -> "SlideGenWorkflow":
         """
-        Create workflow instance from GeneratePresentationRequest
+        Create workflow instance from BaseGenerationRequest
 
         Args:
-            request: Presentation generation request
-            session_id: Session ID (from validated SessionModel)
+            request: Generation request (GeneratePresentationRequest or GenerateMarkdownRequest)
             llm: Optional LLM instance
             embedder: Optional embedder instance
 
@@ -292,7 +291,7 @@ class SlideGenWorkflow:
     async def outline_processor(self, step_input: StepInput) -> StepOutput:
         """Generate the outline using a two-stage approach: retrieve → summarize → generate outline."""
 
-        execution_input = cast(GeneratePresentationRequest, step_input.input)
+        execution_input = cast(BaseGenerationRequest, step_input.input)
         content = execution_input.content
 
         if self.kb_manager and self.summary_agent:
@@ -355,7 +354,7 @@ class SlideGenWorkflow:
         # Only parse outline and extract sections on the first iteration
         if "sections" not in step_input.additional_data:
             outline = step_input.get_step_content("Outline generation")
-            execution_input = cast(GeneratePresentationRequest, step_input.input)
+            execution_input = cast(BaseGenerationRequest, step_input.input)
 
             # Parse the outline, extract each section
             doc = self.parse_outline(outline)
@@ -513,14 +512,14 @@ class SlideGenWorkflow:
 
 
 async def run_slidegen_workflow(
-    request: GeneratePresentationRequest,
+    request: BaseGenerationRequest,
     llm: Model | None = None,
     embedder: Embedder | None = None,
 ) -> MarkdownDocument:
     """Run the slide generation workflow
 
     Args:
-        request: Presentation generation request
+        request: Generation request (GeneratePresentationRequest or GenerateMarkdownRequest)
         llm: Optional LLM instance to use
         embedder: Optional embedder instance to use
 
@@ -543,14 +542,14 @@ async def run_slidegen_workflow(
 
 
 async def run_slidegen_workflow_stream(
-    request: GeneratePresentationRequest,
+    request: BaseGenerationRequest,
     llm: Model | None = None,
     embedder: Embedder | None = None,
 ) -> AsyncGenerator[StreamEventT, None]:
     """Run the slide generation workflow with streaming output
 
     Args:
-        request: Presentation generation request
+        request: Generation request (GeneratePresentationRequest or GenerateMarkdownRequest)
         llm: Optional LLM instance to use
         embedder: Optional embedder instance to use
 

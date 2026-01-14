@@ -17,9 +17,16 @@ from slidegen.exceptions import AccessDeniedError, InsideServerError, NotFoundEr
 from slidegen.middleware.rate_limiter import sse_rate_limiter
 from slidegen.models.task_ownership import TaskOwnership
 from slidegen.schemas.async_task import AsyncTaskResponse
-from slidegen.schemas.gen_request import GeneratePresentationRequest, Tone, Verbosity
+from slidegen.schemas.gen_request import (
+    GenerateMarkdownRequest,
+    GeneratePresentationRequest,
+    MarkdownToPPTRequest,
+    Tone,
+    Verbosity,
+)
 from slidegen.schemas.template import Template
 from slidegen.services import presentation_generator
+from slidegen.services.slidegen import run_slidegen_workflow_stream
 from slidegen.tasks import celery_app
 from slidegen.tasks.slidegen_tasks import generate_presentation_task
 
@@ -60,9 +67,6 @@ class SlideGenResult(BaseModel):
 async def generate_slides(task: SlideGenTask, current_user: CurrentUser) -> Any:
     """Slide generation"""
     try:
-        # Ensure output directory exists
-        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
         # Generate unique output file name
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{task.topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.pptx"
@@ -187,7 +191,6 @@ async def generate_slides_stream(task: SlideGenTask, current_user: CurrentUser) 
     data: {"event": "step_started", "step_name": "Outline generation", "message": "..."}
     ```
     """
-    from slidegen.services.slidegen.workflow import run_slidegen_workflow_stream
 
     # Convert task to GeneratePresentationRequest
     tone = Tone(task.tone) if task.tone in [t.value for t in Tone] else Tone.DEFAULT
@@ -245,6 +248,72 @@ async def generate_slides_stream(task: SlideGenTask, current_user: CurrentUser) 
 
 
 @router.post(
+    "/generate-markdown-stream",
+    description="Stream markdown content generation only (no PPT conversion)",
+    dependencies=[Depends(sse_rate_limiter)],
+)
+async def generate_markdown_stream(request: GenerateMarkdownRequest, current_user: CurrentUser) -> StreamingResponse:
+    """Stream markdown content generation via Server-Sent Events (SSE).
+
+    This endpoint ONLY generates markdown content without converting to PPT.
+    Use this endpoint when you want to:
+    1. Generate markdown content
+    2. Allow user to edit the markdown
+    3. Then call /generate-pptx-from-markdown to create PPT from the edited markdown
+
+    The final event (workflow_completed) contains the complete markdown content
+    that can be displayed to the user for editing.
+
+    Events sent:
+    - workflow_started: Generation started
+    - step_started/step_completed: Individual step progress
+    - loop_progress: Section generation progress with content
+    - progress: Progress percentage updates
+    - content_generated: Generated content (outline, sections)
+    - workflow_completed: Final event with complete markdown content
+    - workflow_error: Error occurred
+
+    Example SSE event format:
+    ```
+    event: workflow_completed
+    data: {"event": "workflow_completed", "content": "# Title\\n## Section 1\\n..."}
+    ```
+    """
+
+    async def event_generator() -> AsyncGenerator[str, None]:
+        """Generate SSE events from workflow stream"""
+        try:
+            async for event in run_slidegen_workflow_stream(request):
+                # Convert Pydantic model to dict and then to JSON
+                event_data = event.model_dump()
+                event_type = event_data.get("event", "message")
+
+                # Format as SSE: event: <type>\ndata: <json>\n\n
+                yield f"event: {event_type}\ndata: {json.dumps(event_data)}\n\n"
+
+        except Exception as e:
+            logger.exception(f"Error in SSE stream: {e}")
+            error_event = {
+                "event": "workflow_error",
+                "error": str(e),
+                "message": "Stream error occurred",
+            }
+            yield f"event: workflow_error\ndata: {json.dumps(error_event)}\n\n"
+
+    logger.info(f"Starting markdown generation stream for user {current_user.id}: {request.content[:50]}...")
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable buffering in nginx
+        },
+    )
+
+
+@router.post(
     "/generate-stream-full",
     description="Stream full presentation generation with SSE",
     dependencies=[Depends(sse_rate_limiter)],
@@ -275,8 +344,6 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
     data: {"event": "generation_completed", "download_url": "/api/v1/slidegen/download/xxx.pptx"}
     ```
     """
-    # Ensure output directory exists
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Generate unique output file name
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -338,6 +405,164 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
             yield f"event: workflow_error\ndata: {json.dumps(error_event)}\n\n"
 
     logger.info(f"Starting full streaming generation for user {current_user.id}: {task.topic}")
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable buffering in nginx
+        },
+    )
+
+
+@router.post("/generate-pptx-from-markdown", response_model=SlideGenResult)
+async def generate_pptx_from_markdown(request: MarkdownToPPTRequest, current_user: CurrentUser) -> SlideGenResult:
+    """Generate PPT directly from user-provided markdown content.
+
+    This endpoint allows users to:
+    1. First use /generate-stream to get AI-generated markdown content
+    2. Edit the markdown content as needed
+    3. Then use this endpoint to convert the final markdown to PPT
+
+    Args:
+        request: MarkdownToPPTRequest containing the markdown content and template
+
+    Returns:
+        SlideGenResult with download URL for the generated presentation
+    """
+    try:
+        if request.export_as != "pptx":
+            return SlideGenResult(
+                success=False,
+                error=f"Unsupported export_as={request.export_as!r}; only 'pptx' is currently supported",
+                message="unsupported export format",
+            )
+
+        # Generate unique output file name
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"presentation_{timestamp}_{uuid.uuid4().hex[:8]}.{request.export_as}"
+        output_path = str(OUTPUT_DIR / filename)
+
+        logger.info(f"Generating PPT from markdown for user {current_user.id}")
+        result_path = await presentation_generator.generate_from_markdown(
+            markdown_content=request.markdown_content,
+            template_name=request.template,
+            output_path=output_path,
+            export_as=request.export_as,
+        )
+
+        logger.info(f"Presentation generated successfully: {result_path}")
+
+        return SlideGenResult(
+            success=True,
+            result={
+                "output_path": result_path,
+                "filename": filename,
+                "download_url": f"/api/v1/slidegen/download/{filename}",
+            },
+            message="presentation generated successfully from markdown",
+        )
+
+    except FileNotFoundError as e:
+        logger.error(f"Template file not found: {e}")
+        return SlideGenResult(success=False, error=str(e), message="template file not found")
+    except ValueError as e:
+        logger.error(f"Unsupported export format: {e}")
+        return SlideGenResult(success=False, error=str(e), message="unsupported export format")
+    except Exception as e:
+        logger.exception(f"Failed to generate presentation from markdown: {e}")
+        return SlideGenResult(success=False, error=str(e), message="failed to generate presentation")
+
+
+@router.post(
+    "/generate-pptx-from-markdown-stream",
+    description="Generate PPT from markdown with SSE progress updates",
+    dependencies=[Depends(sse_rate_limiter)],
+)
+async def generate_pptx_from_markdown_stream(
+    request: MarkdownToPPTRequest, current_user: CurrentUser
+) -> StreamingResponse:
+    """Generate PPT from user-provided markdown content with streaming progress.
+
+    This endpoint provides real-time progress updates during PPT generation.
+    Use this when you want to show the user the conversion progress.
+
+    Events sent:
+    - step_started: Conversion started
+    - progress: Progress percentage updates
+    - step_completed: Conversion completed
+    - generation_completed: Final event with download URL
+    - workflow_error: Error occurred
+
+    Example SSE event format:
+    ```
+    event: generation_completed
+    data: {"event": "generation_completed", "download_url": "/api/v1/slidegen/download/xxx.pptx"}
+    ```
+    """
+
+    # Validate export format
+    if request.export_as != "pptx":
+
+        async def error_generator() -> AsyncGenerator[str, None]:
+            error_event = {
+                "event": "workflow_error",
+                "error": f"Unsupported export_as={request.export_as!r}; only 'pptx' is currently supported",
+                "message": "unsupported export format",
+            }
+            yield f"event: workflow_error\ndata: {json.dumps(error_event)}\n\n"
+
+        return StreamingResponse(
+            error_generator(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+        )
+
+    # Generate unique output file name
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"presentation_{timestamp}_{uuid.uuid4().hex[:8]}.pptx"
+    output_path = str(OUTPUT_DIR / filename)
+
+    async def event_generator() -> AsyncGenerator[str, None]:
+        """Generate SSE events from markdown to PPT conversion"""
+        try:
+            async for event in presentation_generator.generate_from_markdown_stream(
+                markdown_content=request.markdown_content,
+                template_name=request.template,
+                output_path=output_path,
+                export_as=request.export_as,
+            ):
+                # Convert Pydantic model to dict and then to JSON
+                event_data = event.model_dump()
+                event_type = event_data.get("event", "message")
+
+                # Format as SSE: event: <type>\ndata: <json>\n\n
+                yield f"event: {event_type}\ndata: {json.dumps(event_data)}\n\n"
+
+                # Check if this is the final PPTX conversion completion
+                if event_type == "step_completed" and event_data.get("step_name") == "PPTX Conversion":
+                    # Emit final completion event with download URL
+                    final_event = {
+                        "event": "generation_completed",
+                        "output_path": output_path,
+                        "filename": filename,
+                        "download_url": f"/api/v1/slidegen/download/{filename}",
+                        "message": "Presentation generated successfully from markdown",
+                    }
+                    yield f"event: generation_completed\ndata: {json.dumps(final_event)}\n\n"
+
+        except Exception as e:
+            logger.exception(f"Error in SSE stream: {e}")
+            error_event = {
+                "event": "workflow_error",
+                "error": str(e),
+                "message": "Stream error occurred",
+            }
+            yield f"event: workflow_error\ndata: {json.dumps(error_event)}\n\n"
+
+    logger.info(f"Starting streaming PPT generation from markdown for user {current_user.id}")
 
     return StreamingResponse(
         event_generator(),

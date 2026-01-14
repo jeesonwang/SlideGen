@@ -22,6 +22,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Initialize application data (create first superuser, etc.)
     await init_app_data()
 
+    # Ensure output directory exists
+    settings.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
     yield
     # await async_engine.dispose()
 
