@@ -127,7 +127,6 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str = "slidegen"
-    POSTGRES_CHARSET: str = "utf8mb4"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
