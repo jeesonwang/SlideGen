@@ -185,18 +185,18 @@ class SlideGenWorkflow:
                 "Generate a detailed outline based on the provided content.",
                 "If a 'Knowledge Base Summary' section is provided, use it as the primary source of information for the outline.",
                 "The knowledge base summary contains comprehensive information synthesized from reference documents.",
-                "Decompose the outline into multiple independent sections.",
-                "Each section should contain a clear title.",
-                f"Create exactly {request.n_slides} slides/sections.",
+                "IMPORTANT: Each second-level heading (##) represents exactly ONE slide in the presentation.",
+                f"You MUST create exactly {request.n_slides} second-level headings (##), as each one becomes a slide.",
+                "Each second-level heading should have 1-4 third-level headings (###) as key points.",
                 "Ensure the outline covers all important topics mentioned in the knowledge base summary.",
                 f"Always respond in {request.language}",
             ],
             expected_output=(
                 "Output the content outline for this PowerPoint section in Markdown, using headings up to level 3 only. Do not use level-4 or deeper headings.\n"
                 "Must follow:\n"
-                "- Top-level (#): Use the current section title and include it exactly once\n"
-                "- Second-level (##): Split this section into 1-4 clear subsections\n"
-                "- Third-level (###): For each subsection, provide 1-4 key points based on the content's depth and relevance\n"
+                "- Top-level (#): The presentation title, include it exactly once\n"
+                f"- Second-level (##): Each ## heading = ONE slide. You MUST have exactly {request.n_slides} second-level headings.\n"
+                "- Third-level (###): For each slide (##), provide 1-4 key points as ### headings\n"
                 "- Output Markdown only; do not add explanations, prefixes, or unrelated text\n"
                 "Example structure (illustrative; do not copy the content):\n"
                 "# PowerPoint Title\n"
