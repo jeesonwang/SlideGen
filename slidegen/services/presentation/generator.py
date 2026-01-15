@@ -42,10 +42,7 @@ class PresentationGenerator:
 
     def list_templates(self) -> list[str]:
         """List all available template names."""
-        return sorted(
-            file.stem.replace("template_", "")
-            for file in self.templates_dir.glob("template_*.pptx")
-        )
+        return sorted(file.stem.replace("template_", "") for file in self.templates_dir.glob("template_*.pptx"))
 
     async def generate_presentation(
         self,

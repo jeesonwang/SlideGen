@@ -63,9 +63,7 @@ class FileManager:
         """
         ext = Path(filename).suffix.lower()
         if ext not in self.ALLOWED_EXTENSIONS:
-            raise FileTypeError(
-                f"Unsupported file type: {ext}. Supported types: {', '.join(self.ALLOWED_EXTENSIONS)}"
-            )
+            raise FileTypeError(f"Unsupported file type: {ext}. Supported types: {', '.join(self.ALLOWED_EXTENSIONS)}")
         return True
 
     def sanitize_filename(self, filename: str) -> str:
@@ -193,9 +191,7 @@ class FileManager:
             return False
         return self._delete_file_at_path(file_path)
 
-    def _list_files_in_dir(
-        self, directory: Path, context_key: str, context_value: str
-    ) -> list[dict[str, Any]]:
+    def _list_files_in_dir(self, directory: Path, context_key: str, context_value: str) -> list[dict[str, Any]]:
         """
         List all files in a directory with metadata.
 
@@ -219,14 +215,16 @@ class FileManager:
             original_filename = parts[1] if len(parts) > 1 else file_path.name
             stat = file_path.stat()
 
-            files.append({
-                "file_id": file_id,
-                "filename": original_filename,
-                "file_size": stat.st_size,
-                "file_path": str(file_path),
-                "upload_time": datetime.fromtimestamp(stat.st_mtime),
-                context_key: context_value,
-            })
+            files.append(
+                {
+                    "file_id": file_id,
+                    "filename": original_filename,
+                    "file_size": stat.st_size,
+                    "file_path": str(file_path),
+                    "upload_time": datetime.fromtimestamp(stat.st_mtime),
+                    context_key: context_value,
+                }
+            )
 
         return files
 
