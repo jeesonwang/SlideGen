@@ -1,55 +1,131 @@
-# SlideGen
+<div align="center">
+  <a href="https://github.com/jeesonwang/SlideGen">
+    <img src="assets/logo.png" alt="Logo" width="120" height="120">
+  </a>
 
-## 说明
-Python: 3.11.8
+  <h3 align="center">SlideGen</h3>
 
-### 环境变量配置
+  <p align="center">
+    An AI-powered PowerPoint presentation generator.
+    <br />
+    <a href="docs/frontendworkflow.md"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/jeesonwang/SlideGen/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/jeesonwang/SlideGen/issues">Request Feature</a>
+  </p>
+</div>
 
-```bash
-# 生成 .env 文件
-cp .env.sample .env
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#features">Features</a>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
 
-# 编辑 .env 文件
-# vim .env
-```
+<!-- ABOUT THE PROJECT -->
+## About The Project
 
-### 安装依赖
-```bash
-# uv 安装 https://docs.astral.sh/uv/
-uv venv -p 3.11
+SlideGen is an intelligent agent designed to automate the creation of PowerPoint presentations. By leveraging Large Language Models (LLMs) and Retrieval-Augmented Generation (RAG), SlideGen can generate structured, content-rich slides from simple user prompts or uploaded documents.
 
-# 安装依赖
-uv sync
+### Built With
 
-# 运行安装 git hooks
-pre-commit install
-```
+*   [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+*   [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+*   [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+*   [![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+*   [![Celery](https://img.shields.io/badge/celery-%23a9cc54.svg?style=for-the-badge&logo=celery&logoColor=dddddd)](https://docs.celeryq.dev/)
 
-### slidegen 文件夹结构
+<!-- FEATURES -->
+## Features
 
-```
-slidegen/
-├── common/
-    存放通用模块和工具函数。
-├── config/
-    存放配置文件。
-├── contexts/
-    存放上下文相关代码。
-├── controller/
-    存放控制器代码。
-├── core/
-    存放核心功能代码。
-├── engine/
-    存放引擎相关代码。
-├── exception/
-    存放异常处理相关代码。
-├── middleware/
-    存放中间件代码。
-├── model/
-    存放模型代码。
-├── server.py
-├── util/
-    存放实用工具函数。
-└── view/
-    存放视图相关代码。
-```
+SlideGen offers a comprehensive workflow for generating presentations:
+
+*   **Configuration Management**:
+    *   Manage connections to various LLM providers (OpenAI, Azure, Anthropic, Ollama, etc.).
+    *   Configure Embedding models for knowledge base indexing.
+*   **Knowledge Base Management**:
+    *   Upload and manage files (PDF, DOCX, etc.) to be used as reference material.
+    *   RAG support for generating content based on uploaded documents.
+*   **PPT Generation Workflow**:
+    *   **Streamed Content Generation**: Real-time generation of presentation outlines and content in Markdown format.
+    *   **Interactive Editing**: Edit the generated content before finalizing the slides.
+    *   **PPTX Export**: Convert the finalized Markdown into a polished PowerPoint file (`.pptx`).
+
+<!-- GETTING STARTED -->
+## Getting Started
+
+To get a local copy up and running, follow these simple steps.
+
+### Prerequisites
+
+*   Python 3.11+
+*   PostgreSQL
+*   Redis
+
+### Installation
+
+1.  Clone the repo
+    ```sh
+    git clone https://github.com/jeesonwang/SlideGen.git
+    cd SlideGen
+    ```
+2.  Install dependencies
+    *   Using `uv` (Recommended):
+        ```sh
+        uv sync
+        ```
+    *   Or using `pip`:
+        ```sh
+        pip install -r requirements.txt
+        ```
+3.  Set up environment variables
+    *   Copy the sample environment file:
+        ```sh
+        cp .env.sample .env
+        ```
+    *   Update `.env` with your database credentials, API keys, and other configuration settings.
+
+<!-- USAGE EXAMPLES -->
+## Usage
+
+1.  Start the application server:
+    ```sh
+    python main.py
+    ```
+    The server will start at `http://127.0.0.1:7860`.
+
+2.  Access the API documentation:
+    *   Swagger UI: `http://127.0.0.1:7860/docs`
+    *   ReDoc: `http://127.0.0.1:7860/redoc`
+
+<!-- LICENSE -->
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+<!-- CONTACT -->
+## Contact
+
+Project Link: [https://github.com/jeesonwang/SlideGen](https://github.com/jeesonwang/SlideGen)

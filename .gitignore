@@ -122,4 +122,4 @@ uploads/
 
 # images
 generated_images/
-*.png
+components/**/*.png
