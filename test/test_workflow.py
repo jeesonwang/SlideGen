@@ -182,7 +182,7 @@ class TestSlideGenWorkflow:
         assert isinstance(empty_doc, MarkdownDocument)
         assert len(empty_doc.contents) == 0
 
-    async def test_basic_workflow_execution(self, basic_request, llm):
+    async def test_basic_workflow_execution(self, basic_request, llm: Gemini):
         """test basic workflow execution"""
         try:
             result = await run_slidegen_workflow(basic_request, llm=llm)
@@ -192,11 +192,11 @@ class TestSlideGenWorkflow:
             assert isinstance(result, MarkdownDocument)
 
             # Verify the document has content
-            assert len(result.contents) > 0 or result.children
+            assert len(result.main.contents) > 0 or result.main.children
 
             logger.info("Basic workflow execution passed")
             logger.info(f"Generated document length: {len(result.text)} characters")
-            logger.info(f"Contains {len(result.contents)} content blocks")
+            logger.info(f"Contains {len(result.main.contents)} content blocks")
 
         except Exception as e:
             logger.exception("Basic workflow execution failed")
@@ -210,11 +210,11 @@ class TestSlideGenWorkflow:
 
             assert result is not None
             assert isinstance(result, MarkdownDocument)
-            assert len(result.contents) > 0 or result.children
+            assert len(result.main.contents) > 0 or result.main.children
 
             logger.info("Web search workflow execution passed")
             logger.info(f"Generated document length: {len(result.text)} characters")
-            logger.info(f"Contains {len(result.contents)} content blocks")
+            logger.info(f"Contains {len(result.main.contents)} content blocks")
 
         except Exception as e:
             logger.exception("Web search workflow execution failed")
@@ -227,11 +227,11 @@ class TestSlideGenWorkflow:
 
             assert result is not None
             assert isinstance(result, MarkdownDocument)
-            assert len(result.contents) > 0 or result.children
+            assert len(result.main.contents) > 0 or result.main.children
 
             logger.info("Concise style workflow execution passed")
             logger.info(f"Generated document length: {len(result.text)} characters")
-            logger.info(f"Contains {len(result.contents)} content blocks")
+            logger.info(f"Contains {len(result.main.contents)} content blocks")
 
         except Exception as e:
             logger.exception("Concise style workflow execution failed")
@@ -344,11 +344,11 @@ class TestSlideGenWorkflow:
 
             assert result is not None
             assert isinstance(result, MarkdownDocument)
-            assert len(result.contents) > 0 or result.children
+            assert len(result.main.contents) > 0 or result.main.children
 
             logger.info("workflow execution with real embedder and llm passed")
             logger.info(f"generated document length: {len(result.text)} characters")
-            logger.info(f"contains {len(result.contents)} content blocks")
+            logger.info(f"contains {len(result.main.contents)} content blocks")
 
         except Exception as e:
             logger.exception("workflow execution with real embedder and llm failed")
@@ -389,11 +389,11 @@ class TestWorkflowIntegration:
             # verify result structure
             assert result is not None
             assert isinstance(result, MarkdownDocument)
-            assert len(result.contents) > 0 or result.children
+            assert len(result.main.contents) > 0 or result.main.children
 
             logger.info("End to end workflow test passed")
             logger.info(f"Generated document length: {len(result.text)} characters")
-            logger.info(f"Contains {len(result.contents)} content blocks")
+            logger.info(f"Contains {len(result.main.contents)} content blocks")
 
         except Exception as e:
             logger.exception("End to end workflow test failed")

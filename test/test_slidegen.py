@@ -25,7 +25,7 @@ class TestSlideGen:
     @pytest.fixture
     def template_path(self):
         """返回测试PPT模板路径"""
-        return os.path.join(os.path.dirname(__file__), "data", "DeepSeek对中国AI产业的影响.pptx")
+        return os.path.join(os.path.dirname(__file__), "data", "template_0.pptx")
 
     @pytest.fixture
     def presentation(self, template_path):
