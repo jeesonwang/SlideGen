@@ -7,7 +7,7 @@ from typing import BinaryIO
 
 from loguru import logger
 
-from slidegen.exception import FileTypeError
+from slidegen.exceptions import FileTypeError
 
 
 class FileManager:

@@ -4,11 +4,11 @@ from typing import Any
 from pydantic_settings import BaseSettings
 from rich import print
 
-from slidegen.config.conf import BASE_DIR, Settings
+from slidegen.core.config import PROJECT_ROOT, Settings
 
 
 def generate_env_sample(
-    settings_class: type[BaseSettings], output_file: str | Path = BASE_DIR.parent / ".env.sample"
+    settings_class: type[BaseSettings], output_file: str | Path = PROJECT_ROOT / ".env.sample"
 ) -> None:
     fields: dict[str, Any] = settings_class.model_fields
     lines = ["PYTHONPATH=."]
@@ -27,5 +27,4 @@ def generate_env_sample(
     print(f"[green]{output_file} generated successfully.[/green]")
 
 
-# 使用示例
 generate_env_sample(Settings)

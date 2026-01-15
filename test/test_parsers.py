@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 from loguru import logger
 
-from slidegen.workflows.docparse import DocumentReader
-from slidegen.workflows.docparse.reader import (
+from slidegen.services.document import DocumentReader
+from slidegen.services.document.parsers import (
     DocumentParseResult,
     PdfParser,
     TextParser,

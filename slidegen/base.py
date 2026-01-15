@@ -8,9 +8,9 @@ from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 
 from slidegen.api.main import api_router
-from slidegen.common import logger_init
-from slidegen.config import settings
-from slidegen.middleware.exception import register_exception_handler
+from slidegen.core import logger_init, settings
+from slidegen.init_data import init_app_data
+from slidegen.middleware import register_exception_handler
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -19,11 +19,9 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    # Tables be created with Alembic migrations
-    # But if you don't want to use migrations, create
-    # the tables un-commenting the next lines
-    # async with async_engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.create_all)
+    # Initialize application data (create first superuser, etc.)
+    await init_app_data()
+
     yield
     # await async_engine.dispose()
 

@@ -102,6 +102,7 @@ venv.bak/
 log
 exchange
 driver
+
 .DS_Store
 .env
 
@@ -117,7 +118,8 @@ chroma/
 
 # data
 test/data
+uploads/
 
 # images
 generated_images/
-*.png
+components/**/*.png

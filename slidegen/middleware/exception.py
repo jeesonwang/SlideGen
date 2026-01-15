@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 from pydantic import ValidationError
 
-from slidegen.exception import MESSAGE, ApiError, ParamCheckErrorCode, UnknownErrorCode
+from slidegen.exceptions import MESSAGE, ApiError, ParamCheckErrorCode, UnknownErrorCode
 
 
 def human_errors(exc: ValidationError) -> str:
