@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 
@@ -18,7 +19,7 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     # Initialize application data (create first superuser, etc.)
     await init_app_data()
 
@@ -52,6 +53,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
+
     register_exception_handler(app)
     app.include_router(api_router, prefix=settings.API_V1_STR)
     # Mount the data files to serve the file viewer
