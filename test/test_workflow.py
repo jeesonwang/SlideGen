@@ -370,7 +370,7 @@ class TestWorkflowIntegration:
         """Create a real embedder instance for integration testing (optional)"""
         return OpenAIEmbedder(api_key="dummy", id="null", base_url="http://192.168.1.144:8000/v1")
 
-    async def test_end_to_end_workflow(self, llm):
+    async def test_end_to_end_workflow(self, llm, embedder):
         """end to end workflow test"""
         request = GeneratePresentationRequest(
             content="机器学习入门：从理论到实践",
@@ -384,7 +384,7 @@ class TestWorkflowIntegration:
         )
 
         try:
-            result = await run_slidegen_workflow(request, llm=llm)
+            result = await run_slidegen_workflow(request, llm=llm, embedder=embedder)
 
             # verify result structure
             assert result is not None
