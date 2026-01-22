@@ -6,7 +6,6 @@ from typing import Annotated, Any, Literal, Self
 
 import pytz
 from pydantic import (
-    AnyUrl,
     BeforeValidator,
     EmailStr,
     MySQLDsn,
@@ -48,7 +47,7 @@ class Settings(BaseSettings):
     )
 
     # [CORS]
-    BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
+    BACKEND_CORS_ORIGINS: Annotated[list[str] | str, BeforeValidator(parse_cors)] = ["*"]
 
     # [BASE]
     API_V1_STR: str = "/api/v1"

@@ -1,6 +1,8 @@
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from loguru import logger
 
 from slidegen.api.deps import CurrentUser
@@ -269,3 +271,49 @@ async def delete_file(
     except Exception as e:
         logger.exception(f"Failed to delete file: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
+
+
+@router.get("/{file_id}/download")
+async def download_file(
+    file_id: str,
+    current_user: CurrentUser,
+) -> Any:
+    """
+    Download file
+
+    Args:
+        file_id: file ID
+        current_user: current user
+
+    Returns:
+        FileResponse: file download response
+    """
+    try:
+        # Get file path
+        file_path = file_manager.get_file_path(file_id, str(current_user.id))
+
+        if file_path is None:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        # Verify file exists
+        path = Path(file_path)
+        if not path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+
+        # Extract original filename from stored filename (format: {file_id}_{original_filename})
+        filename_parts = path.name.split("_", 1)
+        original_filename = filename_parts[1] if len(filename_parts) > 1 else path.name
+
+        logger.info(f"File {file_id} downloaded by user {current_user.id}")
+
+        return FileResponse(
+            path=str(path),
+            filename=original_filename,
+            media_type="application/octet-stream",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Failed to download file: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to download file: {str(e)}")
