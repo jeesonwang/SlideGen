@@ -26,6 +26,11 @@ from slidegen.schemas.gen_request import (
 )
 from slidegen.schemas.template import Template
 from slidegen.services import presentation_generator
+from slidegen.services.presentation.thumbnail import (
+    LibreOfficeNotFoundError,
+    ThumbnailGenerationError,
+    thumbnail_generator,
+)
 from slidegen.services.slidegen import run_slidegen_workflow_stream
 from slidegen.tasks import celery_app
 from slidegen.tasks.slidegen_tasks import generate_presentation_task
@@ -641,6 +646,7 @@ async def get_available_templates() -> list[Template]:
             Template(
                 id=name,
                 name=name.replace("_", " ").title(),
+                thumbnail=f"/api/v1/slidegen/templates/{name}/thumbnail",
             )
             for name in template_names
         ]
@@ -675,3 +681,42 @@ async def download_presentation(filename: str) -> FileResponse:
     except Exception as e:
         logger.exception(f"Failed to download file {filename}: {e}")
         raise InsideServerError(message=f"failed to download file: {str(e)}")
+
+
+@router.get("/templates/{template_name}/thumbnail", description="get template thumbnail")
+async def get_template_thumbnail(template_name: str) -> FileResponse:
+    """Get template thumbnail.
+
+    Generates a high-quality thumbnail using LibreOffice to convert PPTX to PDF,
+    then PyMuPDF to render the first page as PNG. Thumbnails are cached in the
+    thumbnails directory and regenerated when the template is modified.
+    """
+    try:
+        # Validate template name to prevent directory traversal
+        if not template_name.replace("_", "").isalnum():
+            raise AccessDeniedError(message="invalid template name")
+
+        # Generate or retrieve cached thumbnail
+        thumbnail_path = thumbnail_generator.generate_thumbnail(template_name)
+
+        return FileResponse(
+            path=str(thumbnail_path),
+            media_type="image/png",
+            headers={"Cache-Control": "public, max-age=3600"},
+        )
+
+    except FileNotFoundError:
+        raise NotFoundError(message="template not found")
+    except LibreOfficeNotFoundError as e:
+        logger.warning(f"LibreOffice not installed: {e}")
+        raise InsideServerError(
+            message="LibreOffice is required for thumbnail generation but is not installed"
+        )
+    except ThumbnailGenerationError as e:
+        logger.error(f"Thumbnail generation failed for {template_name}: {e}")
+        raise InsideServerError(message=f"failed to generate thumbnail: {str(e)}")
+    except AccessDeniedError:
+        raise
+    except Exception as e:
+        logger.exception(f"Failed to get thumbnail for {template_name}: {e}")
+        raise InsideServerError(message=f"failed to get thumbnail: {str(e)}")

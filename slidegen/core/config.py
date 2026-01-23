@@ -74,6 +74,10 @@ class Settings(BaseSettings):
     ICONS_JSON_PATH: Path = PROJECT_ROOT / "components" / "icons.json"
     ICONS_DIR: Path = PROJECT_ROOT / "components" / "icons" / "bold"
 
+    # [THUMBNAILS]
+    THUMBNAILS_DIR: Path = COMPONENTS_BASE_PATH / "templates" / "thumbnails"
+    THUMBNAIL_WIDTH: int = 400  # Thumbnail width in pixels
+
     # [CHROMA]
     CHROMA_BASE_PATH: Path = PROJECT_ROOT / "chroma"
     CHROMA_MODELS_PATH: Path = PROJECT_ROOT / "chroma" / "models"

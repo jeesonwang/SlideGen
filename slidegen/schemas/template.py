@@ -8,3 +8,4 @@ class Template(BaseModel):
 
     id: str = Field(..., description="Template ID")
     name: str = Field(..., description="Template display name")
+    thumbnail: str = Field(..., description="Template thumbnail URL")
