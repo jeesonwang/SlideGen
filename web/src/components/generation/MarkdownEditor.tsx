@@ -77,7 +77,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               loading={exporting}
               size="large"
             >
-              Generate PPTX
+              Generate & Download PPTX
             </Button>
           </Space>
         </div>

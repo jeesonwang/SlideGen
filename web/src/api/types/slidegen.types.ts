@@ -46,7 +46,9 @@ export interface GeneratePresentationRequest extends BaseGenerationRequest {
   export_as: ExportFormat;
 }
 
-export interface GenerateMarkdownRequest extends BaseGenerationRequest {}
+export interface GenerateMarkdownRequest extends BaseGenerationRequest {
+  template?: string;
+}
 
 export interface MarkdownToPPTRequest {
   markdown_content: string;
@@ -161,4 +163,10 @@ export interface GeneratePPTXResponse {
 export interface DownloadPPTXResponse {
   url: string;
   filename: string;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  thumbnail?: string;
 }

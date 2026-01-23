@@ -8,9 +8,19 @@ import type {
   GenerateMarkdownRequest,
   MarkdownToPPTRequest,
   GeneratePPTXResponse,
+  Template,
 } from '../types/slidegen.types';
 
 export const slidegenApi = {
+  /**
+   * Get available templates
+   */
+  getTemplates: async (): Promise<Template[]> => {
+    const response = await apiClient.get<Template[]>(
+      API_ENDPOINTS.SLIDEGEN.TEMPLATES
+    );
+    return response.data;
+  },
   /**
    * Generate markdown content with SSE streaming
    * Note: This returns the URL for SSE connection, not the actual request

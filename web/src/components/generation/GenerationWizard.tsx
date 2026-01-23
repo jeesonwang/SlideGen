@@ -29,6 +29,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
     markdownContent,
     setMarkdownContent,
     setGenerationParams,
+    generationParams,
     reset,
   } = useGenerationStore();
 
@@ -63,6 +64,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
           llm_config_id: values.llm_config_id || undefined,
           embedding_config_id: values.embedding_config_id || undefined,
           session_id: sessionId || undefined,
+          template: values.template || GENERATION_DEFAULTS.TEMPLATE,
         }),
         [
           values.content,
@@ -77,6 +79,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
           values.llm_config_id,
           values.embedding_config_id,
           sessionId,
+          values.template,
         ]
       );
 
@@ -117,7 +120,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
     try {
       const result = await slidegenApi.generatePPTXFromMarkdown({
         markdown_content: markdownContent,
-        template: GENERATION_DEFAULTS.TEMPLATE,
+        template: generationParams?.template || GENERATION_DEFAULTS.TEMPLATE,
         export_as: GENERATION_DEFAULTS.EXPORT_AS,
       });
 
@@ -175,8 +178,8 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
       description: 'AI creates markdown content',
     },
     {
-      title: 'Edit & Export',
-      description: 'Review and export PPTX',
+      title: 'Edit & Preview',
+      description: 'Review and download PPTX',
     },
   ];
 
@@ -213,6 +216,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
             web_search: GENERATION_DEFAULTS.WEB_SEARCH,
             include_title_slide: GENERATION_DEFAULTS.INCLUDE_TITLE_SLIDE,
             include_table_of_contents: GENERATION_DEFAULTS.INCLUDE_TOC,
+            template: GENERATION_DEFAULTS.TEMPLATE,
           }}
         >
           <TopicInput sessionId={sessionId} />
