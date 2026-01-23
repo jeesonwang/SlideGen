@@ -61,6 +61,7 @@ dependencies = [
     "python-docx",
     "pypdf",
     "ipykernel>=7.1.0",
+    "pymupdf>=1.24.0",  # PDF rendering for template thumbnails
 ]
 
 [dependency-groups]
