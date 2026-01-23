@@ -91,6 +91,38 @@ class ThumbnailGenerator:
         # Cache the LibreOffice path
         self._libreoffice_path: str | None = None
 
+    def _get_template_path(self, template_name: str) -> Path:
+        """Get the path to a template file, trying multiple naming conventions.
+
+        Tries in order:
+        1. {template_name}.pptx - Direct naming
+        2. template_{template_name}.pptx - Legacy naming with prefix
+
+        Args:
+            template_name: Name of the template (e.g., "general" or "mytemplate").
+
+        Returns:
+            Path to the template file (may not exist yet).
+            Returns the first existing match, or the direct naming path if none exist.
+
+        Example:
+            >>> # For template_name="general"
+            >>> # Tries: "general.pptx", then "template_general.pptx"
+            >>> path = generator._get_template_path("general")
+        """
+        # Try direct naming first (new style)
+        direct_path = self.templates_dir / f"{template_name}.pptx"
+        if direct_path.exists():
+            return direct_path
+
+        # Try legacy naming with "template_" prefix
+        legacy_path = self.templates_dir / f"template_{template_name}.pptx"
+        if legacy_path.exists():
+            return legacy_path
+
+        # Return direct path as default (caller will handle FileNotFoundError)
+        return direct_path
+
     def check_dependencies(self) -> dict[str, bool]:
         """Check if all required dependencies are available.
 
@@ -438,7 +470,7 @@ class ThumbnailGenerator:
         """
         filename = f"{template_name}{suffix}.png"
         thumbnail_path = self.thumbnails_dir / filename
-        template_path = self.templates_dir / f"template_{template_name}.pptx"
+        template_path = self._get_template_path(template_name)
 
         if not thumbnail_path.exists():
             return False
@@ -478,7 +510,7 @@ class ThumbnailGenerator:
         """
         filename = f"{template_name}{output_suffix}.png"
         thumbnail_path = self.thumbnails_dir / filename
-        template_path = self.templates_dir / f"template_{template_name}.pptx"
+        template_path = self._get_template_path(template_name)
 
         # Check if template exists
         if not template_path.exists():
@@ -559,7 +591,7 @@ class ThumbnailGenerator:
             >>> grids = generator.generate_grid_thumbnail("general", cols=5)
             >>> # Creates: general_grid.png (or general_grid-1.png, general_grid-2.png, etc.)
         """
-        template_path = self.templates_dir / f"template_{template_name}.pptx"
+        template_path = self._get_template_path(template_name)
 
         # Check if template exists
         if not template_path.exists():
