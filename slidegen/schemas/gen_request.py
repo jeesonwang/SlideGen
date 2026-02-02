@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from slidegen.models.llm_config import LLMProvider
 from slidegen.schemas.llm_config import LLMConfigTest
+from slidegen.schemas.theme import PresentationTheme
 
 
 class Tone(str, Enum):
@@ -62,6 +63,12 @@ class GeneratePresentationRequest(BaseGenerationRequest):
     include_title_slide: bool = Field(default=True, description="Whether to include a title slide")
     export_as: Literal["pptx", "pdf"] = Field(default="pptx", description="Export format")
 
+    # Theme related fields
+    theme: PresentationTheme | None = Field(default=None, description="Optional theme to apply to the presentation")
+    theme_preset: str | None = Field(
+        default=None, description="Optional theme preset name (e.g., 'sunset_boulevard', 'ocean_breeze')"
+    )
+
 
 class GenerateMarkdownRequest(BaseGenerationRequest):
     """Request for generating markdown content only (without PPT conversion)"""
@@ -75,6 +82,12 @@ class MarkdownToPPTRequest(BaseModel):
     markdown_content: str = Field(..., description="The markdown content to convert to PPT")
     template: str = Field(default="general", description="Template to use for the presentation")
     export_as: Literal["pptx", "pdf"] = Field(default="pptx", description="Export format")
+
+    # Theme related fields
+    theme: PresentationTheme | None = Field(default=None, description="Optional theme to apply to the presentation")
+    theme_preset: str | None = Field(
+        default=None, description="Optional theme preset name (e.g., 'sunset_boulevard', 'ocean_breeze')"
+    )
 
 
 class LLMConfigRequest(LLMConfigTest):
