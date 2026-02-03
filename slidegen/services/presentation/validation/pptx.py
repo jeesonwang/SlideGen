@@ -284,7 +284,3 @@ class PPTXSchemaValidator(BaseSchemaValidator):
             if self.verbose:
                 logger.info("PASSED - All notes slide references are unique")
             return True
-
-
-if __name__ == "__main__":
-    raise RuntimeError("This module should not be run directly.")

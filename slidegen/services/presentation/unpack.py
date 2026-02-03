@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Unpack and format XML contents of Office files (.docx, .pptx, .xlsx)"""
 
-import argparse
 import random
-import sys
 import zipfile
 from pathlib import Path
 
 import defusedxml.minidom
+from loguru import logger
 
 
 def unpack_document(input_file: str | Path, output_dir: str | Path) -> None:
@@ -36,22 +35,9 @@ def unpack_document(input_file: str | Path, output_dir: str | Path) -> None:
             # Write back
             xml_file.write_bytes(pretty_xml)
         except Exception as e:
-            print(f"Warning: Failed to format {xml_file}: {e}", file=sys.stderr)
+            logger.warning(f"Failed to format {xml_file}: {e}")
 
     # For .docx files, suggest an RSID for tracked changes
     if str(input_path).endswith(".docx"):
         suggested_rsid = "".join(random.choices("0123456789ABCDEF", k=8))
-        print(f"Suggested RSID for edit session: {suggested_rsid}")
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Unpack and format Office file XML")
-    parser.add_argument("input_file", help="Input Office file (.docx/.pptx/.xlsx)")
-    parser.add_argument("output_dir", help="Output directory")
-    args = parser.parse_args()
-
-    unpack_document(args.input_file, args.output_dir)
-
-
-if __name__ == "__main__":
-    main()
+        logger.info(f"Suggested RSID for edit session: {suggested_rsid}")

@@ -1,44 +1,16 @@
 #!/usr/bin/env python3
 """
 Tool to pack a directory into a .docx, .pptx, or .xlsx file with XML formatting undone.
-
-Example usage:
-    python pack.py <input_directory> <office_file> [--force]
 """
 
-import argparse
 import shutil
 import subprocess
-import sys
 import tempfile
 import zipfile
 from pathlib import Path
 
 import defusedxml.minidom
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Pack a directory into an Office file")
-    parser.add_argument("input_directory", help="Unpacked Office document directory")
-    parser.add_argument("output_file", help="Output Office file (.docx/.pptx/.xlsx)")
-    parser.add_argument("--force", action="store_true", help="Skip validation")
-    args = parser.parse_args()
-
-    try:
-        success = pack_document(args.input_directory, args.output_file, validate=not args.force)
-
-        # Show warning if validation was skipped
-        if args.force:
-            print("Warning: Skipped validation, file may be corrupt", file=sys.stderr)
-        # Exit with error if validation failed
-        elif not success:
-            print("Contents would produce a corrupt file.", file=sys.stderr)
-            print("Please validate XML before repacking.", file=sys.stderr)
-            print("Use --force to skip validation and pack anyway.", file=sys.stderr)
-            sys.exit(1)
-
-    except ValueError as e:
-        sys.exit(f"Error: {e}")
+from loguru import logger
 
 
 def pack_document(input_dir: str | Path, output_file: str | Path, validate: bool = False) -> bool:
@@ -118,17 +90,17 @@ def validate_document(doc_path: str | Path) -> bool:
             )
             if not (Path(temp_dir) / f"{doc_path.stem}.html").exists():
                 error_msg = result.stderr.strip() or "Document validation failed"
-                print(f"Validation error: {error_msg}", file=sys.stderr)
+                logger.error(f"Validation error: {error_msg}")
                 return False
             return True
         except FileNotFoundError:
-            print("Warning: soffice not found. Skipping validation.", file=sys.stderr)
+            logger.warning("Warning: soffice not found. Skipping validation.")
             return True
         except subprocess.TimeoutExpired:
-            print("Validation error: Timeout during conversion", file=sys.stderr)
+            logger.error("Validation error: Timeout during conversion")
             return False
         except Exception as e:
-            print(f"Validation error: {e}", file=sys.stderr)
+            logger.error(f"Validation error: {e}")
             return False
 
 
@@ -153,7 +125,3 @@ def condense_xml(xml_file: str | Path) -> None:
     # Write back the condensed XML
     with open(xml_file, "wb") as f:
         f.write(dom.toxml(encoding="UTF-8"))
-
-
-if __name__ == "__main__":
-    main()
