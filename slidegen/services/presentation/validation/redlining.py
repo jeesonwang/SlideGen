@@ -266,7 +266,3 @@ class RedliningValidator:
                 paragraphs.append(paragraph_text)
 
         return "\n".join(paragraphs)
-
-
-if __name__ == "__main__":
-    raise RuntimeError("This module should not be run directly.")
