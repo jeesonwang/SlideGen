@@ -11,7 +11,7 @@ const { Content } = AntLayout;
 
 export const Layout: React.FC = () => {
   return (
-    <AntLayout className="min-h-screen bg-secondary-50">
+    <AntLayout className="min-h-screen bg-background">
       <Sidebar />
       <AntLayout className="!bg-transparent">
         <Header />

@@ -36,18 +36,27 @@ export const API_ENDPOINTS = {
   },
   // Sessions
   SESSIONS: {
-    LIST: '/api/v1/sessions',
-    CREATE: '/api/v1/sessions',
+    LIST: '/api/v1/sessions/',
+    CREATE: '/api/v1/sessions/',
     GET: (id: string) => `/api/v1/sessions/${id}`,
     UPDATE: (id: string) => `/api/v1/sessions/${id}`,
     DELETE: (id: string) => `/api/v1/sessions/${id}`,
     ARCHIVE: (id: string) => `/api/v1/sessions/${id}/archive`,
+    // Chat Messages
+    MESSAGES: {
+      LIST: (sessionId: string) => `/api/v1/sessions/${sessionId}/messages`,
+      ADD: (sessionId: string) => `/api/v1/sessions/${sessionId}/messages`,
+      GET: (sessionId: string, messageId: string) =>
+        `/api/v1/sessions/${sessionId}/messages/${messageId}`,
+      DELETE: (sessionId: string, messageId: string) =>
+        `/api/v1/sessions/${sessionId}/messages/${messageId}`,
+    },
   },
   // Files
   FILES: {
     UPLOAD: '/api/v1/files/upload',
     UPLOAD_MULTIPLE: '/api/v1/files/upload-multiple',
-    LIST: '/api/v1/files',
+    LIST: '/api/v1/files/',
     DELETE: (id: string) => `/api/v1/files/${id}`,
     DOWNLOAD: (id: string) => `/api/v1/files/${id}/download`,
   },

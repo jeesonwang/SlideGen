@@ -9,11 +9,16 @@ import {
   SettingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  BgColorsOutlined,
+  SunOutlined,
+  MoonOutlined,
+  DesktopOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useUIStore } from '../../store/uiStore';
+import { getThemeModeLabel, THEME_MODE_OPTIONS, type ThemeMode } from '../../theme/themeMode';
 
 const { Header: AntHeader } = Layout;
 const { Text } = Typography;
@@ -21,7 +26,25 @@ const { Text } = Typography;
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const { sidebarCollapsed, toggleSidebar, themeMode, setThemeMode } = useUIStore();
+
+  const getThemeIcon = (mode: ThemeMode) => {
+    switch (mode) {
+      case 'light':
+        return <SunOutlined />;
+      case 'dark':
+        return <MoonOutlined />;
+      default:
+        return <DesktopOutlined />;
+    }
+  };
+
+  const themeMenuItems: MenuProps['items'] = THEME_MODE_OPTIONS.map((option) => ({
+    key: option.value,
+    icon: getThemeIcon(option.value),
+    label: option.label,
+    onClick: () => setThemeMode(option.value),
+  }));
 
   const userMenuItems: MenuProps['items'] = [
     {
@@ -55,48 +78,71 @@ export const Header: React.FC = () => {
   ];
 
   return (
-    <AntHeader className="!px-8 !py-0 !bg-white/80 backdrop-blur-md flex items-center justify-between border-b border-secondary-100 sticky top-0 z-20 shadow-soft h-20">
+    <AntHeader className="!px-8 !py-0 !bg-surface-50/80 backdrop-blur-md flex items-center justify-between border-b !border-border/70 sticky top-0 z-20 h-20">
       <div className="flex items-center gap-4">
         <button
           onClick={toggleSidebar}
-          className="w-10 h-10 rounded-lg hover:bg-secondary-100 flex items-center justify-center transition-all duration-200 cursor-pointer"
+          className="w-10 h-10 rounded-lg hover:bg-surface-100 flex items-center justify-center transition-all duration-200 cursor-pointer text-text-secondary hover:text-text-main"
           aria-label="Toggle sidebar"
         >
           {sidebarCollapsed ? (
-            <MenuUnfoldOutlined className="text-lg text-secondary-600" />
+            <MenuUnfoldOutlined className="text-lg" />
           ) : (
-            <MenuFoldOutlined className="text-lg text-secondary-600" />
+            <MenuFoldOutlined className="text-lg" />
           )}
         </button>
       </div>
 
-      <Dropdown
-        menu={{ items: userMenuItems }}
-        placement="bottomRight"
-        trigger={['click']}
-      >
-        <button
-          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary-50 cursor-pointer transition-all duration-200 border-0 bg-transparent"
-          aria-label="User menu"
-          aria-haspopup="true"
+      <div className="flex items-center gap-3">
+        <Dropdown
+          menu={{
+            items: themeMenuItems,
+            selectable: true,
+            selectedKeys: [themeMode],
+          }}
+          placement="bottomRight"
+          trigger={['click']}
         >
-          <Space size={12}>
-            <div className="text-right hidden sm:block">
-              <Text className="block text-sm font-medium text-secondary-900">
-                {user?.username || 'User'}
-              </Text>
-              <Text className="block text-xs text-secondary-500">
-                {user?.email}
-              </Text>
-            </div>
-            <Avatar
-              size={40}
-              className="!bg-gradient-to-br !from-primary-600 !to-primary-700 shadow-soft"
-              icon={<UserOutlined />}
-            />
-          </Space>
-        </button>
-      </Dropdown>
+          <button
+            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-surface-100 cursor-pointer transition-all duration-200 border border-border/70 bg-surface-50/70 text-text-main"
+            aria-label="Theme menu"
+            aria-haspopup="true"
+          >
+            <BgColorsOutlined className="text-primary-400" />
+            <span className="hidden sm:inline text-sm font-medium">
+              {getThemeModeLabel(themeMode)}
+            </span>
+          </button>
+        </Dropdown>
+
+        <Dropdown
+          menu={{ items: userMenuItems }}
+          placement="bottomRight"
+          trigger={['click']}
+        >
+          <button
+            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-100 cursor-pointer transition-all duration-200 border-0 bg-transparent"
+            aria-label="User menu"
+            aria-haspopup="true"
+          >
+            <Space size={12}>
+              <div className="text-right hidden sm:block">
+                <Text className="block text-sm font-medium !text-text-main">
+                  {user?.username || 'User'}
+                </Text>
+                <Text className="block text-xs !text-text-secondary">
+                  {user?.email}
+                </Text>
+              </div>
+              <Avatar
+                size={40}
+                className="!bg-gradient-to-br !from-primary-600 !to-primary-700"
+                icon={<UserOutlined />}
+              />
+            </Space>
+          </button>
+        </Dropdown>
+      </div>
     </AntHeader>
   );
 };

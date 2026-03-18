@@ -3,6 +3,7 @@
  */
 
 import apiClient from '../client';
+import { buildApiUrl } from '../baseUrl';
 import { API_ENDPOINTS } from '../../utils/constants';
 import type {
   GenerateMarkdownRequest,
@@ -26,10 +27,13 @@ export const slidegenApi = {
    * Note: This returns the URL for SSE connection, not the actual request
    */
   getMarkdownStreamURL: (params: GenerateMarkdownRequest): string => {
-    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:7860';
     const url = new URL(
-      API_ENDPOINTS.SLIDEGEN.GENERATE_MARKDOWN_STREAM,
-      baseURL
+      buildApiUrl(
+        API_ENDPOINTS.SLIDEGEN.GENERATE_MARKDOWN_STREAM,
+        import.meta.env.VITE_API_BASE_URL,
+        import.meta.env.DEV
+      ),
+      window.location.origin
     );
 
     // Add query parameters

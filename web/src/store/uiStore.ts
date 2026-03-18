@@ -4,22 +4,23 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { ThemeMode } from '../theme/themeMode';
 
 interface UIState {
   sidebarCollapsed: boolean;
-  theme: 'light' | 'dark';
+  themeMode: ThemeMode;
 
   // Actions
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
-  setTheme: (theme: 'light' | 'dark') => void;
+  setThemeMode: (themeMode: ThemeMode) => void;
 }
 
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       sidebarCollapsed: false,
-      theme: 'light',
+      themeMode: 'system',
 
       toggleSidebar: () => {
         set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed }));
@@ -29,8 +30,8 @@ export const useUIStore = create<UIState>()(
         set({ sidebarCollapsed: collapsed });
       },
 
-      setTheme: (theme: 'light' | 'dark') => {
-        set({ theme });
+      setThemeMode: (themeMode: ThemeMode) => {
+        set({ themeMode });
       },
     }),
     {

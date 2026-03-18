@@ -2,15 +2,17 @@
  * PPT Generation Wizard Component
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Steps, Button, Form, message } from 'antd';
 import { TopicInput } from './TopicInput';
 import { StreamingProgress } from './StreamingProgress';
 import { MarkdownEditor } from './MarkdownEditor';
+import { OutlineEditor } from './OutlineEditor';
 import { useGenerationStore } from '../../store/generationStore';
 import { slidegenApi } from '../../api/endpoints/slidegen';
 import { useAuthStore } from '../../store/authStore';
 import { GENERATION_DEFAULTS } from '../../utils/constants';
+import { cn } from '../../utils/classnames';
 import type { GenerateMarkdownRequest } from '../../api/types/slidegen.types';
 import { Tone, Verbosity } from '../../api/types/slidegen.types';
 
@@ -35,6 +37,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
 
   const [streamUrl, setStreamUrl] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [viewMode, setViewMode] = useState<'outline' | 'markdown'>('outline');
 
   useEffect(() => {
     // Reset on mount
@@ -50,38 +53,21 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
         return;
       }
 
-      const params: GenerateMarkdownRequest = useMemo(
-        () => ({
-          content: values.content,
-          instructions: values.instructions || undefined,
-          tone: values.tone || Tone.DEFAULT,
-          verbosity: values.verbosity || Verbosity.STANDARD,
-          web_search: values.web_search || false,
-          n_slides: values.n_slides || GENERATION_DEFAULTS.N_SLIDES,
-          language: values.language || GENERATION_DEFAULTS.LANGUAGE,
-          files: values.files || undefined,
-          user_id: user.id,
-          llm_config_id: values.llm_config_id || undefined,
-          embedding_config_id: values.embedding_config_id || undefined,
-          session_id: sessionId || undefined,
-          template: values.template || GENERATION_DEFAULTS.TEMPLATE,
-        }),
-        [
-          values.content,
-          values.instructions,
-          values.tone,
-          values.verbosity,
-          values.web_search,
-          values.n_slides,
-          values.language,
-          values.files,
-          user.id,
-          values.llm_config_id,
-          values.embedding_config_id,
-          sessionId,
-          values.template,
-        ]
-      );
+      const params: GenerateMarkdownRequest = {
+        content: values.content,
+        instructions: values.instructions || undefined,
+        tone: values.tone || Tone.DEFAULT,
+        verbosity: values.verbosity || Verbosity.STANDARD,
+        web_search: values.web_search || false,
+        n_slides: values.n_slides || GENERATION_DEFAULTS.N_SLIDES,
+        language: values.language || GENERATION_DEFAULTS.LANGUAGE,
+        files: values.files || undefined,
+        user_id: user.id,
+        llm_config_id: values.llm_config_id || undefined,
+        embedding_config_id: values.embedding_config_id || undefined,
+        session_id: sessionId || undefined,
+        template: values.template || GENERATION_DEFAULTS.TEMPLATE,
+      };
 
       setGenerationParams(params);
 
@@ -158,6 +144,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
   const handleReset = () => {
     reset();
     form.resetFields();
+    setViewMode('outline');
   };
 
   const handleBack = () => {
@@ -201,7 +188,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
       <Steps
         current={getCurrentStepIndex()}
         items={steps}
-        className="mb-8"
+        className={cn("mb-8")}
       />
 
       {currentStep === 'configure' && (
@@ -221,7 +208,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
         >
           <TopicInput sessionId={sessionId} />
 
-          <div className="mt-6 text-right">
+          <div className={cn("mt-6 text-right")}>
             <Button
               type="primary"
               size="large"
@@ -241,26 +228,82 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
             onError={handleGenerationError}
           />
 
-          <div className="mt-6 text-right">
+          <div className={cn("mt-6 text-right")}>
             <Button onClick={handleBack}>Back</Button>
           </div>
         </div>
       )}
 
       {currentStep === 'editing' && (
-        <div>
-          <MarkdownEditor
-            value={markdownContent}
-            onChange={handleMarkdownChange}
-            onExport={handleExportPPTX}
-            exporting={exporting}
-          />
-
-          <div className="mt-6 text-right">
-            <Button onClick={handleReset} className="mr-2">
-              Start New Generation
-            </Button>
+        <div className={cn("animate-fade-in")}>
+          <div className={cn("flex justify-between items-center mb-6")}>
+             <div className={cn("space-y-1")}>
+                <h2 className={cn("text-2xl font-bold text-gray-800")}>
+                    {viewMode === 'outline' ? 'Generate Outline' : 'Edit Markdown'}
+                </h2>
+                <p className={cn("text-gray-500")}>
+                    {viewMode === 'outline'
+                        ? 'Review and edit your presentation structure below.'
+                        : 'Fine-tune the markdown content directly.'}
+                </p>
+             </div>
+             <div className={cn("flex gap-3")}>
+                <Button
+                    onClick={() => setViewMode('outline')}
+                    type={viewMode === 'outline' ? 'primary' : 'default'}
+                >
+                    Outline View
+                </Button>
+                <Button
+                    onClick={() => setViewMode('markdown')}
+                    type={viewMode === 'markdown' ? 'primary' : 'default'}
+                >
+                    Markdown View
+                </Button>
+             </div>
           </div>
+
+          {viewMode === 'outline' ? (
+             <div className={cn("mb-8")}>
+                <OutlineEditor
+                    value={markdownContent}
+                    onChange={handleMarkdownChange}
+                />
+
+                <div className={cn(
+                  "mt-8 flex justify-end gap-3 sticky bottom-0",
+                  "bg-white/80 backdrop-blur p-4",
+                  "border-t border-gray-100 shadow-lg -mx-4 px-8"
+                )}>
+                     <Button size="large" onClick={handleReset}>
+                        Start New
+                     </Button>
+                     <Button
+                        type="primary"
+                        size="large"
+                        onClick={handleExportPPTX}
+                        loading={exporting}
+                     >
+                        Export Presentation
+                     </Button>
+                </div>
+             </div>
+          ) : (
+            <div>
+              <MarkdownEditor
+                value={markdownContent}
+                onChange={handleMarkdownChange}
+                onExport={handleExportPPTX}
+                exporting={exporting}
+              />
+
+              <div className={cn("mt-6 text-right")}>
+                <Button onClick={handleReset} className={cn("mr-2")}>
+                  Start New Generation
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

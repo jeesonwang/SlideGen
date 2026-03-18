@@ -15,7 +15,10 @@ import {
   useTestLLMConfig,
   useSetDefaultLLMConfig,
 } from '../../hooks/useLLMConfigs';
-import type { LLMConfigPublic } from '../../api/types/llmConfig.types';
+import type {
+  LLMConfigCreate,
+  LLMConfigPublic,
+} from '../../api/types/llmConfig.types';
 
 const { Title, Text } = Typography;
 
@@ -63,7 +66,7 @@ export const LLMConfigPage = () => {
     await setDefaultMutation.mutateAsync(id);
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: Omit<LLMConfigCreate, 'user_id'>) => {
     try {
       if (editingConfig) {
         await updateMutation.mutateAsync({
@@ -75,7 +78,7 @@ export const LLMConfigPage = () => {
       }
       setIsModalOpen(false);
       setEditingConfig(null);
-    } catch (error) {
+    } catch {
       // Error is already handled by the mutation
     }
   };
@@ -86,24 +89,17 @@ export const LLMConfigPage = () => {
   };
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-        }}
-      >
-        <div>
-          <Title level={2} style={{ margin: 0 }}>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-surface-50 p-6 shadow-soft lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-2">
+          <Title level={3} className="!mb-0 !text-text-main">
             LLM Configurations
           </Title>
-          <Text type="secondary">
-            Manage your language model configurations for presentation generation
+          <Text className="text-text-secondary">
+            Manage language model settings for presentation generation, including defaults, connection tests, and advanced parameters.
           </Text>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} className="!h-11 !rounded-xl !px-5 !font-semibold">
           Add Configuration
         </Button>
       </div>
@@ -123,6 +119,11 @@ export const LLMConfigPage = () => {
         onCancel={handleCancel}
         footer={null}
         width={600}
+        styles={{
+          body: {
+            paddingTop: 12,
+          },
+        }}
         destroyOnClose
       >
         <LLMConfigForm

@@ -12,22 +12,28 @@ import {
   useDeleteSession,
   useArchiveSession,
 } from '../../hooks/useSessions';
+import { useChatStore } from '../../store/chatStore';
 import type { SessionPublic } from '../../api/types/session.types';
+import { getSessionSummary } from '../../components/sessions/sessionPresentation';
+import {
+  getSessionsPageContainerClassName,
+  getSessionsPageContentClassName,
+} from './sessionsPageLayout';
 
 const { Title, Text } = Typography;
 
 export const SessionsPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const { setCurrentSession, loadMessages } = useChatStore();
 
   const { data: sessionsData, isLoading, refetch } = useSessions();
   const deleteMutation = useDeleteSession();
   const archiveMutation = useArchiveSession();
 
-  const sessions = sessionsData?.data || [];
-
   // Filter sessions by search term
   const filteredSessions = useMemo(() => {
+    const sessions = sessionsData?.data || [];
     if (!searchTerm) return sessions;
 
     const lowerSearch = searchTerm.toLowerCase();
@@ -36,12 +42,16 @@ export const SessionsPage = () => {
         session.title.toLowerCase().includes(lowerSearch) ||
         session.topic?.toLowerCase().includes(lowerSearch)
     );
-  }, [sessions, searchTerm]);
+  }, [sessionsData?.data, searchTerm]);
+  const summary = useMemo(
+    () => getSessionSummary(filteredSessions),
+    [filteredSessions]
+  );
 
   const handleView = (session: SessionPublic) => {
-    // For now, just show an alert
-    // In the future, this could navigate to a detail view
-    console.log('View session:', session);
+    setCurrentSession(session.id);
+    loadMessages(session.id);
+    navigate('/generate');
   };
 
   const handleDelete = async (id: string) => {
@@ -61,46 +71,55 @@ export const SessionsPage = () => {
   };
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-        }}
-      >
-        <div>
-          <Title level={2} style={{ margin: 0 }}>
-            Sessions
-          </Title>
-          <Text type="secondary">
-            Manage your presentation generation sessions
-          </Text>
+    <div className={getSessionsPageContainerClassName()}>
+      <div className={getSessionsPageContentClassName()}>
+        <div className="flex flex-col gap-5 rounded-3xl border border-border/70 bg-surface-50 p-6 shadow-soft lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <Title level={2} className="!mb-0 !text-text-main">
+              Sessions
+            </Title>
+            <Text className="block max-w-3xl leading-relaxed text-text-secondary">
+              Manage your presentation-generation sessions, track status, review archived work, and jump back into active projects.
+            </Text>
+            <div className="flex flex-wrap gap-3">
+              <span className="rounded-full border border-border/70 bg-surface-100 px-3 py-1.5 text-sm text-text-secondary">
+                Total {summary.total}
+              </span>
+              <span className="rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300">
+                Active {summary.active}
+              </span>
+              <span className="rounded-full border border-border/70 bg-surface-100 px-3 py-1.5 text-sm text-text-secondary">
+                Archived {summary.archived}
+              </span>
+            </div>
+          </div>
+          <Space size="middle">
+            <Button icon={<ReloadOutlined />} onClick={handleRefresh} className="!h-11 !rounded-xl !px-5 !border-border/70 !bg-surface-100 !text-text-main hover:!border-border hover:!bg-surface-200">
+              Refresh
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreateNew}
+              className="!h-11 !rounded-xl !px-5 !font-semibold"
+            >
+              New Session
+            </Button>
+          </Space>
         </div>
-        <Space>
-          <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-            Refresh
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreateNew}
-          >
-            New Session
-          </Button>
-        </Space>
-      </div>
 
-      <SessionList
-        sessions={filteredSessions}
-        loading={isLoading}
-        onView={handleView}
-        onDelete={handleDelete}
-        onArchive={handleArchive}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-      />
+        <div className="glass-panel rounded-3xl p-6 session-shell">
+          <SessionList
+            sessions={filteredSessions}
+            loading={isLoading}
+            onView={handleView}
+            onDelete={handleDelete}
+            onArchive={handleArchive}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
+        </div>
+      </div>
     </div>
   );
 };

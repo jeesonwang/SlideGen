@@ -18,11 +18,17 @@ export const useAuth = () => {
     mutationFn: async (credentials: LoginRequest) => {
       const tokenData = await authApi.login(credentials);
 
-      // Save token to localStorage immediately so testToken can use it
-      localStorage.setItem('access_token', tokenData.access_token);
+      // Update store with token so the interceptor can pick it up
+      useAuthStore.getState().setToken(tokenData.access_token);
 
-      const userData = await authApi.testToken();
-      return { token: tokenData.access_token, user: userData };
+      try {
+        const userData = await authApi.testToken();
+        return { token: tokenData.access_token, user: userData };
+      } catch (error) {
+        // If validation fails, clear the token
+        useAuthStore.getState().logout();
+        throw error;
+      }
     },
     onSuccess: ({ token, user }) => {
       setAuthState(token, user);

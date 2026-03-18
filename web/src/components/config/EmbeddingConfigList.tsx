@@ -42,11 +42,12 @@ export const EmbeddingConfigList: React.FC<EmbeddingConfigListProps> = ({
 
   if (configs.length === 0) {
     return (
-      <Empty
-        description="No embedding configurations yet"
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-      >
-        <Text type="secondary">
+        <Empty
+          description="No embedding configurations yet"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          className="rounded-2xl border border-dashed border-border/70 bg-surface-50 py-10"
+        >
+        <Text className="text-text-secondary">
           Create your first embedding configuration for knowledge base search
         </Text>
       </Empty>
@@ -58,9 +59,10 @@ export const EmbeddingConfigList: React.FC<EmbeddingConfigListProps> = ({
       {configs.map((config) => (
         <Col xs={24} md={12} xl={8} key={config.id}>
           <Card
+            className="modern-card h-full !rounded-2xl !border !border-border/70"
             title={
               <Space>
-                <Text strong>{config.name}</Text>
+                <Text strong className="!text-text-main">{config.name}</Text>
                 {config.is_default && (
                   <Tag color="gold" icon={<StarFilled />}>
                     Default
@@ -120,40 +122,39 @@ export const EmbeddingConfigList: React.FC<EmbeddingConfigListProps> = ({
               </Popconfirm>,
             ]}
           >
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Space direction="vertical" className="w-full" size="small">
               <div>
-                <Text type="secondary">Provider: </Text>
+                <Text className="text-text-secondary">Provider: </Text>
                 <Tag>{config.provider}</Tag>
               </div>
               <div>
-                <Text type="secondary">Model: </Text>
+                <Text className="text-text-secondary">Model: </Text>
                 <Text code>{config.model_id}</Text>
               </div>
               {config.api_key && (
                 <div>
-                  <Text type="secondary">API Key: </Text>
+                  <Text className="text-text-secondary">API Key: </Text>
                   <Text code>{config.api_key}</Text>
                 </div>
               )}
               {config.dimensions && (
                 <div>
-                  <Text type="secondary">Dimensions: </Text>
+                  <Text className="text-text-secondary">Dimensions: </Text>
                   <Text>{config.dimensions}</Text>
                 </div>
               )}
               {config.base_url && (
                 <div>
-                  <Text type="secondary">Base URL: </Text>
-                  <Text ellipsis style={{ maxWidth: 200 }}>
+                  <Text className="text-text-secondary">Base URL: </Text>
+                  <Text ellipsis className="max-w-[200px]">
                     {config.base_url}
                   </Text>
                 </div>
               )}
               {config.description && (
                 <Paragraph
-                  type="secondary"
                   ellipsis={{ rows: 2 }}
-                  style={{ marginTop: 8, marginBottom: 0 }}
+                  className="mt-2 mb-0 text-text-secondary"
                 >
                   {config.description}
                 </Paragraph>

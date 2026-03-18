@@ -1,0 +1,19 @@
+import './chatLogic.test.ts';
+import './generationRequest.test.ts';
+import './rightPanelVisibility.test.ts';
+import './rightPanelPolicy.test.ts';
+import './dashboardDisplay.test.ts';
+import './dashboardScrollSource.test.ts';
+import './settingsSource.test.ts';
+import './sessionPresentation.test.ts';
+import './chatFiles.test.ts';
+import './sessionsPageLayout.test.ts';
+import './chatSessionTitle.test.ts';
+import './sidebarSessionList.test.ts';
+import './sidebarUserPanel.test.ts';
+import './lightThemeSource.test.ts';
+import './apiEndpoints.test.ts';
+import './apiBaseUrl.test.ts';
+import './loginRedirect.test.ts';
+
+console.log('All regression tests passed');

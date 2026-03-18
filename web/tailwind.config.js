@@ -7,111 +7,61 @@ export default {
   theme: {
     extend: {
       colors: {
-        // SaaS Professional Color Palette
-        primary: {
-          50: '#EFF6FF',
-          100: '#DBEAFE',
-          200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA',
-          500: '#3B82F6',
-          600: '#2563EB', // Primary brand color
-          700: '#1D4ED8',
-          800: '#1E40AF',
-          900: '#1E3A8A',
+        background: 'rgb(var(--color-background) / <alpha-value>)',
+        surface: {
+          50: 'rgb(var(--color-surface-50) / <alpha-value>)',
+          100: 'rgb(var(--color-surface-100) / <alpha-value>)',
+          200: 'rgb(var(--color-surface-200) / <alpha-value>)',
+          300: 'rgb(var(--color-surface-300) / <alpha-value>)',
+          400: 'rgb(var(--color-surface-400) / <alpha-value>)',
+          500: 'rgb(var(--color-surface-500) / <alpha-value>)',
         },
-        secondary: {
-          50: '#F8FAFC',
-          100: '#F1F5F9',
-          200: '#E2E8F0',
-          300: '#CBD5E1',
-          400: '#94A3B8',
-          500: '#64748B',
-          600: '#475569',
-          700: '#334155',
-          800: '#1E293B',
-          900: '#0F172A',
+        primary: {
+          50: '#F0F9FF',
+          100: '#E0F2FE',
+          200: '#BAE6FD',
+          300: '#7DD3FC',
+          400: '#38BDF8',
+          500: '#0EA5E9', // Vivid Sky Blue
+          600: '#0284C7',
+          700: '#0369A1',
+          800: '#075985',
+          900: '#0C4A6E',
+          DEFAULT: '#0EA5E9',
         },
         accent: {
-          50: '#FFF7ED',
-          100: '#FFEDD5',
-          200: '#FED7AA',
-          300: '#FDBA74',
-          400: '#FB923C',
-          500: '#F97316', // CTA color
-          600: '#EA580C',
-          700: '#C2410C',
-          800: '#9A3412',
-          900: '#7C2D12',
+          purple: '#8B5CF6',
+          pink: '#EC4899',
+          cyan: '#06B6D4',
         },
-        success: {
-          50: '#F0FDF4',
-          100: '#DCFCE7',
-          500: '#22C55E',
-          600: '#16A34A',
-        },
-        warning: {
-          50: '#FFFBEB',
-          100: '#FEF3C7',
-          500: '#F59E0B',
-          600: '#D97706',
-        },
-        error: {
-          50: '#FEF2F2',
-          100: '#FEE2E2',
-          500: '#EF4444',
-          600: '#DC2626',
-        },
+        border: 'rgb(var(--color-border) / <alpha-value>)',
+        text: {
+          main: 'rgb(var(--color-text-main) / <alpha-value>)',
+          secondary: 'rgb(var(--color-text-secondary) / <alpha-value>)',
+          muted: 'rgb(var(--color-text-muted) / <alpha-value>)',
+        }
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'primary-gradient': 'linear-gradient(135deg, #0EA5E9 0%, #8B5CF6 100%)', // Blue to Purple
+        'surface-gradient': 'linear-gradient(180deg, rgba(24, 28, 41, 0.8) 0%, rgba(17, 21, 33, 0.8) 100%)',
+        'glass-gradient': 'linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%)',
       },
       fontFamily: {
-        heading: ['Poppins', 'Montserrat', 'sans-serif'],
-        body: ['Open Sans', 'Inter', 'sans-serif'],
-        sans: ['Inter', 'Open Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        inter: ['Inter', 'sans-serif'],
-        montserrat: ['Montserrat', 'sans-serif'],
-        roboto: ['Roboto', 'sans-serif'],
-      },
-      fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1rem' }],
-        'sm': ['0.875rem', { lineHeight: '1.25rem' }],
-        'base': ['1rem', { lineHeight: '1.5rem' }],
-        'lg': ['1.125rem', { lineHeight: '1.75rem' }],
-        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
-        '2xl': ['1.5rem', { lineHeight: '2rem' }],
-        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
-        '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
-        '5xl': ['3rem', { lineHeight: '1.2' }],
-      },
-      borderRadius: {
-        'none': '0',
-        'sm': '0.25rem',
-        DEFAULT: '0.5rem',
-        'md': '0.75rem',
-        'lg': '1rem',
-        'xl': '1.5rem',
-        '2xl': '2rem',
-        'full': '9999px',
+        heading: ['Inter', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
       },
       boxShadow: {
-        'soft': '0 2px 8px rgba(0, 0, 0, 0.08)',
-        'soft-lg': '0 4px 16px rgba(0, 0, 0, 0.1)',
-        'soft-xl': '0 8px 32px rgba(0, 0, 0, 0.12)',
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-        'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
-      },
-      backdropBlur: {
-        xs: '2px',
-        sm: '4px',
-        DEFAULT: '8px',
-        md: '12px',
-        lg: '16px',
-        xl: '24px',
+        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.4)',
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+        'glow': '0 0 20px rgba(14, 165, 233, 0.25)', // Primary glow
+        'glow-strong': '0 0 30px rgba(139, 92, 246, 0.4)', // Accent glow
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-out',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'slide-down': 'slideDown 0.3s ease-out',
-        'scale-in': 'scaleIn 0.2s ease-out',
+        'fade-in': 'fadeIn 0.4s ease-out',
+        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
         fadeIn: {
@@ -119,23 +69,14 @@ export default {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-        slideDown: {
-          '0%': { transform: 'translateY(-10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-        scaleIn: {
-          '0%': { transform: 'scale(0.95)', opacity: '0' },
-          '100%': { transform: 'scale(1)', opacity: '1' },
         },
       },
     },
   },
   plugins: [],
-  // Ensure compatibility with Ant Design
   corePlugins: {
-    preflight: false,
+    preflight: true, // Re-enabling preflight for better consistency, unless strictly forbidden. The previous file had it false, likely for AntD compat. I should check if I should keep it false.
   },
 }

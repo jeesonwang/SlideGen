@@ -18,6 +18,7 @@ import { useSessions } from '../../hooks/useSessions';
 import { useFiles } from '../../hooks/useFiles';
 import { useAuth } from '../../hooks/useAuth';
 import { SessionStatus } from '../../api/types/session.types';
+import { getDashboardGreetingName } from './dashboardDisplay';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -28,6 +29,10 @@ const { Title, Text } = Typography;
 export const DashboardPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const greetingName = getDashboardGreetingName({
+    username: user?.username,
+    email: user?.email,
+  });
 
   // Fetch sessions and files for stats
   const { data: sessionsData, isLoading: sessionsLoading } = useSessions({ limit: 10 });
@@ -74,13 +79,13 @@ export const DashboardPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="h-full overflow-y-auto custom-scrollbar pr-2 space-y-6">
       {/* Welcome Section */}
-      <div className="mb-8 animate-fade-in">
-        <Title level={2} className="!mb-2 !font-heading !text-secondary-900">
-          Welcome back, {user?.username || user?.email}! 👋
+      <div className="dashboard-hero mb-8 animate-fade-in">
+        <Title level={2} className="!mb-2 !font-heading !text-text-main">
+          Welcome back, {greetingName}
         </Title>
-        <Text className="text-base text-secondary-600">
+        <Text className="text-base !text-text-secondary">
           Here's an overview of your presentation generation activity
         </Text>
       </div>
@@ -88,20 +93,20 @@ export const DashboardPage = () => {
       {/* Stats Cards */}
       <Row gutter={[16, 16]} className="mb-6 animate-slide-up">
         <Col xs={24} sm={12} lg={6}>
-          <Card className="modern-card border-0 hover:scale-105 transition-transform duration-200">
+          <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
             <Statistic
-              title={<span className="text-secondary-600 font-medium">Total Sessions</span>}
+              title={<span className="text-text-secondary font-medium">Total Sessions</span>}
               value={totalSessions}
               prefix={<FileTextOutlined className="text-primary-600" />}
               loading={sessionsLoading}
-              valueStyle={{ color: '#1E293B', fontWeight: 600, fontSize: 28 }}
+              valueStyle={{ color: 'rgb(var(--color-text-main))', fontWeight: 600, fontSize: 28 }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="modern-card border-0 hover:scale-105 transition-transform duration-200">
+          <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
             <Statistic
-              title={<span className="text-secondary-600 font-medium">Active Sessions</span>}
+              title={<span className="text-text-secondary font-medium">Active Sessions</span>}
               value={activeSessions}
               prefix={<ClockCircleOutlined className="text-accent-500" />}
               valueStyle={{ color: '#2563EB', fontWeight: 600, fontSize: 28 }}
@@ -110,9 +115,9 @@ export const DashboardPage = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="modern-card border-0 hover:scale-105 transition-transform duration-200">
+          <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
             <Statistic
-              title={<span className="text-secondary-600 font-medium">Completed</span>}
+              title={<span className="text-text-secondary font-medium">Completed</span>}
               value={completedSessions}
               prefix={<CheckCircleOutlined className="text-success-500" />}
               valueStyle={{ color: '#16A34A', fontWeight: 600, fontSize: 28 }}
@@ -121,12 +126,12 @@ export const DashboardPage = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="modern-card border-0 hover:scale-105 transition-transform duration-200">
+          <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
             <Statistic
-              title={<span className="text-secondary-600 font-medium">Knowledge Base</span>}
+              title={<span className="text-text-secondary font-medium">Knowledge Base</span>}
               value={totalFiles}
               prefix={<DatabaseOutlined className="text-primary-500" />}
-              valueStyle={{ color: '#1E293B', fontWeight: 600, fontSize: 28 }}
+              valueStyle={{ color: 'rgb(var(--color-text-main))', fontWeight: 600, fontSize: 28 }}
               loading={filesLoading}
             />
           </Card>
@@ -136,7 +141,7 @@ export const DashboardPage = () => {
       {/* Quick Actions */}
       <Card
         title={<span className="text-lg font-heading font-semibold">Quick Actions</span>}
-        className="modern-card border-0 mb-6"
+        className="modern-card section-card border-0 mb-6"
       >
         <Space size="middle" wrap>
           <Button
@@ -170,7 +175,7 @@ export const DashboardPage = () => {
       {/* Recent Sessions */}
       <Card
         title={<span className="text-lg font-heading font-semibold">Recent Sessions</span>}
-        className="modern-card border-0"
+        className="modern-card section-card border-0"
       >
         {sessionsLoading ? (
           <div className="text-center py-16">
@@ -181,7 +186,7 @@ export const DashboardPage = () => {
             <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-50">
               <ThunderboltOutlined className="text-3xl text-primary-600" />
             </div>
-            <Text className="block text-base text-secondary-600 mb-4">
+            <Text className="block text-base text-text-muted mb-4">
               No sessions yet. Create your first presentation!
             </Text>
             <Button
@@ -210,17 +215,17 @@ export const DashboardPage = () => {
                     View
                   </Button>,
                 ]}
-                className="!px-4 hover:bg-secondary-50 rounded-lg transition-colors duration-200"
+                className="!px-4 hover:!bg-surface-100/70 rounded-lg transition-colors duration-200"
               >
                 <List.Item.Meta
                   avatar={
-                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary-100">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-surface-100 border border-border/70">
                       {getStatusIcon(session.status)}
                     </div>
                   }
                   title={
                     <Space>
-                      <Text strong className="text-secondary-900">{session.title}</Text>
+                      <Text strong className="!text-text-main">{session.title}</Text>
                       <Tag
                         color={getStatusColor(session.status)}
                         className="!rounded-md !px-2"
@@ -232,11 +237,11 @@ export const DashboardPage = () => {
                   description={
                     <Space direction="vertical" size={0}>
                       {session.topic && (
-                        <Text className="text-secondary-600" ellipsis>
+                        <Text className="!text-text-secondary" ellipsis>
                           {session.topic}
                         </Text>
                       )}
-                      <Text className="text-xs text-secondary-500">
+                      <Text className="text-xs !text-text-muted">
                         {dayjs(session.create_time).fromNow()} • {session.file_count}{' '}
                         files • {session.message_count} messages
                       </Text>

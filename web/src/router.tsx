@@ -4,7 +4,7 @@
 
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
-import { Layout } from './components/common/Layout';
+import { AppLayout } from './components/layout/AppLayout';
 
 // Lazy load pages for code splitting
 import { lazy } from 'react';
@@ -48,6 +48,11 @@ const ProfilePage = lazy(() =>
     default: m.ProfilePage,
   }))
 );
+const SettingsPage = lazy(() =>
+  import('./pages/settings/SettingsPage').then((m) => ({
+    default: m.SettingsPage,
+  }))
+);
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
 );
@@ -65,7 +70,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: (
       <ProtectedRoute>
-        <Layout />
+        <AppLayout />
       </ProtectedRoute>
     ),
     children: [
@@ -100,6 +105,10 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <ProfilePage />,
+      },
+      {
+        path: 'settings',
+        element: <SettingsPage />,
       },
     ],
   },

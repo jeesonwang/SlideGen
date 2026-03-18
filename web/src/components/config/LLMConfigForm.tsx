@@ -36,7 +36,7 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
     }
   }, [selectedProvider, form, initialValues?.provider]);
 
-  const handleFinish = (values: any) => {
+  const handleFinish = (values: Omit<LLMConfigCreate, 'user_id'>) => {
     onSubmit(values);
   };
 
@@ -80,10 +80,15 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
       </Form.Item>
 
       {providerInfo && (
-        <div className="mb-4 p-3 bg-gray-100 rounded">
-          <div>{providerInfo.description}</div>
+        <div className="mb-5 rounded-2xl border border-primary-500/15 bg-primary-500/8 p-4 text-sm text-text-secondary">
+          <div className="font-medium text-text-main">{providerInfo.description}</div>
           {providerInfo.documentation_url && (
-            <a href={providerInfo.documentation_url} target="_blank" rel="noopener noreferrer">
+            <a
+              href={providerInfo.documentation_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex text-primary-300 hover:text-primary-200"
+            >
               View Documentation
             </a>
           )}
@@ -132,7 +137,10 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
         </Form.Item>
       )}
 
-      <Collapse ghost>
+      <Collapse
+        ghost
+        className="rounded-2xl border border-white/10 bg-surface-100/30 px-4 py-2"
+      >
         <Panel header="Advanced Settings" key="advanced">
           <Form.Item
             name="temperature"
@@ -169,12 +177,12 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
         </Panel>
       </Collapse>
 
-      <Form.Item style={{ marginTop: 24 }}>
+      <Form.Item className="!mb-0 !mt-8">
         <Space>
-          <Button type="primary" htmlType="submit" loading={loading}>
+          <Button type="primary" htmlType="submit" loading={loading} className="!h-11 !rounded-xl !px-5 !font-semibold">
             {initialValues ? 'Update' : 'Create'}
           </Button>
-          <Button onClick={onCancel}>Cancel</Button>
+          <Button onClick={onCancel} className="!h-11 !rounded-xl !px-5">Cancel</Button>
         </Space>
       </Form.Item>
     </Form>

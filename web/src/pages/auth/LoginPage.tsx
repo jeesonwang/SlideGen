@@ -9,20 +9,21 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import { APP_NAME } from '../../utils/constants';
 import type { LoginRequest } from '../../api/types/auth.types';
+import { shouldRedirectFromLogin } from './loginRedirect';
 
 const { Title, Text } = Typography;
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, isLoggingIn, loginError, isAuthenticated } = useAuth();
+  const { login, isLoggingIn, loginError, isAuthenticated, user } = useAuth();
   const [form] = Form.useForm();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (shouldRedirectFromLogin(isAuthenticated, user)) {
       navigate('/dashboard');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user]);
 
   const onFinish = async (values: LoginRequest) => {
     try {

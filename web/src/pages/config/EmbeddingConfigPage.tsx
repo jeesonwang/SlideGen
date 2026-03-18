@@ -15,7 +15,10 @@ import {
   useTestEmbeddingConfig,
   useSetDefaultEmbeddingConfig,
 } from '../../hooks/useEmbeddingConfigs';
-import type { EmbeddingConfigPublic } from '../../api/types/embeddingConfig.types';
+import type {
+  EmbeddingConfigCreate,
+  EmbeddingConfigPublic,
+} from '../../api/types/embeddingConfig.types';
 
 const { Title, Text } = Typography;
 
@@ -62,7 +65,7 @@ export const EmbeddingConfigPage = () => {
     await setDefaultMutation.mutateAsync(id);
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: Omit<EmbeddingConfigCreate, 'user_id'>) => {
     try {
       if (editingConfig) {
         await updateMutation.mutateAsync({
@@ -74,7 +77,7 @@ export const EmbeddingConfigPage = () => {
       }
       setIsModalOpen(false);
       setEditingConfig(null);
-    } catch (error) {
+    } catch {
       // Error is already handled by the mutation
     }
   };
@@ -85,24 +88,17 @@ export const EmbeddingConfigPage = () => {
   };
 
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-        }}
-      >
-        <div>
-          <Title level={2} style={{ margin: 0 }}>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-surface-50 p-6 shadow-soft lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-2">
+          <Title level={3} className="!mb-0 !text-text-main">
             Embedding Configurations
           </Title>
-          <Text type="secondary">
-            Manage your embedding model configurations for knowledge base search
+          <Text className="text-text-secondary">
+            Manage embedding model settings for knowledge-base retrieval and semantic search, including defaults and dimensions.
           </Text>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} className="!h-11 !rounded-xl !px-5 !font-semibold">
           Add Configuration
         </Button>
       </div>
@@ -126,6 +122,11 @@ export const EmbeddingConfigPage = () => {
         onCancel={handleCancel}
         footer={null}
         width={600}
+        styles={{
+          body: {
+            paddingTop: 12,
+          },
+        }}
         destroyOnClose
       >
         <EmbeddingConfigForm
