@@ -16,7 +16,6 @@ export interface SessionStatusPresentation {
 export interface SessionSummary {
   total: number;
   active: number;
-  archived: number;
 }
 
 export const getSessionStatusPresentation = (
@@ -79,11 +78,8 @@ export const getSessionSummary = (
       if (session.status === SessionStatus.ACTIVE) {
         summary.active += 1;
       }
-      if (session.status === SessionStatus.ARCHIVED) {
-        summary.archived += 1;
-      }
       return summary;
     },
-    { total: 0, active: 0, archived: 0 }
+    { total: 0, active: 0 }
   );
 };

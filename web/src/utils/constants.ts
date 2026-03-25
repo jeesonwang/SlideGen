@@ -12,8 +12,8 @@ export const API_ENDPOINTS = {
   },
   // LLM Config
   LLM_CONFIG: {
-    LIST: '/api/v1/llm-config',
-    CREATE: '/api/v1/llm-config',
+    LIST: '/api/v1/llm-config/',
+    CREATE: '/api/v1/llm-config/',
     GET: (id: string) => `/api/v1/llm-config/${id}`,
     UPDATE: (id: string) => `/api/v1/llm-config/${id}`,
     DELETE: (id: string) => `/api/v1/llm-config/${id}`,
@@ -24,8 +24,8 @@ export const API_ENDPOINTS = {
   },
   // Embedding Config
   EMBEDDING_CONFIG: {
-    LIST: '/api/v1/embedding-config',
-    CREATE: '/api/v1/embedding-config',
+    LIST: '/api/v1/embedding-config/',
+    CREATE: '/api/v1/embedding-config/',
     GET: (id: string) => `/api/v1/embedding-config/${id}`,
     UPDATE: (id: string) => `/api/v1/embedding-config/${id}`,
     DELETE: (id: string) => `/api/v1/embedding-config/${id}`,

@@ -6,7 +6,6 @@ import { Table, Tag, Button, Popconfirm, Typography, Input, Dropdown, Empty } fr
 import {
   EyeOutlined,
   DeleteOutlined,
-  InboxOutlined,
   MoreOutlined,
   MessageOutlined,
   FileTextOutlined,
@@ -30,7 +29,6 @@ interface SessionListProps {
   loading?: boolean;
   onView?: (session: SessionPublic) => void;
   onDelete: (id: string) => void;
-  onArchive: (id: string) => void;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
 }
@@ -40,7 +38,6 @@ export const SessionList: React.FC<SessionListProps> = ({
   loading = false,
   onView,
   onDelete,
-  onArchive,
   searchTerm,
   onSearchChange,
 }) => {
@@ -87,8 +84,6 @@ export const SessionList: React.FC<SessionListProps> = ({
         { text: 'Active', value: SessionStatus.ACTIVE },
         { text: 'Completed', value: SessionStatus.COMPLETED },
         { text: 'Failed', value: SessionStatus.FAILED },
-        { text: 'Archived', value: SessionStatus.ARCHIVED },
-        { text: 'Deleted', value: SessionStatus.DELETED },
       ],
       onFilter: (value, record) => record.status === value,
     },
@@ -143,46 +138,36 @@ export const SessionList: React.FC<SessionListProps> = ({
               View
             </Button>
           )}
-          {record.status !== SessionStatus.DELETED ? (
-            <Dropdown
-              trigger={['click']}
-              menu={{
-                items: [
-                  ...(record.status !== SessionStatus.ARCHIVED
-                    ? [{
-                        key: 'archive',
-                        label: 'Archive',
-                        icon: <InboxOutlined />,
-                        onClick: () => onArchive(record.id),
-                      }]
-                    : []),
-                  {
-                    key: 'delete',
-                    label: (
-                      <Popconfirm
-                        title="Delete session?"
-                        description="This action cannot be undone."
-                        onConfirm={() => onDelete(record.id)}
-                        okText="Delete"
-                        cancelText="Cancel"
-                        okButtonProps={{ danger: true }}
-                      >
-                        <span>Delete</span>
-                      </Popconfirm>
-                    ),
-                    icon: <DeleteOutlined />,
-                    danger: true,
-                  },
-                ],
-              }}
-            >
-              <Button
-                size="small"
-                icon={<MoreOutlined />}
-                className="!rounded-lg !border-border/70 !bg-surface-100 !text-text-secondary hover:!border-border hover:!bg-surface-200"
-              />
-            </Dropdown>
-          ) : null}
+          <Dropdown
+            trigger={['click']}
+            menu={{
+              items: [
+                {
+                  key: 'delete',
+                  label: (
+                    <Popconfirm
+                      title="Delete session?"
+                      description="This action cannot be undone."
+                      onConfirm={() => onDelete(record.id)}
+                      okText="Delete"
+                      cancelText="Cancel"
+                      okButtonProps={{ danger: true }}
+                    >
+                      <span>Delete</span>
+                    </Popconfirm>
+                  ),
+                  icon: <DeleteOutlined />,
+                  danger: true,
+                },
+              ],
+            }}
+          >
+            <Button
+              size="small"
+              icon={<MoreOutlined />}
+              className="!rounded-lg !border-border/70 !bg-surface-100 !text-text-secondary hover:!border-border hover:!bg-surface-200"
+            />
+          </Dropdown>
         </div>
       ),
     },

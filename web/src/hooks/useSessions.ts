@@ -74,18 +74,3 @@ export const useDeleteSession = () => {
     },
   });
 };
-
-export const useArchiveSession = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => sessionsApi.archive(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      message.success('Session archived successfully');
-    },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to archive session');
-    },
-  });
-};

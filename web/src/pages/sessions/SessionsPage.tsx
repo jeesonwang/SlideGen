@@ -7,13 +7,12 @@ import { Typography, Button, Space } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { SessionList } from '../../components/sessions/SessionList';
-import {
-  useSessions,
-  useDeleteSession,
-  useArchiveSession,
-} from '../../hooks/useSessions';
+import { useSessions, useDeleteSession } from '../../hooks/useSessions';
 import { useChatStore } from '../../store/chatStore';
-import type { SessionPublic } from '../../api/types/session.types';
+import {
+  SessionStatus,
+  type SessionPublic,
+} from '../../api/types/session.types';
 import { getSessionSummary } from '../../components/sessions/sessionPresentation';
 import {
   getSessionsPageContainerClassName,
@@ -29,11 +28,15 @@ export const SessionsPage = () => {
 
   const { data: sessionsData, isLoading, refetch } = useSessions();
   const deleteMutation = useDeleteSession();
-  const archiveMutation = useArchiveSession();
 
   // Filter sessions by search term
   const filteredSessions = useMemo(() => {
-    const sessions = sessionsData?.data || [];
+    const sessions =
+      sessionsData?.data.filter(
+        (session) =>
+          session.status !== SessionStatus.ARCHIVED &&
+          session.status !== SessionStatus.DELETED
+      ) || [];
     if (!searchTerm) return sessions;
 
     const lowerSearch = searchTerm.toLowerCase();
@@ -58,10 +61,6 @@ export const SessionsPage = () => {
     await deleteMutation.mutateAsync(id);
   };
 
-  const handleArchive = async (id: string) => {
-    await archiveMutation.mutateAsync(id);
-  };
-
   const handleCreateNew = () => {
     navigate('/generate');
   };
@@ -79,7 +78,7 @@ export const SessionsPage = () => {
               Sessions
             </Title>
             <Text className="block max-w-3xl leading-relaxed text-text-secondary">
-              Manage your presentation-generation sessions, track status, review archived work, and jump back into active projects.
+              Manage your presentation-generation sessions, track status, and jump back into active projects.
             </Text>
             <div className="flex flex-wrap gap-3">
               <span className="rounded-full border border-border/70 bg-surface-100 px-3 py-1.5 text-sm text-text-secondary">
@@ -87,9 +86,6 @@ export const SessionsPage = () => {
               </span>
               <span className="rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300">
                 Active {summary.active}
-              </span>
-              <span className="rounded-full border border-border/70 bg-surface-100 px-3 py-1.5 text-sm text-text-secondary">
-                Archived {summary.archived}
               </span>
             </div>
           </div>
@@ -114,7 +110,6 @@ export const SessionsPage = () => {
             loading={isLoading}
             onView={handleView}
             onDelete={handleDelete}
-            onArchive={handleArchive}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
           />

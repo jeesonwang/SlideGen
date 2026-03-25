@@ -354,7 +354,7 @@ export const Sidebar = () => {
         
         <Popover
           trigger="click"
-          placement="topLeft"
+          placement="rightBottom"
           open={userPanelOpen}
           onOpenChange={setUserPanelOpen}
           content={

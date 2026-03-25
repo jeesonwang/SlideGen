@@ -4,7 +4,6 @@
 
 import { Row, Col, Card, Statistic, Button, Typography, Space, List, Tag, Spin } from 'antd';
 import {
-  FileTextOutlined,
   DatabaseOutlined,
   ThunderboltOutlined,
   ClockCircleOutlined,
@@ -39,16 +38,21 @@ export const DashboardPage = () => {
   const { data: filesData, isLoading: filesLoading } = useFiles();
 
   // Calculate stats
-  const totalSessions = sessionsData?.count || 0;
-  const activeSessions = sessionsData?.data.filter(
-    (s) => s.status === SessionStatus.ACTIVE
-  ).length || 0;
-  const completedSessions = sessionsData?.data.filter(
-    (s) => s.status === SessionStatus.COMPLETED
-  ).length || 0;
+  const visibleSessions =
+    sessionsData?.data.filter(
+      (session) =>
+        session.status !== SessionStatus.DELETED &&
+        session.status !== SessionStatus.ARCHIVED
+    ) || [];
+  const activeSessions = visibleSessions.filter(
+    (session) => session.status === SessionStatus.ACTIVE
+  ).length;
+  const completedSessions = visibleSessions.filter(
+    (session) => session.status === SessionStatus.COMPLETED
+  ).length;
   const totalFiles = filesData?.count || 0;
 
-  const recentSessions = sessionsData?.data.slice(0, 5) || [];
+  const recentSessions = visibleSessions.slice(0, 5);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -92,18 +96,7 @@ export const DashboardPage = () => {
 
       {/* Stats Cards */}
       <Row gutter={[16, 16]} className="mb-6 animate-slide-up">
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
-            <Statistic
-              title={<span className="text-text-secondary font-medium">Total Sessions</span>}
-              value={totalSessions}
-              prefix={<FileTextOutlined className="text-primary-600" />}
-              loading={sessionsLoading}
-              valueStyle={{ color: 'rgb(var(--color-text-main))', fontWeight: 600, fontSize: 28 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
             <Statistic
               title={<span className="text-text-secondary font-medium">Active Sessions</span>}
@@ -114,7 +107,7 @@ export const DashboardPage = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
             <Statistic
               title={<span className="text-text-secondary font-medium">Completed</span>}
@@ -125,7 +118,7 @@ export const DashboardPage = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
             <Statistic
               title={<span className="text-text-secondary font-medium">Knowledge Base</span>}

@@ -23,9 +23,11 @@ assert.equal(getSessionStatusPresentation(SessionStatus.DELETED).label, 'Deleted
 assert.equal(getSessionStatusPresentation(SessionStatus.ACTIVE).color, 'processing');
 assert.equal(getSessionMetaLine(session), 'Q1 business review');
 
-const summary = getSessionSummary([session, { ...session, id: 'session-2', status: SessionStatus.ARCHIVED }]);
+const summary = getSessionSummary([
+  session,
+  { ...session, id: 'session-2', status: SessionStatus.COMPLETED },
+]);
 assert.equal(summary.total, 2);
 assert.equal(summary.active, 1);
-assert.equal(summary.archived, 1);
 
 console.log('sessionPresentation.test.ts passed');

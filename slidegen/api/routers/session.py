@@ -157,6 +157,8 @@ async def list_sessions(
         # Apply filters
         if status:
             base_statement = base_statement.where(SessionModel.status == status)
+        else:
+            base_statement = base_statement.where(SessionModel.status == SessionStatus.ACTIVE)
 
         if search:
             search_escaped = search.replace("%", r"\%").replace("_", r"\_")
@@ -188,6 +190,8 @@ async def list_sessions(
         # Apply the same filters to count_query
         if status:
             count_query = count_query.where(SessionModel.status == status)
+        else:
+            count_query = count_query.where(SessionModel.status == SessionStatus.ACTIVE)
 
         if search:
             search_escaped = search.replace("%", r"\%").replace("_", r"\_")
@@ -351,39 +355,27 @@ async def delete_session(
     db_session: SessionDep,
     current_user: CurrentUser,
     session_id: uuid.UUID,
-    permanent: bool = Query(False, description="Permanent delete vs soft delete"),
 ) -> dict[str, str]:
     """
     Delete session and all associated data
 
-    - Soft delete by default (status=DELETED)
-    - permanent=True: Hard delete from DB + filesystem cleanup
+    - Permanently removes the session from the DB
+    - Cleans up session files from the filesystem first
     - Cascade deletes: files, messages, knowledge base
     """
     try:
         # Validate ownership
         session = await validate_session_ownership(db_session, session_id, current_user.id)
 
-        if permanent:
-            # Hard delete: delete files from filesystem first
-            deleted_file_count = file_manager.delete_session_directory(str(session_id))
-            logger.info(f"Deleted {deleted_file_count} files from session {session_id}")
+        deleted_file_count = file_manager.delete_session_directory(str(session_id))
+        logger.info(f"Deleted {deleted_file_count} files from session {session_id}")
 
-            # Delete from database (cascade will handle file_metadata and chat_messages)
-            await db_session.delete(session)
-            await db_session.commit()
+        # Delete from database (cascade will handle file_metadata and chat_messages)
+        await db_session.delete(session)
+        await db_session.commit()
 
-            logger.info(f"Permanently deleted session: {session_id}")
-            return {"message": "Session permanently deleted", "session_id": str(session_id)}
-
-        else:
-            # Soft delete: just update status
-            session.status = SessionStatus.DELETED
-            db_session.add(session)
-            await db_session.commit()
-
-            logger.info(f"Soft deleted session: {session_id}")
-            return {"message": "Session archived (soft delete)", "session_id": str(session_id)}
+        logger.info(f"Permanently deleted session: {session_id}")
+        return {"message": "Session permanently deleted", "session_id": str(session_id)}
 
     except HTTPException:
         raise

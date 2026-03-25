@@ -60,22 +60,39 @@ export const EmbeddingConfigList: React.FC<EmbeddingConfigListProps> = ({
         <Col xs={24} md={12} xl={8} key={config.id}>
           <Card
             className="modern-card h-full !rounded-2xl !border !border-border/70"
+            styles={{
+              header: {
+                alignItems: 'flex-start',
+              },
+              title: {
+                whiteSpace: 'normal',
+                overflow: 'visible',
+                textOverflow: 'unset',
+              },
+              extra: {
+                alignSelf: 'flex-start',
+              },
+            }}
             title={
-              <Space>
-                <Text strong className="!text-text-main">{config.name}</Text>
-                {config.is_default && (
-                  <Tag color="gold" icon={<StarFilled />}>
-                    Default
-                  </Tag>
-                )}
-                {config.is_active ? (
-                  <Tag color="success" icon={<CheckCircleOutlined />}>
-                    Active
-                  </Tag>
-                ) : (
-                  <Tag color="default">Inactive</Tag>
-                )}
-              </Space>
+              <div className="flex flex-col gap-2 min-w-0">
+                <Text strong className="!text-text-main">
+                  {config.name}
+                </Text>
+                <div className="flex flex-wrap items-center gap-2">
+                  {config.is_default && (
+                    <Tag color="gold" icon={<StarFilled />}>
+                      Default
+                    </Tag>
+                  )}
+                  {config.is_active ? (
+                    <Tag color="success" icon={<CheckCircleOutlined />}>
+                      Active
+                    </Tag>
+                  ) : (
+                    <Tag color="default">Inactive</Tag>
+                  )}
+                </div>
+              </div>
             }
             extra={
               !config.is_default && (
