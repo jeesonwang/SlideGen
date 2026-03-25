@@ -158,8 +158,7 @@ export const Sidebar = () => {
           <span className="text-white font-bold text-lg">S</span>
         </div>
         <div>
-          <h1 className="text-base font-bold m-0 leading-tight tracking-tight">AI PPT Gen</h1>
-          <p className="text-[10px] text-primary-400 font-medium tracking-wider m-0">ENTERPRISE</p>
+          <h1 className="text-base font-bold m-0 leading-tight tracking-tight">SlideGen</h1>
         </div>
       </div>
 

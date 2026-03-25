@@ -100,18 +100,21 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
         label="Model"
         rules={[{ required: true, message: 'Please select or enter a model' }]}
       >
-        <Select
-          placeholder="Select or type a model ID"
-          showSearch
-          mode={modelsData?.models.length ? undefined : 'tags'}
-          loading={!modelsData && !!selectedProvider}
-        >
-          {modelsData?.models.map((model) => (
-            <Select.Option key={model.model_id} value={model.model_id}>
-              {model.name}
-            </Select.Option>
-          ))}
-        </Select>
+        {modelsData?.models.length ? (
+          <Select
+            placeholder="Select a model"
+            showSearch
+            loading={!modelsData && !!selectedProvider}
+          >
+            {modelsData.models.map((model) => (
+              <Select.Option key={model.model_id} value={model.model_id}>
+                {model.name}
+              </Select.Option>
+            ))}
+          </Select>
+        ) : (
+          <Input placeholder="Enter a model ID" />
+        )}
       </Form.Item>
 
       {providerInfo?.requires_api_key && (
