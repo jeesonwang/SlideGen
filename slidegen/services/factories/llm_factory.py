@@ -102,7 +102,7 @@ class LLMFactory:
 
             test_prompt = config.test_prompt or "Hello, how are you?"
             message = Message(role="user", content=test_prompt)
-            response = llm.invoke([message])
+            response = llm.response([message])
             latency = time.time() - start_time
 
             if hasattr(response, "content"):

@@ -84,15 +84,17 @@ class EmbeddingFactory:
             test_text = config.test_text or "This is a test sentence for embedding."
 
             # Get embedding
-            embedding = embedder.get_embedding(test_text)
+            embedding = await embedder.async_get_embedding(test_text)
             latency = time.time() - start_time
 
-            # Check embedding dimension
-            if isinstance(embedding, list):
-                embedding_dimension = len(embedding)
-            else:
-                embedding_dimension = None
+            if not isinstance(embedding, list) or len(embedding) == 0:
+                return EmbeddingConfigTestResult(
+                    success=False,
+                    error="Embedding request returned empty result",
+                    latency=latency,
+                )
 
+            embedding_dimension = len(embedding)
             return EmbeddingConfigTestResult(success=True, embedding_dimension=embedding_dimension, latency=latency)
 
         except Exception as e:
