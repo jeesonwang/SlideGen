@@ -13,7 +13,6 @@ from slidegen.models.embedding_config import (
     EmbeddingConfigPublic,
     EmbeddingConfigsPublic,
     EmbeddingConfigUpdate,
-    EmbeddingProvider,
 )
 from slidegen.models.user import Message
 from slidegen.schemas.embedding_config import (
