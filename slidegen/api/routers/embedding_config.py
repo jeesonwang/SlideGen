@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from loguru import logger
@@ -82,7 +83,7 @@ async def get_embedding_configs(
 @router.post("/", response_model=EmbeddingConfigPublic)
 async def create_embedding_config(
     *, session: SessionDep, current_user: CurrentUser, config_in: EmbeddingConfigCreate
-) -> EmbeddingConfigPublic:
+) -> Any:
     """Create new embedding configuration"""
     # Validate configuration
     is_valid, error_msg = EmbeddingFactory.validate_config(config_in)
@@ -120,9 +121,7 @@ async def create_embedding_config(
 
 
 @router.get("/{config_id}", response_model=EmbeddingConfigPublic)
-async def get_embedding_config(
-    session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID
-) -> EmbeddingConfigPublic:
+async def get_embedding_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Any:
     """Get specified embedding configuration"""
     config = await session.get(EmbeddingConfigModel, config_id)
     if not config:
@@ -141,7 +140,7 @@ async def update_embedding_config(
     current_user: CurrentUser,
     config_id: uuid.UUID,
     config_in: EmbeddingConfigUpdate,
-) -> EmbeddingConfigPublic:
+) -> Any:
     """Update embedding configuration"""
     config = await session.get(EmbeddingConfigModel, config_id)
     if not config:
@@ -197,9 +196,7 @@ async def delete_embedding_config(session: SessionDep, current_user: CurrentUser
 
 
 @router.post("/{config_id}/set-default", response_model=Message)
-async def set_default_embedding_config(
-    session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID
-) -> Message:
+async def set_default_embedding_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Message:
     """Set default embedding configuration"""
     config = await session.get(EmbeddingConfigModel, config_id)
     if not config:
@@ -226,7 +223,7 @@ async def set_default_embedding_config(
 
 
 @router.get("/default/current", response_model=EmbeddingConfigPublic | None)
-async def get_default_embedding_config(session: SessionDep, current_user: CurrentUser) -> EmbeddingConfigPublic | None:
+async def get_default_embedding_config(session: SessionDep, current_user: CurrentUser) -> Any:
     """Get default embedding configuration for the current user"""
     statement = select(EmbeddingConfigModel).where(
         EmbeddingConfigModel.user_id == current_user.id,

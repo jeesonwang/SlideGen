@@ -20,6 +20,8 @@ class ContentType(str, Enum):
     MARKDOWN = ".md"
     DOCX = ".docx"
     DOC = ".doc"
+    PPTX = ".pptx"
+    PPT = ".ppt"
     JSON = ".json"
     HTML = ".html"
     HTM = ".htm"

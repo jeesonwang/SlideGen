@@ -5,10 +5,14 @@ from pathlib import Path
 
 import pytest
 from loguru import logger
+from pptx import Presentation
 
 from slidegen.services.document import DocumentReader
 from slidegen.services.document.readers import (
+    DocReader,
     DocumentReadResult,
+    PptReader,
+    PptxReader,
     PdfReader,
     TextReader,
 )
@@ -153,6 +157,59 @@ class TestPdfReader:
         logger.info("Successfully created pdf reader with password")
 
 
+class TestOfficeReaders:
+    """Test Office readers."""
+
+    @pytest.fixture
+    def test_pptx_file(self, tmp_path):
+        """Create a temporary PPTX file."""
+        pptx_path = tmp_path / "sample.pptx"
+        presentation = Presentation()
+        title_slide = presentation.slides.add_slide(presentation.slide_layouts[0])
+        title_slide.shapes.title.text = "Quarterly Review"
+        title_slide.placeholders[1].text = "Revenue and growth overview"
+
+        bullet_slide = presentation.slides.add_slide(presentation.slide_layouts[1])
+        bullet_slide.shapes.title.text = "Highlights"
+        bullet_slide.placeholders[1].text = "Growth\nMargin\nForecast"
+        presentation.save(pptx_path)
+        return str(pptx_path)
+
+    def test_pptx_reader_reads_slide_text(self, test_pptx_file):
+        """Test reading a PPTX file directly."""
+        reader = PptxReader()
+
+        result = reader.convert(test_pptx_file, file_extension=".pptx")
+
+        assert result is not None
+        assert isinstance(result, DocumentReadResult)
+        assert "Quarterly Review" in result.text_content
+        assert "Highlights" in result.text_content
+        assert "Forecast" in result.text_content
+
+    def test_ppt_reader_returns_none_when_soffice_missing(self, tmp_path, monkeypatch):
+        """Test PPT reader fallback when LibreOffice is unavailable."""
+        ppt_path = tmp_path / "legacy.ppt"
+        ppt_path.write_bytes(b"fake ppt bytes")
+        monkeypatch.setattr("slidegen.services.document.readers.ppt_reader.is_soffice_available", lambda: False)
+
+        reader = PptReader()
+        result = reader.convert(str(ppt_path), file_extension=".ppt")
+
+        assert result is None
+
+    def test_doc_reader_returns_none_when_soffice_missing(self, tmp_path, monkeypatch):
+        """Test DOC reader fallback when LibreOffice is unavailable."""
+        doc_path = tmp_path / "legacy.doc"
+        doc_path.write_bytes(b"fake doc bytes")
+        monkeypatch.setattr("slidegen.services.document.readers.doc_reader.is_soffice_available", lambda: False)
+
+        reader = DocReader()
+        result = reader.convert(str(doc_path), file_extension=".doc")
+
+        assert result is None
+
+
 class TestDocumentReader:
     """Test DocumentReader integration"""
 
@@ -265,7 +322,10 @@ class TestDocumentReader:
         assert "PdfReader" in reader_types
         assert "HtmlReader" in reader_types
         assert "DocxReader" in reader_types
+        assert "DocReader" in reader_types
         assert "ExcelReader" in reader_types
+        assert "PptReader" in reader_types
+        assert "PptxReader" in reader_types
 
         logger.info(f"Registered readers: {', '.join(reader_types)}")
 

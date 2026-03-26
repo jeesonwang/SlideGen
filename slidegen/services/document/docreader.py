@@ -12,12 +12,15 @@ from loguru import logger
 from slidegen.exceptions import FileParseError, FileTypeError
 from slidegen.services.document.readers import (
     BaseDocumentReader,
+    DocReader,
     DocumentReadResult,
     DocxReader,
     ExcelReader,
     HtmlReader,
     MarkdownReader,
     PdfReader,
+    PptReader,
+    PptxReader,
     TextReader,
 )
 
@@ -32,10 +35,13 @@ class DocumentReader:
 
     def register_builtins(self, **kwargs: Any) -> None:
         if not self._builtins_enabled:
+            self.register_reader(DocReader())
             self.register_reader(DocxReader())
             self.register_reader(HtmlReader())
             self.register_reader(ExcelReader())
             self.register_reader(MarkdownReader())
+            self.register_reader(PptReader())
+            self.register_reader(PptxReader())
             self.register_reader(PdfReader())
             self.register_reader(TextReader())
             # TODO: Add more readers here

@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from fastapi import APIRouter
 from loguru import logger
@@ -54,7 +55,9 @@ async def fetch_models(config: LLMModelsFetchRequest) -> AvailableModels:
 
 
 @router.get("/", response_model=LLMConfigsPublic)
-async def get_llm_configs(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> LLMConfigsPublic:
+async def get_llm_configs(
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+) -> LLMConfigsPublic:
     """Get list of LLM configurations for the current user"""
     count_statement = select(func.count()).select_from(LLMConfigModel).where(LLMConfigModel.user_id == current_user.id)
     count = (await session.execute(count_statement)).scalar_one()
@@ -72,9 +75,7 @@ async def get_llm_configs(session: SessionDep, current_user: CurrentUser, skip: 
 
 
 @router.post("/", response_model=LLMConfigPublic)
-async def create_llm_config(
-    *, session: SessionDep, current_user: CurrentUser, config_in: LLMConfigCreate
-) -> LLMConfigPublic:
+async def create_llm_config(*, session: SessionDep, current_user: CurrentUser, config_in: LLMConfigCreate) -> Any:
     """Create new LLM configuration"""
     # Validate configuration
     is_valid, error_msg = LLMFactory.validate_config(config_in)
@@ -108,7 +109,7 @@ async def create_llm_config(
 
 
 @router.get("/{config_id}", response_model=LLMConfigPublic)
-async def get_llm_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> LLMConfigPublic:
+async def get_llm_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Any:
     """Get specified LLM configuration"""
     config = await session.get(LLMConfigModel, config_id)
     if not config:
@@ -127,7 +128,7 @@ async def update_llm_config(
     current_user: CurrentUser,
     config_id: uuid.UUID,
     config_in: LLMConfigUpdate,
-) -> LLMConfigPublic:
+) -> Any:
     """Update LLM configuration"""
     config = await session.get(LLMConfigModel, config_id)
     if not config:
@@ -206,7 +207,7 @@ async def set_default_llm_config(session: SessionDep, current_user: CurrentUser,
 
 
 @router.get("/default/current", response_model=LLMConfigPublic | None)
-async def get_default_llm_config(session: SessionDep, current_user: CurrentUser) -> LLMConfigPublic | None:
+async def get_default_llm_config(session: SessionDep, current_user: CurrentUser) -> Any:
     """Get default LLM configuration for the current user"""
     statement = select(LLMConfigModel).where(
         LLMConfigModel.user_id == current_user.id, LLMConfigModel.is_default, LLMConfigModel.is_active
