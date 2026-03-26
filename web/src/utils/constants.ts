@@ -18,9 +18,9 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/api/v1/llm-config/${id}`,
     DELETE: (id: string) => `/api/v1/llm-config/${id}`,
     TEST: '/api/v1/llm-config/test',
+    FETCH_MODELS: '/api/v1/llm-config/fetch-models',
     SET_DEFAULT: (id: string) => `/api/v1/llm-config/${id}/set-default`,
     PROVIDERS: '/api/v1/llm-config/providers',
-    MODELS: (provider: string) => `/api/v1/llm-config/providers/${provider}/models`,
   },
   // Embedding Config
   EMBEDDING_CONFIG: {

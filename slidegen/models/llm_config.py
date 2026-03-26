@@ -85,24 +85,3 @@ class LLMConfigModel(Base, LLMConfigBase, table=True):
     user_id: uuid.UUID = Field(foreign_key="users.id", index=True, description="User ID")
     # Override extra_params to use JSON column for database
     extra_params: dict[str, Any] | None = Field(sa_column=Column(JSON), default=None, description="Extra parameters")
-
-
-DEFAULT_MODEL_CONFIGS = {
-    LLMProvider.OPENAI: [
-        {"model_id": "gpt-4o", "name": "GPT-4o"},
-        {"model_id": "gpt-4o-mini", "name": "GPT-4o Mini"},
-        {"model_id": "gpt-5", "name": "GPT-5"},
-        {"model_id": "gpt-5-mini", "name": "GPT-5 Mini"},
-    ],
-    LLMProvider.OPENROUTER: [
-        {"model_id": "openai/gpt-4o", "name": "GPT-4o (OpenRouter)"},
-        {"model_id": "openai/gpt-4o-mini", "name": "GPT-4o Mini (OpenRouter)"},
-        {"model_id": "anthropic/claude-3.5-sonnet", "name": "Claude 3.5 Sonnet"},
-        {"model_id": "meta-llama/llama-3.1-405b-instruct", "name": "Llama 3.1 405B"},
-    ],
-    LLMProvider.ANTHROPIC: [
-        {"model_id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet"},
-        {"model_id": "claude-3-opus-20240229", "name": "Claude 3 Opus"},
-        {"model_id": "claude-3-haiku-20240307", "name": "Claude 3 Haiku"},
-    ],
-}

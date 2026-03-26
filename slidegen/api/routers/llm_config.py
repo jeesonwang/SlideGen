@@ -1,14 +1,13 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from loguru import logger
 from sqlmodel import col, func, select
 
 from slidegen.api.deps import CurrentUser, SessionDep
 from slidegen.exceptions import NotFoundError, ParamsCheckError
 from slidegen.models.llm_config import (
-    DEFAULT_MODEL_CONFIGS,
     LLMConfigCreate,
     LLMConfigModel,
     LLMConfigPublic,
@@ -22,6 +21,7 @@ from slidegen.schemas.llm_config import (
     AvailableModels,
     LLMConfigTest,
     LLMConfigTestResult,
+    LLMModelsFetchRequest,
     LLMProvidersInfo,
 )
 from slidegen.services.factories.llm_factory import LLMFactory
@@ -35,16 +35,6 @@ async def get_providers() -> Any:
     return LLMProvidersInfo(providers=list(PROVIDER_INFO.values()))
 
 
-@router.get("/providers/{provider}/models", response_model=AvailableModels)
-async def get_provider_models(provider: LLMProvider) -> Any:
-    """Get available models for a specific provider"""
-    if provider not in DEFAULT_MODEL_CONFIGS:
-        raise HTTPException(status_code=404, detail=f"Provider {provider} does not have preset model configurations")
-
-    models = DEFAULT_MODEL_CONFIGS[provider]
-    return AvailableModels(provider=provider, models=models)
-
-
 @router.post("/test", response_model=LLMConfigTestResult)
 async def test_llm_config(config: LLMConfigTest) -> Any:
     """Test if the LLM configuration is valid"""
@@ -56,6 +46,13 @@ async def test_llm_config(config: LLMConfigTest) -> Any:
     # Perform actual test
     result = await LLMFactory.test_llm_config(config)
     return result
+
+
+@router.post("/fetch-models", response_model=AvailableModels)
+async def fetch_models(config: LLMModelsFetchRequest) -> Any:
+    """Fetch available models using the current provider configuration"""
+    models = await LLMFactory.fetch_available_models(config)
+    return models
 
 
 @router.get("/", response_model=LLMConfigsPublic)

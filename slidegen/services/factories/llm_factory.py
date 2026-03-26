@@ -1,6 +1,7 @@
 import time
 from typing import Any
 
+import httpx
 from agno.models.anthropic import Claude
 from agno.models.azure.openai_chat import AzureOpenAI
 from agno.models.base import Model
@@ -12,7 +13,13 @@ from agno.models.openrouter import OpenRouter
 from loguru import logger
 
 from slidegen.models.llm_config import LLMConfigBase, LLMProvider
-from slidegen.schemas.llm_config import LLMConfigTest, LLMConfigTestResult
+from slidegen.schemas.llm_config import (
+    PROVIDER_INFO,
+    AvailableModels,
+    LLMConfigTest,
+    LLMConfigTestResult,
+    LLMModelsFetchRequest,
+)
 
 
 class LLMFactory:
@@ -122,6 +129,84 @@ class LLMFactory:
             return LLMConfigTestResult(success=False, error=error_msg, latency=latency)
 
     @staticmethod
+    async def fetch_available_models(config: LLMModelsFetchRequest) -> AvailableModels:
+        """Fetch available models from the configured provider endpoint"""
+        provider = config.provider
+        extra_params = config.extra_params or {}
+
+        if provider == LLMProvider.OLLAMA:
+            base_url = config.base_url or PROVIDER_INFO[provider].default_base_url
+            if not base_url:
+                raise ValueError("Ollama needs server address")
+            payload = await LLMFactory._request_json(
+                f"{LLMFactory._normalize_base_url(base_url)}/api/tags",
+                headers={"Accept": "application/json"},
+            )
+            models = [
+                {
+                    "model_id": model.get("model") or model.get("name"),
+                    "name": model.get("name") or model.get("model"),
+                }
+                for model in payload.get("models", [])
+                if model.get("model") or model.get("name")
+            ]
+            return AvailableModels(provider=provider, models=models)
+
+        if provider == LLMProvider.ANTHROPIC:
+            if not config.api_key:
+                raise ValueError("Anthropic needs API key")
+            base_url = config.base_url or PROVIDER_INFO[provider].default_base_url
+            if not base_url:
+                raise ValueError("Anthropic needs base URL")
+            payload = await LLMFactory._request_json(
+                f"{LLMFactory._normalize_base_url(base_url)}/v1/models",
+                headers={
+                    "Accept": "application/json",
+                    "x-api-key": config.api_key,
+                    "anthropic-version": extra_params.get("anthropic_version", "2023-06-01"),
+                },
+            )
+            models = [
+                {
+                    "model_id": model.get("id"),
+                    "name": model.get("display_name") or model.get("id"),
+                }
+                for model in payload.get("data", [])
+                if model.get("id")
+            ]
+            return AvailableModels(provider=provider, models=models)
+
+        if provider == LLMProvider.AZURE_OPENAI:
+            raise ValueError(
+                "Azure OpenAI model discovery is not supported yet. Please enter the deployment name manually."
+            )
+
+        default_base_url = PROVIDER_INFO[provider].default_base_url if provider in PROVIDER_INFO else None
+        base_url = config.base_url or default_base_url
+        if not base_url:
+            raise ValueError(f"{provider} needs base URL")
+
+        headers = {"Accept": "application/json"}
+        if config.api_key:
+            headers["Authorization"] = f"Bearer {config.api_key}"
+        elif provider in {LLMProvider.OPENAI, LLMProvider.OPENROUTER, LLMProvider.CUSTOM}:
+            raise ValueError(f"{PROVIDER_INFO[provider].name} needs API key")
+
+        payload = await LLMFactory._request_json(
+            f"{LLMFactory._normalize_base_url(base_url)}/models",
+            headers=headers,
+        )
+        models = [
+            {
+                "model_id": model.get("id"),
+                "name": model.get("name") or model.get("id"),
+            }
+            for model in payload.get("data", [])
+            if model.get("id")
+        ]
+        return AvailableModels(provider=provider, models=models)
+
+    @staticmethod
     def validate_config(config: LLMConfigBase | LLMConfigTest) -> tuple[bool, str | None]:
         """Validate the basic parameters of the LLM configuration"""
         try:
@@ -167,3 +252,26 @@ class LLMFactory:
 
         except Exception as e:
             return False, f"Configuration validation failed: {e!s}"
+
+    @staticmethod
+    async def _request_json(url: str, headers: dict[str, str]) -> dict[str, Any]:
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                response = await client.get(url, headers=headers)
+                response.raise_for_status()
+                return response.json()
+        except httpx.HTTPStatusError as exc:
+            detail = exc.response.text.strip()
+            raise ValueError(
+                f"Model discovery failed with status {exc.response.status_code}: {detail or exc.response.reason_phrase}"
+            ) from exc
+        except httpx.RequestError as exc:
+            raise ValueError(f"Model discovery request failed: {exc!s}") from exc
+        except ValueError:
+            raise
+        except Exception as exc:
+            raise ValueError("Model discovery returned invalid JSON") from exc
+
+    @staticmethod
+    def _normalize_base_url(base_url: str) -> str:
+        return base_url.rstrip("/")

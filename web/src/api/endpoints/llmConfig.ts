@@ -11,6 +11,7 @@ import type {
   LLMConfigUpdate,
   LLMConfigTest,
   LLMConfigTestResult,
+  LLMModelsFetchRequest,
   LLMProvidersInfo,
   AvailableModels,
 } from '../types/llmConfig.types';
@@ -81,6 +82,17 @@ export const llmConfigApi = {
   },
 
   /**
+   * Fetch available models from the current provider configuration
+   */
+  fetchModels: async (data: LLMModelsFetchRequest): Promise<AvailableModels> => {
+    const response = await apiClient.post<AvailableModels>(
+      API_ENDPOINTS.LLM_CONFIG.FETCH_MODELS,
+      data
+    );
+    return response.data;
+  },
+
+  /**
    * Set an LLM configuration as default
    */
   setDefault: async (id: string): Promise<LLMConfigPublic> => {
@@ -96,16 +108,6 @@ export const llmConfigApi = {
   getProviders: async (): Promise<LLMProvidersInfo> => {
     const response = await apiClient.get<LLMProvidersInfo>(
       API_ENDPOINTS.LLM_CONFIG.PROVIDERS
-    );
-    return response.data;
-  },
-
-  /**
-   * Get available models for a provider
-   */
-  getModels: async (provider: string): Promise<AvailableModels> => {
-    const response = await apiClient.get<AvailableModels>(
-      API_ENDPOINTS.LLM_CONFIG.MODELS(provider)
     );
     return response.data;
   },

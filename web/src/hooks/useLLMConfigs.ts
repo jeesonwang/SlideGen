@@ -8,6 +8,7 @@ import type {
   LLMConfigCreate,
   LLMConfigUpdate,
   LLMConfigTest,
+  LLMModelsFetchRequest,
 } from '../api/types/llmConfig.types';
 import { message } from 'antd';
 
@@ -104,19 +105,19 @@ export const useSetDefaultLLMConfig = () => {
   });
 };
 
+export const useFetchLLMModels = () => {
+  return useMutation({
+    mutationFn: (data: LLMModelsFetchRequest) => llmConfigApi.fetchModels(data),
+    onError: (error: any) => {
+      message.error(error?.detail || 'Failed to fetch models');
+    },
+  });
+};
+
 export const useLLMProviders = () => {
   return useQuery({
     queryKey: ['llm-providers'],
     queryFn: () => llmConfigApi.getProviders(),
     staleTime: Infinity, // Providers rarely change
-  });
-};
-
-export const useLLMModels = (provider: string) => {
-  return useQuery({
-    queryKey: ['llm-models', provider],
-    queryFn: () => llmConfigApi.getModels(provider),
-    enabled: !!provider,
-    staleTime: 1000 * 60 * 60, // 1 hour
   });
 };

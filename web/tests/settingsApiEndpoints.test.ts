@@ -20,6 +20,18 @@ assert.match(
 
 assert.match(
   constantsSource,
+  /LLM_CONFIG:\s*{[\s\S]*FETCH_MODELS:\s*'\/api\/v1\/llm-config\/fetch-models'/,
+  'LLM config should expose a dynamic model discovery endpoint'
+);
+
+assert.doesNotMatch(
+  constantsSource,
+  /LLM_CONFIG:\s*{[\s\S]*?MODELS:\s*\(provider:\s*string\)[\s\S]*?}\s*,/,
+  'LLM config should not expose the legacy preset-model endpoint'
+);
+
+assert.match(
+  constantsSource,
   /EMBEDDING_CONFIG:\s*{[\s\S]*LIST:\s*'\/api\/v1\/embedding-config\/'/,
   'Embedding config list endpoint should include a trailing slash to avoid FastAPI redirects'
 );

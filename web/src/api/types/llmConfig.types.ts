@@ -66,6 +66,13 @@ export interface LLMConfigTest {
   test_prompt?: string;
 }
 
+export interface LLMModelsFetchRequest {
+  provider: LLMProvider;
+  api_key?: string | null;
+  base_url?: string | null;
+  extra_params?: Record<string, any> | null;
+}
+
 export interface LLMConfigTestResult {
   success: boolean;
   response?: string | null;

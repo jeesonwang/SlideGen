@@ -18,6 +18,15 @@ class LLMConfigTest(BaseModel):
     test_prompt: str = Field(default="Hello, how are you?", description="Test prompt")
 
 
+class LLMModelsFetchRequest(BaseModel):
+    """Dynamic model discovery request"""
+
+    provider: LLMProvider = Field(description="LLM provider")
+    api_key: str | None = Field(default=None, description="API key")
+    base_url: str | None = Field(default=None, description="API base URL")
+    extra_params: dict[str, Any] | None = Field(default=None, description="Extra parameters")
+
+
 class LLMConfigTestResult(BaseModel):
     """LLM configuration test result"""
 

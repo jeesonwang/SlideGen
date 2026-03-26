@@ -2,10 +2,10 @@
  * LLM Configuration Form component
  */
 
-import { useEffect } from 'react';
-import { Form, Input, InputNumber, Select, Button, Space, Collapse, Switch } from 'antd';
-import { useLLMProviders, useLLMModels } from '../../hooks/useLLMConfigs';
-import type { LLMConfigCreate } from '../../api/types/llmConfig.types';
+import { useEffect, useState } from 'react';
+import { Form, Input, InputNumber, Select, Button, Space, Collapse, Switch, message } from 'antd';
+import { useFetchLLMModels, useLLMProviders } from '../../hooks/useLLMConfigs';
+import type { AvailableModels, LLMConfigCreate } from '../../api/types/llmConfig.types';
 
 const { TextArea } = Input;
 const { Panel } = Collapse;
@@ -24,17 +24,25 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
   loading = false,
 }) => {
   const [form] = Form.useForm();
+  const [availableModels, setAvailableModels] = useState<AvailableModels['models']>([]);
   const { data: providersData } = useLLMProviders();
+  const fetchModelsMutation = useFetchLLMModels();
 
   const selectedProvider = Form.useWatch('provider', form);
-  const { data: modelsData } = useLLMModels(selectedProvider);
+  const selectedApiKey = Form.useWatch('api_key', form);
+  const selectedBaseUrl = Form.useWatch('base_url', form);
 
   // Reset model when provider changes
   useEffect(() => {
     if (selectedProvider && selectedProvider !== initialValues?.provider) {
       form.setFieldValue('model_id', undefined);
+      setAvailableModels([]);
     }
   }, [selectedProvider, form, initialValues?.provider]);
+
+  useEffect(() => {
+    setAvailableModels([]);
+  }, [selectedProvider, selectedApiKey, selectedBaseUrl]);
 
   const handleFinish = (values: Omit<LLMConfigCreate, 'user_id'>) => {
     onSubmit(values);
@@ -43,6 +51,48 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
   const providerInfo = providersData?.providers.find(
     (p) => p.provider === selectedProvider
   );
+
+  const canFetchModels = (() => {
+    if (!selectedProvider) {
+      return false;
+    }
+
+    if (providerInfo?.requires_api_key && !selectedApiKey) {
+      return false;
+    }
+
+    if (
+      (selectedProvider === 'custom' || selectedProvider === 'azure_openai') &&
+      !selectedBaseUrl
+    ) {
+      return false;
+    }
+
+    return true;
+  })();
+
+  const handleFetchModels = async () => {
+    try {
+      const values = form.getFieldsValue(['provider', 'api_key', 'base_url', 'extra_params']);
+      const result = await fetchModelsMutation.mutateAsync({
+        provider: values.provider,
+        api_key: values.api_key,
+        base_url: values.base_url,
+        extra_params: values.extra_params,
+      });
+
+      setAvailableModels(result.models);
+
+      if (result.models.length === 0) {
+        message.warning('No models were returned. You can still enter a model ID manually.');
+        return;
+      }
+
+      message.success(`Loaded ${result.models.length} models`);
+    } catch {
+      // Error message is already handled by the mutation
+    }
+  };
 
   return (
     <Form
@@ -96,25 +146,37 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
       )}
 
       <Form.Item
-        name="model_id"
         label="Model"
-        rules={[{ required: true, message: 'Please select or enter a model' }]}
+        extra="Click Fetch Models to load models from the current provider configuration. Manual input remains available."
       >
-        {modelsData?.models.length ? (
-          <Select
-            placeholder="Select a model"
-            showSearch
-            loading={!modelsData && !!selectedProvider}
+        <Space.Compact block>
+          <Form.Item
+            name="model_id"
+            noStyle
+            rules={[{ required: true, message: 'Please select or enter a model' }]}
           >
-            {modelsData.models.map((model) => (
-              <Select.Option key={model.model_id} value={model.model_id}>
-                {model.name}
-              </Select.Option>
-            ))}
-          </Select>
-        ) : (
-          <Input placeholder="Enter a model ID" />
-        )}
+            {availableModels.length > 0 ? (
+              <Select
+                placeholder="Select a model"
+                showSearch
+                optionFilterProp="label"
+                options={availableModels.map((model) => ({
+                  value: model.model_id,
+                  label: model.name,
+                }))}
+              />
+            ) : (
+              <Input placeholder="Enter a model ID" />
+            )}
+          </Form.Item>
+          <Button
+            onClick={handleFetchModels}
+            loading={fetchModelsMutation.isPending}
+            disabled={!canFetchModels}
+          >
+            Fetch Models
+          </Button>
+        </Space.Compact>
       </Form.Item>
 
       {providerInfo?.requires_api_key && (
