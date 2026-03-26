@@ -1,14 +1,13 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from loguru import logger
 from sqlmodel import col, func, select
 
 from slidegen.api.deps import CurrentUser, SessionDep
 from slidegen.exceptions import NotFoundError, ParamsCheckError
 from slidegen.models.embedding_config import (
-    DEFAULT_EMBEDDING_CONFIGS,
     EmbeddingConfigCreate,
     EmbeddingConfigModel,
     EmbeddingConfigPublic,
@@ -22,6 +21,7 @@ from slidegen.schemas.embedding_config import (
     AvailableEmbeddingModels,
     EmbeddingConfigTest,
     EmbeddingConfigTestResult,
+    EmbeddingModelsFetchRequest,
     EmbeddingProvidersInfo,
 )
 from slidegen.services.factories.embedding_factory import EmbeddingFactory
@@ -39,16 +39,6 @@ def _is_masked_secret(value: str | None) -> bool:
 async def get_providers() -> EmbeddingProvidersInfo:
     """Get all supported embedding providers information"""
     return EmbeddingProvidersInfo(providers=list(EMBEDDING_PROVIDER_INFO.values()))
-
-
-@router.get("/providers/{provider}/models", response_model=AvailableEmbeddingModels)
-async def get_provider_models(provider: EmbeddingProvider) -> AvailableEmbeddingModels:
-    """Get available models for a specific provider"""
-    if provider not in DEFAULT_EMBEDDING_CONFIGS:
-        raise HTTPException(status_code=404, detail=f"Provider {provider} does not have preset model configurations")
-
-    models = DEFAULT_EMBEDDING_CONFIGS[provider]
-    return AvailableEmbeddingModels(provider=provider, models=models)
 
 
 @router.post("/test", response_model=EmbeddingConfigTestResult)
@@ -73,6 +63,13 @@ async def test_embedding_config(
     # Perform actual test
     result = await EmbeddingFactory.test_embedding_config(config)
     return result
+
+
+@router.post("/fetch-models", response_model=AvailableEmbeddingModels)
+async def fetch_models(config: EmbeddingModelsFetchRequest) -> AvailableEmbeddingModels:
+    """Fetch available embedding models using the current provider configuration"""
+    models = await EmbeddingFactory.fetch_available_models(config)
+    return models
 
 
 @router.get("/", response_model=EmbeddingConfigsPublic)

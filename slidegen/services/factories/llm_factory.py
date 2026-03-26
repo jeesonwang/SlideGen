@@ -1,7 +1,6 @@
 import time
 from typing import Any
 
-import httpx
 from agno.models.anthropic import Claude
 from agno.models.azure.openai_chat import AzureOpenAI
 from agno.models.base import Model
@@ -20,9 +19,10 @@ from slidegen.schemas.llm_config import (
     LLMConfigTestResult,
     LLMModelsFetchRequest,
 )
+from slidegen.services.factories.base_factory import BaseFactory
 
 
-class LLMFactory:
+class LLMFactory(BaseFactory):
     """LLM factory class, support creating different provider LLM instances"""
 
     @staticmethod
@@ -252,26 +252,3 @@ class LLMFactory:
 
         except Exception as e:
             return False, f"Configuration validation failed: {e!s}"
-
-    @staticmethod
-    async def _request_json(url: str, headers: dict[str, str]) -> dict[str, Any]:
-        try:
-            async with httpx.AsyncClient(timeout=20.0) as client:
-                response = await client.get(url, headers=headers)
-                response.raise_for_status()
-                return response.json()
-        except httpx.HTTPStatusError as exc:
-            detail = exc.response.text.strip()
-            raise ValueError(
-                f"Model discovery failed with status {exc.response.status_code}: {detail or exc.response.reason_phrase}"
-            ) from exc
-        except httpx.RequestError as exc:
-            raise ValueError(f"Model discovery request failed: {exc!s}") from exc
-        except ValueError:
-            raise
-        except Exception as exc:
-            raise ValueError("Model discovery returned invalid JSON") from exc
-
-    @staticmethod
-    def _normalize_base_url(base_url: str) -> str:
-        return base_url.rstrip("/")

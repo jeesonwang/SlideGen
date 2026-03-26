@@ -19,6 +19,15 @@ class EmbeddingConfigTest(BaseModel):
     test_text: str = Field(default="This is a test sentence for embedding.", description="Test text")
 
 
+class EmbeddingModelsFetchRequest(BaseModel):
+    """Dynamic embedding model discovery request"""
+
+    provider: EmbeddingProvider = Field(description="Embedding provider")
+    api_key: str | None = Field(default=None, description="API key")
+    base_url: str | None = Field(default=None, description="API base URL")
+    extra_params: dict[str, Any] | None = Field(default=None, description="Extra parameters")
+
+
 class EmbeddingConfigTestResult(BaseModel):
     """Embedding configuration test result"""
 

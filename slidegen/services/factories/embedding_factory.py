@@ -8,10 +8,17 @@ from agno.knowledge.embedder.openai import OpenAIEmbedder
 from loguru import logger
 
 from slidegen.models.embedding_config import EmbeddingConfigBase, EmbeddingProvider
-from slidegen.schemas.embedding_config import EmbeddingConfigTest, EmbeddingConfigTestResult
+from slidegen.schemas.embedding_config import (
+    EMBEDDING_PROVIDER_INFO,
+    AvailableEmbeddingModels,
+    EmbeddingConfigTest,
+    EmbeddingConfigTestResult,
+    EmbeddingModelsFetchRequest,
+)
+from slidegen.services.factories.base_factory import BaseFactory
 
 
-class EmbeddingFactory:
+class EmbeddingFactory(BaseFactory):
     """Embedding factory class, support creating different provider embedding instances"""
 
     @staticmethod
@@ -103,6 +110,60 @@ class EmbeddingFactory:
             logger.warning(f"Embedding configuration test failed: {error_msg}")
 
             return EmbeddingConfigTestResult(success=False, error=error_msg, latency=latency)
+
+    @staticmethod
+    async def fetch_available_models(config: EmbeddingModelsFetchRequest) -> AvailableEmbeddingModels:
+        """Fetch available embedding models from the configured provider endpoint"""
+        provider = config.provider
+
+        if provider == EmbeddingProvider.AZURE_OPENAI:
+            raise ValueError(
+                "Azure OpenAI embedding model discovery is not supported yet. Please enter the deployment name manually."
+            )
+
+        if provider == EmbeddingProvider.OLLAMA:
+            base_url = config.base_url or EMBEDDING_PROVIDER_INFO[provider].default_base_url
+            if not base_url:
+                raise ValueError("Ollama needs server address")
+            payload = await EmbeddingFactory._request_json(
+                f"{EmbeddingFactory._normalize_base_url(base_url)}/api/tags",
+                headers={"Accept": "application/json"},
+            )
+            models = [
+                {
+                    "model_id": model.get("model") or model.get("name"),
+                    "name": model.get("name") or model.get("model"),
+                }
+                for model in payload.get("models", [])
+                if model.get("model") or model.get("name")
+            ]
+            return AvailableEmbeddingModels(provider=provider, models=models)
+
+        default_base_url = (
+            EMBEDDING_PROVIDER_INFO[provider].default_base_url if provider in EMBEDDING_PROVIDER_INFO else None
+        )
+        base_url = config.base_url or default_base_url
+        if not base_url:
+            raise ValueError(f"{provider} needs base URL")
+
+        headers = {"Accept": "application/json"}
+        if config.api_key:
+            headers["Authorization"] = f"Bearer {config.api_key}"
+
+        payload = await EmbeddingFactory._request_json(
+            f"{EmbeddingFactory._normalize_base_url(base_url)}/models",
+            headers=headers,
+        )
+        models = [
+            {
+                "model_id": model.get("id"),
+                "name": model.get("name") or model.get("id"),
+                "dimensions": model.get("dimensions"),
+            }
+            for model in payload.get("data", [])
+            if model.get("id")
+        ]
+        return AvailableEmbeddingModels(provider=provider, models=models)
 
     @staticmethod
     def validate_config(config: EmbeddingConfigBase | EmbeddingConfigTest) -> tuple[bool, str | None]:

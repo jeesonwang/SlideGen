@@ -16,6 +16,14 @@ llm_factory_module = module_from_spec(llm_factory_spec)
 llm_factory_spec.loader.exec_module(llm_factory_module)
 LLMFactory = llm_factory_module.LLMFactory
 
+base_factory_spec = spec_from_file_location(
+    "test_base_factory_module",
+    Path(__file__).resolve().parents[1] / "slidegen/services/factories/base_factory.py",
+)
+assert base_factory_spec is not None and base_factory_spec.loader is not None
+base_factory_module = module_from_spec(base_factory_spec)
+base_factory_spec.loader.exec_module(base_factory_module)
+
 
 def test_test_llm_config_uses_response_api() -> None:
     config = LLMConfigTest(
@@ -76,7 +84,7 @@ def test_request_json_uses_httpx_async_client() -> None:
     mock_client.__aenter__.return_value = mock_client
     mock_client.__aexit__.return_value = None
 
-    with patch.object(llm_factory_module.httpx, "AsyncClient", return_value=mock_client) as async_client:
+    with patch.object(base_factory_module.httpx, "AsyncClient", return_value=mock_client) as async_client:
         result = asyncio.run(LLMFactory._request_json("https://example.com/models", {"Authorization": "Bearer test"}))
 
     async_client.assert_called_once()

@@ -81,17 +81,3 @@ class EmbeddingConfigModel(Base, EmbeddingConfigBase, table=True):
     user_id: uuid.UUID = Field(foreign_key="users.id", index=True, description="User ID")
     # Override extra_params to use JSON column for database
     extra_params: dict[str, Any] | None = Field(sa_column=Column(JSON), default=None, description="Extra parameters")
-
-
-DEFAULT_EMBEDDING_CONFIGS = {
-    EmbeddingProvider.OPENAI: [
-        {"model_id": "text-embedding-3-large", "name": "Text Embedding 3 Large", "dimensions": 3072},
-        {"model_id": "text-embedding-3-small", "name": "Text Embedding 3 Small", "dimensions": 1536},
-        {"model_id": "text-embedding-ada-002", "name": "Ada 002", "dimensions": 1536},
-    ],
-    EmbeddingProvider.OLLAMA: [
-        {"model_id": "nomic-embed-text", "name": "Nomic Embed Text", "dimensions": 768},
-        {"model_id": "mxbai-embed-large", "name": "MxBai Embed Large", "dimensions": 1024},
-        {"model_id": "all-minilm", "name": "All-MiniLM-L6-v2", "dimensions": 384},
-    ],
-}
