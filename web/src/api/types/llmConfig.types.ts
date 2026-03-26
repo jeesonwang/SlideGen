@@ -56,6 +56,7 @@ export interface LLMConfigsPublic {
 }
 
 export interface LLMConfigTest {
+  config_id?: string | null;
   provider: LLMProvider;
   model_id: string;
   api_key?: string | null;

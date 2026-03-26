@@ -19,12 +19,17 @@ import type {
   EmbeddingConfigCreate,
   EmbeddingConfigPublic,
 } from '../../api/types/embeddingConfig.types';
+import {
+  buildEmbeddingConfigTestPayload,
+  sanitizeEmbeddingConfigSubmitValues,
+} from './embeddingConfigKeyHandling';
 
 const { Title, Text } = Typography;
 
 export const EmbeddingConfigPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<EmbeddingConfigPublic | null>(null);
+  const [testingConfigId, setTestingConfigId] = useState<string | null>(null);
 
   const { data: configsData, isLoading } = useEmbeddingConfigs();
   const createMutation = useCreateEmbeddingConfig();
@@ -50,15 +55,12 @@ export const EmbeddingConfigPage = () => {
   };
 
   const handleTest = async (config: EmbeddingConfigPublic) => {
-    await testMutation.mutateAsync({
-      provider: config.provider,
-      model_id: config.model_id,
-      api_key: config.api_key || undefined,
-      base_url: config.base_url || undefined,
-      dimensions: config.dimensions || undefined,
-      extra_params: config.extra_params || undefined,
-      test_text: 'This is a test sentence for embedding.',
-    });
+    setTestingConfigId(config.id);
+    try {
+      await testMutation.mutateAsync(buildEmbeddingConfigTestPayload(config));
+    } finally {
+      setTestingConfigId(null);
+    }
   };
 
   const handleSetDefault = async (id: string) => {
@@ -70,7 +72,7 @@ export const EmbeddingConfigPage = () => {
       if (editingConfig) {
         await updateMutation.mutateAsync({
           id: editingConfig.id,
-          data: values,
+          data: sanitizeEmbeddingConfigSubmitValues(values, editingConfig),
         });
       } else {
         await createMutation.mutateAsync(values);
@@ -106,6 +108,7 @@ export const EmbeddingConfigPage = () => {
       <EmbeddingConfigList
         configs={configs}
         loading={isLoading}
+        testingConfigId={testingConfigId}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onTest={handleTest}

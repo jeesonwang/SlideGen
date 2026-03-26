@@ -52,6 +52,7 @@ export interface EmbeddingConfigsPublic {
 }
 
 export interface EmbeddingConfigTest {
+  config_id?: string | null;
   provider: EmbeddingProvider;
   model_id: string;
   api_key?: string | null;

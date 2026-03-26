@@ -19,12 +19,14 @@ import type {
   LLMConfigCreate,
   LLMConfigPublic,
 } from '../../api/types/llmConfig.types';
+import { buildLLMConfigTestPayload, sanitizeLLMConfigSubmitValues } from './llmConfigKeyHandling';
 
 const { Title, Text } = Typography;
 
 export const LLMConfigPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<LLMConfigPublic | null>(null);
+  const [testingConfigId, setTestingConfigId] = useState<string | null>(null);
 
   const { data: configsData, isLoading } = useLLMConfigs();
   const createMutation = useCreateLLMConfig();
@@ -50,16 +52,12 @@ export const LLMConfigPage = () => {
   };
 
   const handleTest = async (config: LLMConfigPublic) => {
-    await testMutation.mutateAsync({
-      provider: config.provider,
-      model_id: config.model_id,
-      api_key: config.api_key || undefined,
-      base_url: config.base_url || undefined,
-      temperature: config.temperature,
-      max_tokens: config.max_tokens || undefined,
-      extra_params: config.extra_params || undefined,
-      test_prompt: 'Hello, this is a test.',
-    });
+    setTestingConfigId(config.id);
+    try {
+      await testMutation.mutateAsync(buildLLMConfigTestPayload(config));
+    } finally {
+      setTestingConfigId(null);
+    }
   };
 
   const handleSetDefault = async (id: string) => {
@@ -71,7 +69,7 @@ export const LLMConfigPage = () => {
       if (editingConfig) {
         await updateMutation.mutateAsync({
           id: editingConfig.id,
-          data: values,
+          data: sanitizeLLMConfigSubmitValues(values, editingConfig),
         });
       } else {
         await createMutation.mutateAsync(values);
@@ -107,6 +105,7 @@ export const LLMConfigPage = () => {
       <LLMConfigList
         configs={configs}
         loading={isLoading}
+        testingConfigId={testingConfigId}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onTest={handleTest}

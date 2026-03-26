@@ -18,6 +18,7 @@ const { Text, Paragraph } = Typography;
 interface LLMConfigListProps {
   configs: LLMConfigPublic[];
   loading?: boolean;
+  testingConfigId?: string | null;
   onEdit: (config: LLMConfigPublic) => void;
   onDelete: (id: string) => void;
   onTest: (config: LLMConfigPublic) => void;
@@ -27,6 +28,7 @@ interface LLMConfigListProps {
 export const LLMConfigList: React.FC<LLMConfigListProps> = ({
   configs,
   loading = false,
+  testingConfigId = null,
   onEdit,
   onDelete,
   onTest,
@@ -56,7 +58,10 @@ export const LLMConfigList: React.FC<LLMConfigListProps> = ({
 
   return (
     <Row gutter={[16, 16]}>
-      {configs.map((config) => (
+      {configs.map((config) => {
+        const isTesting = testingConfigId === config.id;
+
+        return (
         <Col xs={24} md={12} xl={8} key={config.id}>
           <Card
             className="modern-card h-full !rounded-2xl !border !border-border/70"
@@ -111,9 +116,11 @@ export const LLMConfigList: React.FC<LLMConfigListProps> = ({
                 <Button
                   type="text"
                   icon={<ThunderboltOutlined />}
+                  loading={isTesting}
+                  disabled={isTesting}
                   onClick={() => onTest(config)}
                 >
-                  Test
+                  {isTesting ? 'Testing...' : 'Test'}
                 </Button>
               </Tooltip>,
               <Button
@@ -140,6 +147,11 @@ export const LLMConfigList: React.FC<LLMConfigListProps> = ({
             ]}
           >
             <Space direction="vertical" className="w-full" size="small">
+              {isTesting && (
+                <div className="rounded-xl border border-primary-500/20 bg-primary-500/8 px-3 py-2">
+                  <Text className="text-primary-300">Waiting for model response...</Text>
+                </div>
+              )}
               <div>
                 <Text className="text-text-secondary">Provider: </Text>
                 <Tag>{config.provider}</Tag>
@@ -181,7 +193,7 @@ export const LLMConfigList: React.FC<LLMConfigListProps> = ({
             </Space>
           </Card>
         </Col>
-      ))}
+      )})}
     </Row>
   );
 };
