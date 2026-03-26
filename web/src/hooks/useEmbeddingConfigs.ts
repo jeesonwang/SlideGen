@@ -8,6 +8,7 @@ import type {
   EmbeddingConfigCreate,
   EmbeddingConfigUpdate,
   EmbeddingConfigTest,
+  EmbeddingModelsFetchRequest,
 } from '../api/types/embeddingConfig.types';
 import { message } from 'antd';
 
@@ -106,19 +107,19 @@ export const useSetDefaultEmbeddingConfig = () => {
   });
 };
 
+export const useFetchEmbeddingModels = () => {
+  return useMutation({
+    mutationFn: (data: EmbeddingModelsFetchRequest) => embeddingConfigApi.fetchModels(data),
+    onError: (error: any) => {
+      message.error(error?.detail || 'Failed to fetch models');
+    },
+  });
+};
+
 export const useEmbeddingProviders = () => {
   return useQuery({
     queryKey: ['embedding-providers'],
     queryFn: () => embeddingConfigApi.getProviders(),
     staleTime: Infinity, // Providers rarely change
-  });
-};
-
-export const useEmbeddingModels = (provider: string) => {
-  return useQuery({
-    queryKey: ['embedding-models', provider],
-    queryFn: () => embeddingConfigApi.getModels(provider),
-    enabled: !!provider,
-    staleTime: 1000 * 60 * 60, // 1 hour
   });
 };

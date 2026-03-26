@@ -10,6 +10,7 @@ import type {
   EmbeddingConfigCreate,
   EmbeddingConfigUpdate,
   EmbeddingConfigTest,
+  EmbeddingModelsFetchRequest,
   EmbeddingConfigTestResult,
   EmbeddingProvidersInfo,
   AvailableEmbeddingModels,
@@ -86,6 +87,17 @@ export const embeddingConfigApi = {
   },
 
   /**
+   * Fetch available embedding models from the current provider configuration
+   */
+  fetchModels: async (data: EmbeddingModelsFetchRequest): Promise<AvailableEmbeddingModels> => {
+    const response = await apiClient.post<AvailableEmbeddingModels>(
+      API_ENDPOINTS.EMBEDDING_CONFIG.FETCH_MODELS,
+      data
+    );
+    return response.data;
+  },
+
+  /**
    * Set an Embedding configuration as default
    */
   setDefault: async (id: string): Promise<EmbeddingConfigPublic> => {
@@ -101,16 +113,6 @@ export const embeddingConfigApi = {
   getProviders: async (): Promise<EmbeddingProvidersInfo> => {
     const response = await apiClient.get<EmbeddingProvidersInfo>(
       API_ENDPOINTS.EMBEDDING_CONFIG.PROVIDERS
-    );
-    return response.data;
-  },
-
-  /**
-   * Get available models for a provider
-   */
-  getModels: async (provider: string): Promise<AvailableEmbeddingModels> => {
-    const response = await apiClient.get<AvailableEmbeddingModels>(
-      API_ENDPOINTS.EMBEDDING_CONFIG.MODELS(provider)
     );
     return response.data;
   },

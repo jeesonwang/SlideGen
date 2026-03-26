@@ -42,4 +42,16 @@ assert.match(
   'Embedding config create endpoint should include a trailing slash to match the backend route'
 );
 
+assert.match(
+  constantsSource,
+  /EMBEDDING_CONFIG:\s*{[\s\S]*FETCH_MODELS:\s*'\/api\/v1\/embedding-config\/fetch-models'/,
+  'Embedding config should expose a dynamic model discovery endpoint'
+);
+
+assert.doesNotMatch(
+  constantsSource,
+  /EMBEDDING_CONFIG:\s*{[\s\S]*?MODELS:\s*\(provider:\s*string\)[\s\S]*?}\s*,/,
+  'Embedding config should not expose the legacy preset-model endpoint'
+);
+
 console.log('settingsApiEndpoints.test.ts passed');

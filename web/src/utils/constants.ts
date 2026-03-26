@@ -30,9 +30,9 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/api/v1/embedding-config/${id}`,
     DELETE: (id: string) => `/api/v1/embedding-config/${id}`,
     TEST: '/api/v1/embedding-config/test',
+    FETCH_MODELS: '/api/v1/embedding-config/fetch-models',
     SET_DEFAULT: (id: string) => `/api/v1/embedding-config/${id}/set-default`,
     PROVIDERS: '/api/v1/embedding-config/providers',
-    MODELS: (provider: string) => `/api/v1/embedding-config/providers/${provider}/models`,
   },
   // Sessions
   SESSIONS: {

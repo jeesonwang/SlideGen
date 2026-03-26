@@ -62,6 +62,13 @@ export interface EmbeddingConfigTest {
   test_text?: string;
 }
 
+export interface EmbeddingModelsFetchRequest {
+  provider: EmbeddingProvider;
+  api_key?: string | null;
+  base_url?: string | null;
+  extra_params?: Record<string, any> | null;
+}
+
 export interface EmbeddingConfigTestResult {
   success: boolean;
   embedding_dimension?: number | null;

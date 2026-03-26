@@ -2,10 +2,10 @@
  * Embedding Configuration Form component
  */
 
-import { useEffect } from 'react';
-import { Form, Input, InputNumber, Select, Button, Space, Collapse, Switch } from 'antd';
-import { useEmbeddingProviders, useEmbeddingModels } from '../../hooks/useEmbeddingConfigs';
-import type { EmbeddingConfigCreate } from '../../api/types/embeddingConfig.types';
+import { useEffect, useState } from 'react';
+import { Form, Input, InputNumber, Select, Button, Space, Collapse, Switch, message } from 'antd';
+import { useEmbeddingProviders, useFetchEmbeddingModels } from '../../hooks/useEmbeddingConfigs';
+import type { AvailableEmbeddingModels, EmbeddingConfigCreate } from '../../api/types/embeddingConfig.types';
 
 const { TextArea } = Input;
 const { Panel } = Collapse;
@@ -24,18 +24,26 @@ export const EmbeddingConfigForm: React.FC<EmbeddingConfigFormProps> = ({
   loading = false,
 }) => {
   const [form] = Form.useForm();
+  const [availableModels, setAvailableModels] = useState<AvailableEmbeddingModels['models']>([]);
   const { data: providersData } = useEmbeddingProviders();
+  const fetchModelsMutation = useFetchEmbeddingModels();
 
   const selectedProvider = Form.useWatch('provider', form);
-  const { data: modelsData } = useEmbeddingModels(selectedProvider);
+  const selectedApiKey = Form.useWatch('api_key', form);
+  const selectedBaseUrl = Form.useWatch('base_url', form);
 
   // Reset model when provider changes
   useEffect(() => {
     if (selectedProvider && selectedProvider !== initialValues?.provider) {
       form.setFieldValue('model_id', undefined);
       form.setFieldValue('dimensions', undefined);
+      setAvailableModels([]);
     }
   }, [selectedProvider, form, initialValues?.provider]);
+
+  useEffect(() => {
+    setAvailableModels([]);
+  }, [selectedProvider, selectedApiKey, selectedBaseUrl]);
 
   const handleFinish = (values: Omit<EmbeddingConfigCreate, 'user_id'>) => {
     onSubmit(values);
@@ -46,9 +54,48 @@ export const EmbeddingConfigForm: React.FC<EmbeddingConfigFormProps> = ({
   );
 
   const handleModelChange = (modelId: string) => {
-    const model = modelsData?.models.find((m) => m.model_id === modelId);
+    const model = availableModels.find((m) => m.model_id === modelId);
     if (model && 'dimensions' in model && model.dimensions) {
       form.setFieldValue('dimensions', model.dimensions);
+    }
+  };
+
+  const canFetchModels = (() => {
+    if (!selectedProvider) {
+      return false;
+    }
+
+    if (providerInfo?.requires_api_key && !selectedApiKey) {
+      return false;
+    }
+
+    if (selectedProvider === 'custom' && !selectedBaseUrl) {
+      return false;
+    }
+
+    return true;
+  })();
+
+  const handleFetchModels = async () => {
+    try {
+      const values = form.getFieldsValue(['provider', 'api_key', 'base_url', 'extra_params']);
+      const result = await fetchModelsMutation.mutateAsync({
+        provider: values.provider,
+        api_key: values.api_key,
+        base_url: values.base_url,
+        extra_params: values.extra_params,
+      });
+
+      setAvailableModels(result.models);
+
+      if (result.models.length === 0) {
+        message.warning('No models were returned. You can still enter a model ID manually.');
+        return;
+      }
+
+      message.success(`Loaded ${result.models.length} models`);
+    } catch {
+      // Error message is already handled by the mutation
     }
   };
 
@@ -102,24 +149,41 @@ export const EmbeddingConfigForm: React.FC<EmbeddingConfigFormProps> = ({
       )}
 
       <Form.Item
-        name="model_id"
         label="Model"
-        rules={[{ required: true, message: 'Please select or enter a model' }]}
+        extra="Click Fetch Models to load embedding models from the current provider configuration. Manual input remains available."
       >
-        <Select
-          placeholder="Select or type a model ID"
-          showSearch
-          mode={modelsData?.models.length ? undefined : 'tags'}
-          loading={!modelsData && !!selectedProvider}
-          onChange={handleModelChange}
-        >
-          {modelsData?.models.map((model) => (
-            <Select.Option key={model.model_id} value={model.model_id}>
-              {model.name}
-              {'dimensions' in model && model.dimensions && ` (${model.dimensions}d)`}
-            </Select.Option>
-          ))}
-        </Select>
+        <Space.Compact block>
+          <Form.Item
+            name="model_id"
+            noStyle
+            rules={[{ required: true, message: 'Please select or enter a model' }]}
+          >
+            {availableModels.length > 0 ? (
+              <Select
+                placeholder="Select a model"
+                showSearch
+                optionFilterProp="label"
+                options={availableModels.map((model) => ({
+                  value: model.model_id,
+                  label:
+                    'dimensions' in model && model.dimensions
+                      ? `${model.name} (${model.dimensions}d)`
+                      : model.name,
+                }))}
+                onChange={handleModelChange}
+              />
+            ) : (
+              <Input placeholder="Enter a model ID" />
+            )}
+          </Form.Item>
+          <Button
+            onClick={handleFetchModels}
+            loading={fetchModelsMutation.isPending}
+            disabled={!canFetchModels}
+          >
+            Fetch Models
+          </Button>
+        </Space.Compact>
       </Form.Item>
 
       {providerInfo?.requires_api_key && (
