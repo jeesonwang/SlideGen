@@ -29,6 +29,12 @@ from slidegen.services.factories.embedding_factory import EmbeddingFactory
 router = APIRouter()
 
 
+def _is_masked_secret(value: str | None) -> bool:
+    if value is None:
+        return False
+    return bool(value) and value.startswith("***")
+
+
 @router.get("/providers", response_model=EmbeddingProvidersInfo)
 async def get_providers() -> EmbeddingProvidersInfo:
     """Get all supported embedding providers information"""
@@ -46,8 +52,19 @@ async def get_provider_models(provider: EmbeddingProvider) -> AvailableEmbedding
 
 
 @router.post("/test", response_model=EmbeddingConfigTestResult)
-async def test_embedding_config(config: EmbeddingConfigTest) -> EmbeddingConfigTestResult:
+async def test_embedding_config(
+    config: EmbeddingConfigTest,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> EmbeddingConfigTestResult:
     """Test if the embedding configuration is valid"""
+    if config.config_id and (not config.api_key or _is_masked_secret(config.api_key)):
+        stored_config = await session.get(EmbeddingConfigModel, config.config_id)
+        if not stored_config or stored_config.user_id != current_user.id:
+            raise NotFoundError("Configuration not found")
+
+        config = config.model_copy(update={"api_key": stored_config.api_key})
+
     # First validate configuration basic parameters
     is_valid, error_msg = EmbeddingFactory.validate_config(config)
     if not is_valid:
@@ -163,6 +180,8 @@ async def update_embedding_config(
 
     # Update configuration
     config_data = config_in.model_dump(exclude_unset=True)
+    if "api_key" in config_data and _is_masked_secret(config_data["api_key"]):
+        config_data.pop("api_key")
     config.sqlmodel_update(config_data)
 
     # Validate updated configuration

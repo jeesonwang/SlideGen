@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -8,6 +9,7 @@ from slidegen.models.llm_config import LLMProvider
 class LLMConfigTest(BaseModel):
     """Test LLM configuration schema"""
 
+    config_id: uuid.UUID | None = Field(default=None, description="Saved configuration ID")
     provider: LLMProvider = Field(description="LLM provider")
     model_id: str = Field(description="Model ID")
     api_key: str | None = Field(default=None, description="API key")
