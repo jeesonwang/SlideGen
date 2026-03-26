@@ -34,7 +34,7 @@ class EmbeddingConfigBase(SQLModel):
 
 # Properties to receive via API on creation
 class EmbeddingConfigCreate(EmbeddingConfigBase):
-    user_id: uuid.UUID = Field(description="User ID")
+    pass
 
 
 # Properties to receive via API on update

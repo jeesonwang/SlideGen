@@ -1,5 +1,4 @@
 import uuid
-from typing import Any
 
 from fastapi import APIRouter
 from loguru import logger
@@ -13,7 +12,6 @@ from slidegen.models.llm_config import (
     LLMConfigPublic,
     LLMConfigsPublic,
     LLMConfigUpdate,
-    LLMProvider,
 )
 from slidegen.models.user import Message
 from slidegen.schemas.llm_config import (
@@ -30,13 +28,13 @@ router = APIRouter()
 
 
 @router.get("/providers", response_model=LLMProvidersInfo)
-async def get_providers() -> Any:
+async def get_providers() -> LLMProvidersInfo:
     """Get all supported LLM providers information"""
     return LLMProvidersInfo(providers=list(PROVIDER_INFO.values()))
 
 
 @router.post("/test", response_model=LLMConfigTestResult)
-async def test_llm_config(config: LLMConfigTest) -> Any:
+async def test_llm_config(config: LLMConfigTest) -> LLMConfigTestResult:
     """Test if the LLM configuration is valid"""
     # 首先验证配置基本参数
     is_valid, error_msg = LLMFactory.validate_config(config)
@@ -49,14 +47,14 @@ async def test_llm_config(config: LLMConfigTest) -> Any:
 
 
 @router.post("/fetch-models", response_model=AvailableModels)
-async def fetch_models(config: LLMModelsFetchRequest) -> Any:
+async def fetch_models(config: LLMModelsFetchRequest) -> AvailableModels:
     """Fetch available models using the current provider configuration"""
     models = await LLMFactory.fetch_available_models(config)
     return models
 
 
 @router.get("/", response_model=LLMConfigsPublic)
-async def get_llm_configs(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
+async def get_llm_configs(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> LLMConfigsPublic:
     """Get list of LLM configurations for the current user"""
     count_statement = select(func.count()).select_from(LLMConfigModel).where(LLMConfigModel.user_id == current_user.id)
     count = (await session.execute(count_statement)).scalar_one()
@@ -74,16 +72,15 @@ async def get_llm_configs(session: SessionDep, current_user: CurrentUser, skip: 
 
 
 @router.post("/", response_model=LLMConfigPublic)
-async def create_llm_config(*, session: SessionDep, current_user: CurrentUser, config_in: LLMConfigCreate) -> Any:
+async def create_llm_config(
+    *, session: SessionDep, current_user: CurrentUser, config_in: LLMConfigCreate
+) -> LLMConfigPublic:
     """Create new LLM configuration"""
     # Validate configuration
     is_valid, error_msg = LLMFactory.validate_config(config_in)
     if not is_valid:
         logger.warning(f"Invalid LLM config for user {current_user.id}: {error_msg}")
         raise ParamsCheckError(error_msg)
-
-    # Set user ID
-    config_in.user_id = current_user.id
 
     # If set as default configuration, cancel other default configurations
     if config_in.is_default:
@@ -95,7 +92,12 @@ async def create_llm_config(*, session: SessionDep, current_user: CurrentUser, c
             session.add(default_config)
 
     # Create configuration
-    config = LLMConfigModel.model_validate(config_in)
+    config = LLMConfigModel.model_validate(
+        {
+            **config_in.model_dump(),
+            "user_id": current_user.id,
+        }
+    )
     session.add(config)
     await session.commit()
     await session.refresh(config)
@@ -106,7 +108,7 @@ async def create_llm_config(*, session: SessionDep, current_user: CurrentUser, c
 
 
 @router.get("/{config_id}", response_model=LLMConfigPublic)
-async def get_llm_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Any:
+async def get_llm_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> LLMConfigPublic:
     """Get specified LLM configuration"""
     config = await session.get(LLMConfigModel, config_id)
     if not config:
@@ -125,7 +127,7 @@ async def update_llm_config(
     current_user: CurrentUser,
     config_id: uuid.UUID,
     config_in: LLMConfigUpdate,
-) -> Any:
+) -> LLMConfigPublic:
     """Update LLM configuration"""
     config = await session.get(LLMConfigModel, config_id)
     if not config:
@@ -161,7 +163,7 @@ async def update_llm_config(
 
 
 @router.delete("/{config_id}", response_model=Message)
-async def delete_llm_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Any:
+async def delete_llm_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Message:
     """Delete LLM configuration"""
     config = await session.get(LLMConfigModel, config_id)
     if not config:
@@ -179,7 +181,7 @@ async def delete_llm_config(session: SessionDep, current_user: CurrentUser, conf
 
 
 @router.post("/{config_id}/set-default", response_model=Message)
-async def set_default_llm_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Any:
+async def set_default_llm_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Message:
     """Set default LLM configuration"""
     config = await session.get(LLMConfigModel, config_id)
     if not config:
@@ -204,7 +206,7 @@ async def set_default_llm_config(session: SessionDep, current_user: CurrentUser,
 
 
 @router.get("/default/current", response_model=LLMConfigPublic | None)
-async def get_default_llm_config(session: SessionDep, current_user: CurrentUser) -> Any:
+async def get_default_llm_config(session: SessionDep, current_user: CurrentUser) -> LLMConfigPublic | None:
     """Get default LLM configuration for the current user"""
     statement = select(LLMConfigModel).where(
         LLMConfigModel.user_id == current_user.id, LLMConfigModel.is_default, LLMConfigModel.is_active

@@ -37,7 +37,7 @@ class LLMConfigBase(SQLModel):
 
 # Properties to receive via API on creation
 class LLMConfigCreate(LLMConfigBase):
-    user_id: uuid.UUID = Field(description="User ID")
+    pass
 
 
 # Properties to receive via API on update

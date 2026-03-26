@@ -1,5 +1,4 @@
 import uuid
-from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from loguru import logger
@@ -30,13 +29,13 @@ router = APIRouter()
 
 
 @router.get("/providers", response_model=EmbeddingProvidersInfo)
-async def get_providers() -> Any:
+async def get_providers() -> EmbeddingProvidersInfo:
     """Get all supported embedding providers information"""
     return EmbeddingProvidersInfo(providers=list(EMBEDDING_PROVIDER_INFO.values()))
 
 
 @router.get("/providers/{provider}/models", response_model=AvailableEmbeddingModels)
-async def get_provider_models(provider: EmbeddingProvider) -> Any:
+async def get_provider_models(provider: EmbeddingProvider) -> AvailableEmbeddingModels:
     """Get available models for a specific provider"""
     if provider not in DEFAULT_EMBEDDING_CONFIGS:
         raise HTTPException(status_code=404, detail=f"Provider {provider} does not have preset model configurations")
@@ -46,7 +45,7 @@ async def get_provider_models(provider: EmbeddingProvider) -> Any:
 
 
 @router.post("/test", response_model=EmbeddingConfigTestResult)
-async def test_embedding_config(config: EmbeddingConfigTest) -> Any:
+async def test_embedding_config(config: EmbeddingConfigTest) -> EmbeddingConfigTestResult:
     """Test if the embedding configuration is valid"""
     # First validate configuration basic parameters
     is_valid, error_msg = EmbeddingFactory.validate_config(config)
@@ -59,7 +58,9 @@ async def test_embedding_config(config: EmbeddingConfigTest) -> Any:
 
 
 @router.get("/", response_model=EmbeddingConfigsPublic)
-async def get_embedding_configs(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
+async def get_embedding_configs(
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+) -> EmbeddingConfigsPublic:
     """Get list of embedding configurations for the current user"""
     count_statement = (
         select(func.count()).select_from(EmbeddingConfigModel).where(EmbeddingConfigModel.user_id == current_user.id)
@@ -81,16 +82,13 @@ async def get_embedding_configs(session: SessionDep, current_user: CurrentUser, 
 @router.post("/", response_model=EmbeddingConfigPublic)
 async def create_embedding_config(
     *, session: SessionDep, current_user: CurrentUser, config_in: EmbeddingConfigCreate
-) -> Any:
+) -> EmbeddingConfigPublic:
     """Create new embedding configuration"""
     # Validate configuration
     is_valid, error_msg = EmbeddingFactory.validate_config(config_in)
     if not is_valid:
         logger.warning(f"Invalid embedding config for user {current_user.id}: {error_msg}")
         raise ParamsCheckError(error_msg)
-
-    # Set user ID
-    config_in.user_id = current_user.id
 
     # If set as default configuration, cancel other default configurations
     if config_in.is_default:
@@ -104,7 +102,12 @@ async def create_embedding_config(
             session.add(default_config)
 
     # Create configuration
-    config = EmbeddingConfigModel.model_validate(config_in)
+    config = EmbeddingConfigModel.model_validate(
+        {
+            **config_in.model_dump(),
+            "user_id": current_user.id,
+        }
+    )
     session.add(config)
     await session.commit()
     await session.refresh(config)
@@ -117,7 +120,9 @@ async def create_embedding_config(
 
 
 @router.get("/{config_id}", response_model=EmbeddingConfigPublic)
-async def get_embedding_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Any:
+async def get_embedding_config(
+    session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID
+) -> EmbeddingConfigPublic:
     """Get specified embedding configuration"""
     config = await session.get(EmbeddingConfigModel, config_id)
     if not config:
@@ -136,7 +141,7 @@ async def update_embedding_config(
     current_user: CurrentUser,
     config_id: uuid.UUID,
     config_in: EmbeddingConfigUpdate,
-) -> Any:
+) -> EmbeddingConfigPublic:
     """Update embedding configuration"""
     config = await session.get(EmbeddingConfigModel, config_id)
     if not config:
@@ -174,7 +179,7 @@ async def update_embedding_config(
 
 
 @router.delete("/{config_id}", response_model=Message)
-async def delete_embedding_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Any:
+async def delete_embedding_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Message:
     """Delete embedding configuration"""
     config = await session.get(EmbeddingConfigModel, config_id)
     if not config:
@@ -192,7 +197,9 @@ async def delete_embedding_config(session: SessionDep, current_user: CurrentUser
 
 
 @router.post("/{config_id}/set-default", response_model=Message)
-async def set_default_embedding_config(session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID) -> Any:
+async def set_default_embedding_config(
+    session: SessionDep, current_user: CurrentUser, config_id: uuid.UUID
+) -> Message:
     """Set default embedding configuration"""
     config = await session.get(EmbeddingConfigModel, config_id)
     if not config:
@@ -219,7 +226,7 @@ async def set_default_embedding_config(session: SessionDep, current_user: Curren
 
 
 @router.get("/default/current", response_model=EmbeddingConfigPublic | None)
-async def get_default_embedding_config(session: SessionDep, current_user: CurrentUser) -> Any:
+async def get_default_embedding_config(session: SessionDep, current_user: CurrentUser) -> EmbeddingConfigPublic | None:
     """Get default embedding configuration for the current user"""
     statement = select(EmbeddingConfigModel).where(
         EmbeddingConfigModel.user_id == current_user.id,
