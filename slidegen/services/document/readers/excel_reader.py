@@ -2,13 +2,13 @@ from typing import Any
 
 import pandas as pd
 
-from .base import ContentType, DocumentParseResult
-from .html_reader import HtmlParser
+from .base import ContentType, DocumentReadResult
+from .html_reader import HtmlReader
 
 
-class ExcelParser(HtmlParser):
+class ExcelReader(HtmlReader):
     """
-    Parser for excel files.
+    Reader for Excel files.
     """
 
     def __init__(self, **kwargs: Any) -> None:
@@ -18,9 +18,9 @@ class ExcelParser(HtmlParser):
     def get_supported_content_types(self) -> list[ContentType]:
         return [ContentType.XLSX, ContentType.XLS]
 
-    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
+    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentReadResult:
         extension = kwargs.get("file_extension", "").lower()
-        supported_extensions = [ct.value for ct in ExcelParser.get_supported_content_types()]
+        supported_extensions = [ct.value for ct in ExcelReader.get_supported_content_types()]
         if extension not in supported_extensions:
             return None
         if extension == ".xlsx":
@@ -38,7 +38,7 @@ class ExcelParser(HtmlParser):
                 html_content = sheets[s].to_html(index=False)
                 md_content += self._convert(html_content).text_content.strip() + "\n\n"
 
-        return DocumentParseResult(
+        return DocumentReadResult(
             title=None,
             text_content=md_content,
         )

@@ -1,20 +1,20 @@
 import re
 from typing import Any
 
-from .base import ContentType, DocumentParser, DocumentParseResult
+from .base import BaseDocumentReader, ContentType, DocumentReadResult
 
 
-class MarkdownParser(DocumentParser):
-    """Parser for Markdown files (.md, .markdown)."""
+class MarkdownReader(BaseDocumentReader):
+    """Reader for Markdown files (.md, .markdown)."""
 
     @classmethod
     def get_supported_content_types(self) -> list[ContentType]:
         return [ContentType.MARKDOWN]
 
-    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
+    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentReadResult:
         # Bail if not markdown
         extension = kwargs.get("file_extension", "").lower()
-        supported_extensions = [ct.value for ct in MarkdownParser.get_supported_content_types()]
+        supported_extensions = [ct.value for ct in MarkdownReader.get_supported_content_types()]
         if extension not in supported_extensions:
             return None
 
@@ -31,7 +31,7 @@ class MarkdownParser(DocumentParser):
         if title_match:
             title = title_match.group(1).strip()
 
-        return DocumentParseResult(
+        return DocumentReadResult(
             title=title,
             text_content=text_content,
         )

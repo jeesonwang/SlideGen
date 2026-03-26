@@ -3,10 +3,10 @@ from typing import Any
 from bs4 import BeautifulSoup
 
 from ._markdownify import CustomMarkdownify
-from .base import ContentType, DocumentParser, DocumentParseResult
+from .base import BaseDocumentReader, ContentType, DocumentReadResult
 
 
-class HtmlParser(DocumentParser):
+class HtmlReader(BaseDocumentReader):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self.html_table = kwargs.get("html_table", True)
@@ -15,10 +15,10 @@ class HtmlParser(DocumentParser):
     def get_supported_content_types(self) -> list[ContentType]:
         return [ContentType.HTML, ContentType.HTM]
 
-    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
+    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentReadResult:
         # Bail if not html
         extension = kwargs.get("file_extension", "").lower()
-        supported_extensions = [ct.value for ct in HtmlParser.get_supported_content_types()]
+        supported_extensions = [ct.value for ct in HtmlReader.get_supported_content_types()]
         if extension not in supported_extensions:
             return None
 
@@ -28,7 +28,7 @@ class HtmlParser(DocumentParser):
 
         return result
 
-    def _convert(self, html_content: str) -> DocumentParseResult:
+    def _convert(self, html_content: str) -> DocumentReadResult:
         soup = BeautifulSoup(html_content, "html.parser")
         # Remove javascript and style blocks
         for script in soup(["script", "style"]):
@@ -47,7 +47,7 @@ class HtmlParser(DocumentParser):
         # remove leading and trailing \n
         webpage_text = webpage_text.strip()
 
-        return DocumentParseResult(
+        return DocumentReadResult(
             title=None if soup.title is None else soup.title.string,
             text_content=webpage_text,
         )

@@ -2,20 +2,20 @@ from typing import Any
 
 from loguru import logger
 
-from .base import ContentType, DocumentParser, DocumentParseResult
+from .base import BaseDocumentReader, ContentType, DocumentReadResult
 
 try:
-    from pypdf import PdfReader
+    from pypdf import PdfReader as PyPdfReader
     from pypdf.errors import PdfStreamError
 except ImportError:
     raise ImportError("`pypdf` not installed. Please install it via `pip install pypdf`.")
 
 
-class PdfParser(DocumentParser):
-    """Parser for PDF files (.pdf)."""
+class PdfReader(BaseDocumentReader):
+    """Reader for PDF files (.pdf)."""
 
     def __init__(self, password: str | None = None, **kwargs: Any):
-        """Initialize PDF parser.
+        """Initialize PDF reader.
 
         Args:
             password: Optional password for encrypted PDFs
@@ -28,10 +28,10 @@ class PdfParser(DocumentParser):
     def get_supported_content_types(self) -> list[ContentType]:
         return [ContentType.PDF]
 
-    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
+    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentReadResult:
         # Bail if not pdf
         extension = kwargs.get("file_extension", "").lower()
-        supported_extensions = [ct.value for ct in PdfParser.get_supported_content_types()]
+        supported_extensions = [ct.value for ct in PdfReader.get_supported_content_types()]
         if extension not in supported_extensions:
             return None
 
@@ -39,7 +39,7 @@ class PdfParser(DocumentParser):
         password = kwargs.get("password", self.password)
 
         try:
-            pdf_reader = PdfReader(local_path)
+            pdf_reader = PyPdfReader(local_path)
 
             # Handle encrypted PDFs
             if pdf_reader.is_encrypted:
@@ -74,7 +74,7 @@ class PdfParser(DocumentParser):
             if pdf_reader.metadata:
                 title = pdf_reader.metadata.get("/Title")
 
-            return DocumentParseResult(
+            return DocumentReadResult(
                 title=title,
                 text_content=text_content,
             )
@@ -83,5 +83,5 @@ class PdfParser(DocumentParser):
             logger.error(f"Error reading PDF file '{local_path}': {e}")
             return None
         except Exception as e:
-            logger.error(f"Unexpected error parsing PDF file '{local_path}': {e}")
+            logger.error(f"Unexpected error reading PDF file '{local_path}': {e}")
             return None

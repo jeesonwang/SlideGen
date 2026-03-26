@@ -4,14 +4,14 @@ import mammoth
 
 from .base import (
     ContentType,
-    DocumentParseResult,
+    DocumentReadResult,
 )
-from .html_reader import HtmlParser
+from .html_reader import HtmlReader
 
 
-class DocxParser(HtmlParser):
+class DocxReader(HtmlReader):
     """
-    DOCX parser
+    DOCX reader
     """
 
     def __init__(self, **kwargs: Any) -> None:
@@ -21,10 +21,10 @@ class DocxParser(HtmlParser):
     def get_supported_content_types(self) -> list[ContentType]:
         return [ContentType.DOCX]
 
-    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentParseResult:
+    def convert(self, local_path: str, **kwargs: Any) -> None | DocumentReadResult:
         # Bail if not a DOCX
         extension = kwargs.get("file_extension", "").lower()
-        supported_extensions = [ct.value for ct in DocxParser.get_supported_content_types()]
+        supported_extensions = [ct.value for ct in DocxReader.get_supported_content_types()]
         if extension not in supported_extensions:
             return None
 

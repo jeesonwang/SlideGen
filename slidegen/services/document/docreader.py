@@ -10,15 +10,15 @@ import puremagic
 from loguru import logger
 
 from slidegen.exceptions import FileParseError, FileTypeError
-from slidegen.services.document.parsers import (
-    DocumentParser,
-    DocumentParseResult,
-    DocxParser,
-    ExcelParser,
-    HtmlParser,
-    MarkdownParser,
-    PdfParser,
-    TextParser,
+from slidegen.services.document.readers import (
+    BaseDocumentReader,
+    DocumentReadResult,
+    DocxReader,
+    ExcelReader,
+    HtmlReader,
+    MarkdownReader,
+    PdfReader,
+    TextReader,
 )
 
 
@@ -27,23 +27,23 @@ class DocumentReader:
 
     def __init__(self) -> None:
         self._builtins_enabled = False
-        self.document_parsers: list[DocumentParser] = []
+        self.document_readers: list[BaseDocumentReader] = []
         self.register_builtins()
 
     def register_builtins(self, **kwargs: Any) -> None:
         if not self._builtins_enabled:
-            self.register_parser(DocxParser())
-            self.register_parser(HtmlParser())
-            self.register_parser(ExcelParser())
-            self.register_parser(MarkdownParser())
-            self.register_parser(PdfParser())
-            self.register_parser(TextParser())
-            # TODO: Add more parsers here
+            self.register_reader(DocxReader())
+            self.register_reader(HtmlReader())
+            self.register_reader(ExcelReader())
+            self.register_reader(MarkdownReader())
+            self.register_reader(PdfReader())
+            self.register_reader(TextReader())
+            # TODO: Add more readers here
             self._builtins_enabled = True
         else:
-            logger.warning("Builtins parsers already registered")
+            logger.warning("Built-in readers already registered")
 
-    def convert_local(self, path: str | Path, **kwargs: Any) -> DocumentParseResult:
+    def convert_local(self, path: str | Path, **kwargs: Any) -> DocumentReadResult:
         if isinstance(path, Path):
             path = str(path)
 
@@ -59,7 +59,7 @@ class DocumentReader:
         # Convert
         return self._convert(path, extensions, **kwargs)
 
-    def convert_stream(self, stream: BinaryIO, **kwargs: Any) -> DocumentParseResult:
+    def convert_stream(self, stream: BinaryIO, **kwargs: Any) -> DocumentReadResult:
         ext = kwargs.get("file_extension")
         extensions = [ext] if ext is not None else []
 
@@ -90,12 +90,12 @@ class DocumentReader:
 
         return result
 
-    def _convert(self, local_path: str, extensions: list[str | None], **kwargs: Any) -> DocumentParseResult:
+    def _convert(self, local_path: str, extensions: list[str | None], **kwargs: Any) -> DocumentReadResult:
         if not os.path.exists(local_path):
             raise FileNotFoundError(f"File not found: {local_path}")
         error_trace = ""
         for ext in extensions + [None]:  # Try last with no extension
-            for converter in self.document_parsers:
+            for reader in self.document_readers:
                 _kwargs = copy.deepcopy(kwargs)
 
                 if ext is None:
@@ -105,7 +105,7 @@ class DocumentReader:
                     _kwargs.update({"file_extension": ext})
 
                 try:
-                    res = converter.convert(local_path, **_kwargs)
+                    res = reader.convert(local_path, **_kwargs)
                 except Exception:
                     error_trace = ("\n\n" + traceback.format_exc()).strip()
 
@@ -123,7 +123,7 @@ class DocumentReader:
             f"Could not convert '{local_path}' to Markdown. The formats {extensions} are not supported."
         )
 
-    def convert(self, source: str | Path | BinaryIO | Any, **kwargs: Any) -> DocumentParseResult:
+    def convert(self, source: str | Path | BinaryIO | Any, **kwargs: Any) -> DocumentReadResult:
         # TODO: Add support for other source types
         if isinstance(source, str | Path):
             return self.convert_local(source, **kwargs)
@@ -144,9 +144,9 @@ class DocumentReader:
         # if ext not in extensions:
         extensions.append(ext)
 
-    def register_parser(self, parser: DocumentParser) -> None:
-        """Register a document parser."""
-        self.document_parsers.insert(0, parser)
+    def register_reader(self, reader: BaseDocumentReader) -> None:
+        """Register a document reader."""
+        self.document_readers.insert(0, reader)
 
     def _guess_ext_magic(self, path: str) -> list[str]:
         """Use puremagic (a Python implementation of libmagic) to guess a file's extension based on the first few bytes."""
