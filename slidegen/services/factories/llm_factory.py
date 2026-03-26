@@ -189,8 +189,8 @@ class LLMFactory:
         headers = {"Accept": "application/json"}
         if config.api_key:
             headers["Authorization"] = f"Bearer {config.api_key}"
-        elif provider in {LLMProvider.OPENAI, LLMProvider.OPENROUTER, LLMProvider.CUSTOM}:
-            raise ValueError(f"{PROVIDER_INFO[provider].name} needs API key")
+        # elif provider in {LLMProvider.OPENAI, LLMProvider.OPENROUTER, LLMProvider.CUSTOM}:
+        #     raise ValueError(f"{PROVIDER_INFO[provider].name} needs API key")
 
         payload = await LLMFactory._request_json(
             f"{LLMFactory._normalize_base_url(base_url)}/models",
