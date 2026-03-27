@@ -17,6 +17,7 @@ import './sessionsPageSource.test.ts';
 import './chatFiles.test.ts';
 import './sessionsPageLayout.test.ts';
 import './chatSessionTitle.test.ts';
+import './leftSidebarCollapseSource.test.ts';
 import './sidebarSessionList.test.ts';
 import './sidebarUserPanel.test.ts';
 import './sidebarOverlaySource.test.ts';

@@ -6,11 +6,13 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { LayoutContext } from '../../context/LayoutContext';
 import { getRightPanelVisibility } from './rightPanelVisibility';
 import { getDefaultRightPanelCollapsed } from './rightPanelPolicy';
+import { useUIStore } from '../../store/uiStore';
 
 const { Content, Sider } = Layout;
 
 export const AppLayout = () => {
   const location = useLocation();
+  const { sidebarCollapsed } = useUIStore();
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(() =>
     getDefaultRightPanelCollapsed(location.pathname)
   );
@@ -25,8 +27,10 @@ export const AppLayout = () => {
     <LayoutContext.Provider value={{ rightPanelCollapsed, setRightPanelCollapsed }}>
       <Layout className="h-screen w-screen overflow-hidden bg-background flex flex-row">
         {/* Left Sidebar */}
-        <Sider 
-          width={260} 
+        <Sider
+          width={260}
+          collapsed={sidebarCollapsed}
+          collapsedWidth={80}
           className="!bg-surface-50 border-r border-border"
           trigger={null}
         >
