@@ -4,8 +4,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { message } from 'antd';
-import type { SSEEvent } from '../api/types/slidegen.types';
-import { storage } from '../utils/storage';
+import type { MarkdownStreamRequestConfig, SSEEvent } from '../api/types/slidegen.types';
 
 interface UseSSEOptions {
   onMessage?: (event: SSEEvent) => void;
@@ -15,7 +14,7 @@ interface UseSSEOptions {
 }
 
 interface UseSSEReturn {
-  connect: (url: string) => void;
+  connect: (request: string | MarkdownStreamRequestConfig) => void;
   disconnect: () => void;
   isConnected: boolean;
   error: Error | null;
@@ -26,7 +25,8 @@ export const useSSE = (options: UseSSEOptions = {}): UseSSEReturn => {
 
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const activeRequestRef = useRef<string | MarkdownStreamRequestConfig | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 3;
 
@@ -43,110 +43,141 @@ export const useSSE = (options: UseSSEOptions = {}): UseSSEReturn => {
   }, [onMessage, onError, onComplete]);
 
   const disconnect = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-      setIsConnected(false);
-    }
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsConnected(false);
   }, []);
 
-  const connect = useCallback(
-    (url: string) => {
-      // Disconnect existing connection
-      disconnect();
+  const parseSSEChunk = useCallback(
+    (chunk: string) => {
+      const lines = chunk.split('\n');
+      let eventType = 'message';
+      const dataLines: string[] = [];
 
-      try {
-        // Add token to URL for authentication
-        const token = storage.getToken();
-        const urlWithAuth = new URL(url);
-        if (token) {
-          urlWithAuth.searchParams.set('token', token);
+      lines.forEach((line) => {
+        if (line.startsWith('event:')) {
+          eventType = line.slice(6).trim();
+          return;
         }
 
-        const eventSource = new EventSource(urlWithAuth.toString());
-        eventSourceRef.current = eventSource;
+        if (line.startsWith('data:')) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      });
 
-        eventSource.onopen = () => {
+      if (dataLines.length === 0) {
+        return;
+      }
+
+      try {
+        const data = JSON.parse(dataLines.join('\n'));
+        const sseEvent: SSEEvent = {
+          event: eventType as SSEEvent['event'],
+          ...data,
+        } as SSEEvent;
+
+        onMessageRef.current?.(sseEvent);
+
+        if (eventType === 'workflow_completed') {
+          disconnect();
+          onCompleteRef.current?.(data.content || '');
+          return;
+        }
+
+        if (eventType === 'workflow_error') {
+          disconnect();
+          const err = new Error(data.error || 'Generation failed');
+          setError(err);
+          onErrorRef.current?.(err);
+          message.error(data.error || 'Generation failed');
+        }
+      } catch (err) {
+        console.error('Failed to parse SSE event:', err);
+      }
+    },
+    [disconnect]
+  );
+
+  const connect = useCallback(
+    (request: string | MarkdownStreamRequestConfig) => {
+      disconnect();
+      activeRequestRef.current = request;
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      const target = typeof request === 'string' ? { url: request, options: { method: 'GET' } } : request;
+
+      void (async () => {
+        try {
+          const response = await fetch(target.url, {
+            ...target.options,
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            throw new Error(`Connection failed (${response.status})`);
+          }
+
+          if (!response.body) {
+            throw new Error('Streaming is not supported in this browser');
+          }
+
           setIsConnected(true);
           setError(null);
           reconnectAttemptsRef.current = 0;
-        };
 
-        eventSource.onerror = (event) => {
-          console.error('SSE Error:', event);
-          const err = new Error('Connection error');
-          setError(err);
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+              break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            let boundaryIndex = buffer.indexOf('\n\n');
+            while (boundaryIndex !== -1) {
+              const chunk = buffer.slice(0, boundaryIndex).trim();
+              buffer = buffer.slice(boundaryIndex + 2);
+              if (chunk) {
+                parseSSEChunk(chunk);
+              }
+              boundaryIndex = buffer.indexOf('\n\n');
+            }
+          }
+        } catch (err) {
+          if (controller.signal.aborted) {
+            return;
+          }
+
+          console.error('SSE Error:', err);
+          const streamError = err instanceof Error ? err : new Error('Connection error');
+          setError(streamError);
           setIsConnected(false);
 
-          // Retry logic
-          if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+          if (reconnectAttemptsRef.current < maxReconnectAttempts && activeRequestRef.current) {
             reconnectAttemptsRef.current++;
             message.warning(
               `Connection lost. Retrying... (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`
             );
             setTimeout(() => {
-              connect(url);
+              if (activeRequestRef.current) {
+                connect(activeRequestRef.current);
+              }
             }, 2000 * reconnectAttemptsRef.current);
           } else {
             disconnect();
             message.error('Failed to connect after multiple attempts');
-            onErrorRef.current?.(err);
+            onErrorRef.current?.(streamError);
           }
-        };
-
-        // Listen for all SSE event types
-        const eventTypes = [
-          'workflow_started',
-          'workflow_completed',
-          'workflow_error',
-          'step_started',
-          'step_completed',
-          'step_error',
-          'loop_started',
-          'loop_iteration_started',
-          'loop_iteration_completed',
-          'loop_completed',
-          'content_generated',
-          'progress',
-        ];
-
-        eventTypes.forEach((eventType) => {
-          eventSource.addEventListener(eventType, (event: MessageEvent) => {
-            try {
-              const data = JSON.parse(event.data);
-              const sseEvent: SSEEvent = {
-                event: eventType,
-                ...data,
-              } as SSEEvent;
-
-              onMessageRef.current?.(sseEvent);
-
-              // Handle completion
-              if (eventType === 'workflow_completed') {
-                disconnect();
-                onCompleteRef.current?.(data.content || '');
-              }
-
-              // Handle errors
-              if (eventType === 'workflow_error') {
-                disconnect();
-                const err = new Error(data.error || 'Generation failed');
-                setError(err);
-                onErrorRef.current?.(err);
-                message.error(data.error || 'Generation failed');
-              }
-            } catch (err) {
-              console.error('Failed to parse SSE event:', err);
-            }
-          });
-        });
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Failed to connect');
-        setError(error);
-        onErrorRef.current?.(error);
-      }
+        }
+      })();
     },
-    [disconnect]
+    [disconnect, parseSSEChunk]
   );
 
   // Auto-connect if URL is provided

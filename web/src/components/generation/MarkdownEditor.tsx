@@ -32,13 +32,13 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const markdownComponents = useMemo(
     () => ({
       h1: ({ node, ...props }: any) => (
-        <h1 className="text-blue-500 border-b-2 border-blue-500 pb-2" {...props} />
+        <h1 className="border-b-2 border-primary-500 pb-2 text-primary-500" {...props} />
       ),
       h2: ({ node, ...props }: any) => (
-        <h2 className="text-blue-600 mt-6" {...props} />
+        <h2 className="mt-6 text-primary-500" {...props} />
       ),
       h3: ({ node, ...props }: any) => (
-        <h3 className="text-blue-400" {...props} />
+        <h3 className="text-primary-400" {...props} />
       ),
       ul: ({ node, ...props }: any) => (
         <ul className="leading-relaxed" {...props} />
@@ -49,12 +49,12 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       code: ({ node, ...props }: any) =>
         props.inline ? (
           <code
-            className="bg-gray-100 px-1.5 py-0.5 rounded font-mono"
+            className="rounded bg-surface-100 px-1.5 py-0.5 font-mono text-text-main"
             {...props}
           />
         ) : (
           <code
-            className="block bg-gray-100 p-3 rounded font-mono overflow-x-auto"
+            className="block overflow-x-auto rounded bg-surface-100 p-3 font-mono text-text-main"
             {...props}
           />
         ),
@@ -94,7 +94,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 </span>
               ),
               children: (
-                <div className="min-h-[400px] max-h-[600px] overflow-y-auto p-4 border border-gray-200 rounded">
+                <div className="min-h-[400px] max-h-[600px] overflow-y-auto rounded border border-border/70 bg-surface-50 p-4 text-text-main">
                   <ReactMarkdown components={markdownComponents}>
                     {value}
                   </ReactMarkdown>
@@ -120,7 +120,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           ]}
         />
 
-        <div className="p-3 bg-blue-50 border border-blue-300 rounded">
+        <div className="rounded border border-primary-500/20 bg-primary-500/10 p-3">
           <Typography.Text className="text-xs">
             <strong>Tip:</strong> Each slide should start with a heading (## or ###).
             Use bullet points for content. The AI has generated a structured

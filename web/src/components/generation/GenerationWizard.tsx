@@ -14,6 +14,7 @@ import { useAuthStore } from '../../store/authStore';
 import { GENERATION_DEFAULTS } from '../../utils/constants';
 import { cn } from '../../utils/classnames';
 import type { GenerateMarkdownRequest } from '../../api/types/slidegen.types';
+import type { MarkdownStreamRequestConfig } from '../../api/types/slidegen.types';
 import { Tone, Verbosity } from '../../api/types/slidegen.types';
 
 interface GenerationWizardProps {
@@ -35,7 +36,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
     reset,
   } = useGenerationStore();
 
-  const [streamUrl, setStreamUrl] = useState('');
+  const [streamRequest, setStreamRequest] = useState<MarkdownStreamRequestConfig | null>(null);
   const [exporting, setExporting] = useState(false);
   const [viewMode, setViewMode] = useState<'outline' | 'markdown'>('outline');
 
@@ -72,8 +73,8 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
       setGenerationParams(params);
 
       // Get the SSE stream URL
-      const url = slidegenApi.getMarkdownStreamURL(params);
-      setStreamUrl(url);
+      const request = slidegenApi.getMarkdownStreamRequest(params);
+      setStreamRequest(request);
 
       // Move to streaming step
       setStep('generating');
@@ -220,10 +221,10 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
         </Form>
       )}
 
-      {currentStep === 'generating' && streamUrl && (
+      {currentStep === 'generating' && streamRequest && (
         <div>
           <StreamingProgress
-            streamUrl={streamUrl}
+            streamRequest={streamRequest}
             onComplete={handleGenerationComplete}
             onError={handleGenerationError}
           />
@@ -238,10 +239,10 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
         <div className={cn("animate-fade-in")}>
           <div className={cn("flex justify-between items-center mb-6")}>
              <div className={cn("space-y-1")}>
-                <h2 className={cn("text-2xl font-bold text-gray-800")}>
+                <h2 className={cn("text-2xl font-bold text-text-main")}>
                     {viewMode === 'outline' ? 'Generate Outline' : 'Edit Markdown'}
                 </h2>
-                <p className={cn("text-gray-500")}>
+                <p className={cn("text-text-secondary")}>
                     {viewMode === 'outline'
                         ? 'Review and edit your presentation structure below.'
                         : 'Fine-tune the markdown content directly.'}
@@ -272,8 +273,8 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
 
                 <div className={cn(
                   "mt-8 flex justify-end gap-3 sticky bottom-0",
-                  "bg-white/80 backdrop-blur p-4",
-                  "border-t border-gray-100 shadow-lg -mx-4 px-8"
+                  "bg-surface-50/85 backdrop-blur p-4",
+                  "border-t border-border/70 shadow-lg -mx-4 px-8"
                 )}>
                      <Button size="large" onClick={handleReset}>
                         Start New

@@ -50,6 +50,18 @@ export interface GenerateMarkdownRequest extends BaseGenerationRequest {
   template?: string;
 }
 
+export interface MarkdownStreamRequestConfig {
+  url: string;
+  options: {
+    method: 'POST';
+    headers: {
+      'Content-Type': 'application/json';
+      Authorization?: string;
+    };
+    body: string;
+  };
+}
+
 export interface MarkdownToPPTRequest {
   markdown_content: string;
   template: string;

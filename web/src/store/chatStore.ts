@@ -34,6 +34,7 @@ interface ChatState {
   setCurrentSession: (sessionId: string | null) => void;
   loadMessages: (sessionId: string) => Promise<void>;
   addLocalMessage: (role: MessageRole, content: string) => void;
+  updateLocalMessage: (messageId: string, content: string) => void;
   sendMessage: (content: string) => Promise<ChatMessagePublic | null>;
   appendStreamChunk: (chunk: string) => void;
   finalizeStreamingMessage: (finalContent?: string) => void;
@@ -85,6 +86,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     };
     set((state) => ({ 
       messages: [...state.messages, tempMessage] 
+    }));
+  },
+
+  updateLocalMessage: (messageId: string, content: string) => {
+    set((state) => ({
+      messages: state.messages.map((message) =>
+        message.id === messageId ? { ...message, content } : message
+      ),
     }));
   },
 

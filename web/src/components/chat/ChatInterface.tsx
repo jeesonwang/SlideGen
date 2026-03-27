@@ -6,7 +6,9 @@ import {
   RobotOutlined,
   ReloadOutlined,
   LoadingOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined,
+  CopyOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import { Button, Input, Tooltip, Spin, message } from 'antd';
 import type { InputRef } from 'antd';
@@ -29,12 +31,15 @@ import {
   getUpdatedSessionTitle,
   shouldSubmitTitleChange,
 } from './chatSessionTitle';
+import { OutlineEditor } from '../generation/OutlineEditor';
 
 
 const { TextArea } = Input;
 
 export const ChatInterface = () => {
   const [input, setInput] = useState('');
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -53,6 +58,7 @@ export const ChatInterface = () => {
     setCurrentSession,
     loadMessages,
     sendMessage,
+    updateLocalMessage,
     appendStreamChunk,
     finalizeStreamingMessage,
     setStreaming,
@@ -60,7 +66,7 @@ export const ChatInterface = () => {
     clearError,
   } = useChatStore();
   
-  const { getGenerationRequest, setStep } = useGenerationStore();
+  const { getGenerationRequest, setStep, setMarkdownContent } = useGenerationStore();
   const { user } = useAuthStore();
   const { data: filesData } = useFiles(currentSessionId ? { session_id: currentSessionId } : undefined);
   const { data: currentSession } = useSession(currentSessionId || '');
@@ -93,6 +99,7 @@ export const ChatInterface = () => {
       });
 
       finalizeStreamingMessage(assistantContent);
+      setMarkdownContent(assistantContent);
       setStep('editing');
       
       // Persist assistant message to backend
@@ -183,8 +190,8 @@ export const ChatInterface = () => {
       setStreaming(true);
       
       const request = getGenerationRequest(userContent, user.id, sessionId, currentFileIds);
-      const sseUrl = slidegenApi.getMarkdownStreamURL(request);
-      connectSSE(sseUrl);
+      const streamRequest = slidegenApi.getMarkdownStreamRequest(request);
+      connectSSE(streamRequest);
     }
   };
 
@@ -221,8 +228,8 @@ export const ChatInterface = () => {
           currentSessionId,
           currentFileIds
         );
-        const sseUrl = slidegenApi.getMarkdownStreamURL(request);
-        connectSSE(sseUrl);
+        const streamRequest = slidegenApi.getMarkdownStreamRequest(request);
+        connectSSE(streamRequest);
       }
     }
   };
@@ -290,6 +297,30 @@ export const ChatInterface = () => {
     }
   };
 
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      message.success('Copied!');
+    } catch {
+      message.error('Failed to copy');
+    }
+  };
+
+  const handleEditMessageStart = (msgId: string, content: string) => {
+    setEditingMessageId(msgId);
+    setEditingContent(content);
+  };
+
+  const handleEditMessageSubmit = async () => {
+    if (!editingContent.trim() || !editingMessageId) return;
+    setInput(editingContent.trim());
+    setEditingMessageId(null);
+    setEditingContent('');
+  };
+
+  const isOutlineMarkdown = (content: string) =>
+    /^#\s+/m.test(content) && /^##\s+/m.test(content);
+
   return (
     <div className="flex flex-col h-full bg-transparent relative">
       {/* Top Header Strip */}
@@ -331,7 +362,7 @@ export const ChatInterface = () => {
                   ? 'cursor-text hover:text-primary-300'
                   : 'cursor-default'
               )}
-              title={currentSessionId ? '点击重命名当前会话' : chatHeaderTitle}
+              title={currentSessionId ? 'Click to rename this session' : chatHeaderTitle}
             >
               {chatHeaderTitle}
             </button>
@@ -386,7 +417,10 @@ export const ChatInterface = () => {
               <div
                 key={msg.id}
                 className={cn(
-                  "flex gap-4 max-w-3xl animate-slide-up",
+                  "flex gap-4 animate-slide-up",
+                  msg.role === 'assistant' && isOutlineMarkdown(msg.content)
+                    ? "w-full max-w-[min(100%,78rem)]"
+                    : "max-w-3xl",
                   msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
                 )}
               >
@@ -402,17 +436,80 @@ export const ChatInterface = () => {
 
                 {/* Bubble */}
                 <div className={cn(
-                  "flex flex-col gap-1 min-w-0 max-w-[85%]",
+                  "flex flex-col gap-1 min-w-0",
+                  msg.role === 'assistant' && isOutlineMarkdown(msg.content)
+                    ? "w-full max-w-[min(100%,72rem)] flex-1"
+                    : "max-w-[85%]",
                   msg.role === 'user' ? "items-end" : "items-start"
                 )}>
-                  <div className={cn(
-                    "px-6 py-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm",
-                    msg.role === 'assistant'
-                      ? "bg-surface-100/40 backdrop-blur-md text-text-main rounded-tl-none border border-white/5"
-                      : "bg-primary-gradient text-white rounded-tr-none shadow-glow font-medium"
-                  )}>
-                    {msg.content}
-                  </div>
+                  {editingMessageId === msg.id ? (
+                    <div className="w-full flex flex-col gap-2">
+                      <TextArea
+                        autoSize={{ minRows: 2, maxRows: 8 }}
+                        value={editingContent}
+                        onChange={(e) => setEditingContent(e.target.value)}
+                        className="!bg-surface-100/40 !border-primary-500/50 !text-text-main !rounded-2xl"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button size="small" onClick={() => setEditingMessageId(null)}>Cancel</Button>
+                        <Button size="small" type="primary" onClick={() => void handleEditMessageSubmit()}>
+                          Edit &amp; Resend
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        "group/bubble relative",
+                        msg.role === 'assistant' && isOutlineMarkdown(msg.content) && "w-full"
+                      )}
+                    >
+                      {msg.role === 'assistant' && isOutlineMarkdown(msg.content) ? (
+                        <div className="w-full rounded-[30px] rounded-tl-none">
+                          <OutlineEditor
+                            value={msg.content}
+                            onChange={(nextContent) => {
+                              updateLocalMessage(msg.id, nextContent);
+                              setMarkdownContent(nextContent);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className={cn(
+                          "px-6 py-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm",
+                          msg.role === 'assistant'
+                            ? "bg-surface-100/40 backdrop-blur-md text-text-main rounded-tl-none border border-white/5"
+                            : "bg-primary-gradient text-white rounded-tr-none shadow-glow font-medium"
+                        )}>
+                          {msg.content}
+                        </div>
+                      )}
+                      {msg.role === 'user' && (
+                        <div className="flex gap-1 justify-end mt-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity duration-150">
+                          <Tooltip title="Copy">
+                            <button
+                              type="button"
+                              onClick={() => void handleCopyMessage(msg.content)}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-200/40 hover:bg-surface-200/70 text-text-secondary hover:text-text-main transition-colors"
+                            >
+                              <CopyOutlined className="text-xs" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip title="Edit">
+                            <button
+                              type="button"
+                              onClick={() => handleEditMessageStart(msg.id, msg.content)}
+                              disabled={isStreaming}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-200/40 hover:bg-surface-200/70 text-text-secondary hover:text-text-main transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <EditOutlined className="text-xs" />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <span className="text-[10px] text-text-secondary/60 px-1 font-medium tracking-wide">
                     {msg.role === 'assistant' ? 'AI ASSISTANT' : 'YOU'} • {formatTime(msg.create_time)}
                   </span>

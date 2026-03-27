@@ -7,10 +7,12 @@ import { buildApiUrl } from '../baseUrl';
 import { API_ENDPOINTS } from '../../utils/constants';
 import type {
   GenerateMarkdownRequest,
+  MarkdownStreamRequestConfig,
   MarkdownToPPTRequest,
   GeneratePPTXResponse,
   Template,
 } from '../types/slidegen.types';
+import { storage } from '../../utils/storage';
 
 export const slidegenApi = {
   /**
@@ -26,7 +28,7 @@ export const slidegenApi = {
    * Generate markdown content with SSE streaming
    * Note: This returns the URL for SSE connection, not the actual request
    */
-  getMarkdownStreamURL: (params: GenerateMarkdownRequest): string => {
+  getMarkdownStreamRequest: (params: GenerateMarkdownRequest): MarkdownStreamRequestConfig => {
     const url = new URL(
       buildApiUrl(
         API_ENDPOINTS.SLIDEGEN.GENERATE_MARKDOWN_STREAM,
@@ -36,18 +38,22 @@ export const slidegenApi = {
       window.location.origin
     );
 
-    // Add query parameters
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value)) {
-          value.forEach((item) => url.searchParams.append(key, String(item)));
-        } else {
-          url.searchParams.append(key, String(value));
-        }
-      }
-    });
+    const payload = Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null)
+    );
+    const token = storage.getToken();
 
-    return url.toString();
+    return {
+      url: url.toString(),
+      options: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      },
+    };
   },
 
   /**

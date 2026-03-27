@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const files = [
+  'web/src/components/generation/OutlineEditor.tsx',
+  'web/src/components/generation/MarkdownEditor.tsx',
+  'web/src/components/generation/TopicInput.tsx',
+  'web/src/components/generation/GenerationWizard.tsx',
+  'web/src/components/generation/StreamingProgress.tsx',
+];
+
+const forbiddenPatterns = [
+  'text-gray-',
+  'bg-gray-',
+  'border-gray-',
+  'text-slate-',
+  'bg-slate-',
+  'border-slate-',
+  'bg-white',
+];
+
+for (const relativePath of files) {
+  const content = readFileSync(resolve(relativePath), 'utf8');
+
+  for (const pattern of forbiddenPatterns) {
+    assert.equal(
+      content.includes(pattern),
+      false,
+      `${relativePath} should not contain hard-coded surface/text token: ${pattern}`
+    );
+  }
+}
+
+console.log('generationThemeSource.test.ts passed');

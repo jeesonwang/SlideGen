@@ -11,12 +11,12 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import { useSSE } from '../../hooks/useSSE';
-import type { SSEEvent } from '../../api/types/slidegen.types';
+import type { MarkdownStreamRequestConfig, SSEEvent } from '../../api/types/slidegen.types';
 
 const { Title, Text, Paragraph } = Typography;
 
 interface StreamingProgressProps {
-  streamUrl: string;
+  streamRequest: MarkdownStreamRequestConfig;
   onComplete: (content: string) => void;
   onError?: (error: Error) => void;
 }
@@ -29,7 +29,7 @@ interface TimelineItem {
 }
 
 export const StreamingProgress: React.FC<StreamingProgressProps> = ({
-  streamUrl,
+  streamRequest,
   onComplete,
   onError,
 }) => {
@@ -148,14 +148,12 @@ export const StreamingProgress: React.FC<StreamingProgressProps> = ({
   );
 
   useEffect(() => {
-    if (streamUrl) {
-      connect(streamUrl);
-    }
+    connect(streamRequest);
 
     return () => {
       disconnect();
     };
-  }, [streamUrl]);
+  }, [streamRequest, connect, disconnect]);
 
   const handleRetry = () => {
     setProgress(0);
@@ -163,7 +161,7 @@ export const StreamingProgress: React.FC<StreamingProgressProps> = ({
     setTimelineItems([]);
     setGeneratedContent('');
     setHasError(false);
-    connect(streamUrl);
+    connect(streamRequest);
   };
 
   const getTimelineIcon = (status: TimelineItem['status']) => {
@@ -238,7 +236,7 @@ export const StreamingProgress: React.FC<StreamingProgressProps> = ({
               <Text strong>Generated Content Preview:</Text>
               <Paragraph
                 ellipsis={{ rows: 6, expandable: true, symbol: 'Show more' }}
-                className="mt-2 p-3 bg-gray-100 rounded whitespace-pre-wrap font-mono text-xs"
+                className="mt-2 rounded border border-border/70 bg-surface-100/80 p-3 whitespace-pre-wrap font-mono text-xs text-text-main"
               >
                 {generatedContent}
               </Paragraph>

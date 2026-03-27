@@ -30,14 +30,14 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, te
           <div
             key={t.id}
             className={`
-              cursor-pointer rounded-lg border-2 p-4 transition-all hover:shadow-md
-              ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}
+              cursor-pointer rounded-lg border-2 bg-surface-50/70 p-4 transition-all hover:shadow-md
+              ${isSelected ? 'border-primary-500 bg-primary-500/10' : 'border-border/70 hover:border-primary-300'}
             `}
             onClick={() => onChange?.(t.id)}
           >
             <div className="flex items-center gap-3">
               {t.thumbnail ? (
-                <div className="h-12 w-12 overflow-hidden rounded-lg border border-gray-200">
+                <div className="h-12 w-12 overflow-hidden rounded-lg border border-border/70 bg-surface-100">
                   <img
                     src={t.thumbnail}
                     alt={t.name}
@@ -50,25 +50,25 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, te
                   <div
                     className={`
                       hidden flex h-full w-full items-center justify-center
-                      ${t.id.includes('purple') ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-600'}
+                      ${t.id.includes('purple') ? 'bg-primary-500/12 text-primary-500' : 'bg-surface-100 text-text-secondary'}
                     `}
                   >
-                    <div className={`h-6 w-6 rounded-full ${t.id.includes('purple') ? 'bg-purple-500' : 'bg-gray-500'}`} />
+                    <div className={`h-6 w-6 rounded-full ${t.id.includes('purple') ? 'bg-accent-purple' : 'bg-surface-400'}`} />
                   </div>
                 </div>
               ) : (
                 <div
                   className={`
                     flex h-12 w-12 items-center justify-center rounded-lg
-                    ${t.id.includes('purple') ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-600'}
+                    ${t.id.includes('purple') ? 'bg-primary-500/12 text-primary-500' : 'bg-surface-100 text-text-secondary'}
                   `}
                 >
-                  <div className={`h-6 w-6 rounded-full ${t.id.includes('purple') ? 'bg-purple-500' : 'bg-gray-500'}`} />
+                  <div className={`h-6 w-6 rounded-full ${t.id.includes('purple') ? 'bg-accent-purple' : 'bg-surface-400'}`} />
                 </div>
               )}
               <div>
-                <div className="font-medium">{t.name}</div>
-                <div className="text-xs text-gray-500">
+                <div className="font-medium text-text-main">{t.name}</div>
+                <div className="text-xs text-text-secondary">
                   {t.id === 'general' ? 'Clean & Professional' : 'Modern & Vibrant'}
                 </div>
               </div>
@@ -265,7 +265,7 @@ export const TopicInput: React.FC<TopicInputProps> = ({ sessionId }) => {
             </Form.Item>
           </Space>
 
-          <div className="mt-4 p-3 bg-gray-100 rounded">
+          <div className="mt-4 rounded border border-border/70 bg-surface-100/80 p-3">
             <Text type="secondary" className="text-xs">
               These settings control how the AI generates your presentation content.
               Adjust them based on your needs.
