@@ -473,6 +473,9 @@ export const ChatInterface = () => {
                               updateLocalMessage(msg.id, nextContent);
                               setMarkdownContent(nextContent);
                             }}
+                            onRefresh={() => void handleGenerate()}
+                            refreshDisabled={isStreaming || messages.length === 0}
+                            refreshing={isStreaming}
                           />
                         </div>
                       ) : (

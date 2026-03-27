@@ -12,6 +12,12 @@ assert.match(
 
 assert.match(
   source,
+  /onRefresh=\{\(\)\s*=>\s*void handleGenerate\(\)\}/,
+  'ChatInterface should pass OutlineEditor a refresh callback that reuses handleGenerate'
+);
+
+assert.match(
+  source,
   /msg\.role === 'assistant' && isOutlineMarkdown\(msg\.content\)\s*\?\s*"w-full max-w-\[min\(100%,78rem\)\]"/,
   'ChatInterface should give outline assistant rows a full-width container'
 );
