@@ -189,7 +189,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
       <Steps
         current={getCurrentStepIndex()}
         items={steps}
-        className={cn("mb-8")}
+        className="mb-8"
       />
 
       {currentStep === 'configure' && (
@@ -209,7 +209,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
         >
           <TopicInput sessionId={sessionId} />
 
-          <div className={cn("mt-6 text-right")}>
+          <div className="mt-6 text-right">
             <Button
               type="primary"
               size="large"
@@ -229,26 +229,26 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
             onError={handleGenerationError}
           />
 
-          <div className={cn("mt-6 text-right")}>
+          <div className="mt-6 text-right">
             <Button onClick={handleBack}>Back</Button>
           </div>
         </div>
       )}
 
       {currentStep === 'editing' && (
-        <div className={cn("animate-fade-in")}>
-          <div className={cn("flex justify-between items-center mb-6")}>
-             <div className={cn("space-y-1")}>
-                <h2 className={cn("text-2xl font-bold text-text-main")}>
+        <div className="animate-fade-in">
+          <div className="flex justify-between items-center mb-6">
+             <div className="space-y-1">
+                <h2 className="text-2xl font-bold text-text-main">
                     {viewMode === 'outline' ? 'Generate Outline' : 'Edit Markdown'}
                 </h2>
-                <p className={cn("text-text-secondary")}>
+                <p className="text-text-secondary">
                     {viewMode === 'outline'
                         ? 'Review and edit your presentation structure below.'
                         : 'Fine-tune the markdown content directly.'}
                 </p>
              </div>
-             <div className={cn("flex gap-3")}>
+             <div className="flex gap-3">
                 <Button
                     onClick={() => setViewMode('outline')}
                     type={viewMode === 'outline' ? 'primary' : 'default'}
@@ -265,7 +265,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
           </div>
 
           {viewMode === 'outline' ? (
-             <div className={cn("mb-8")}>
+             <div className="mb-8">
                 <OutlineEditor
                     value={markdownContent}
                     onChange={handleMarkdownChange}
@@ -298,8 +298,8 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
                 exporting={exporting}
               />
 
-              <div className={cn("mt-6 text-right")}>
-                <Button onClick={handleReset} className={cn("mr-2")}>
+              <div className="mt-6 text-right">
+                <Button onClick={handleReset} className="mr-2">
                   Start New Generation
                 </Button>
               </div>

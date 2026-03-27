@@ -48,15 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-            padding: 24,
-          }}
-        >
+        <div className="flex justify-center items-center min-h-screen p-6">
           <Result
             status="error"
             icon={<WarningOutlined />}
@@ -65,18 +57,9 @@ export class ErrorBoundary extends Component<Props, State> {
               <div>
                 <p>We're sorry, but an unexpected error occurred.</p>
                 {this.state.error && (
-                  <details style={{ marginTop: 16, textAlign: 'left' }}>
-                    <summary style={{ cursor: 'pointer' }}>Error details</summary>
-                    <pre
-                      style={{
-                        marginTop: 8,
-                        padding: 12,
-                        background: '#f5f5f5',
-                        borderRadius: 4,
-                        fontSize: 12,
-                        overflow: 'auto',
-                      }}
-                    >
+                  <details className="mt-4 text-left">
+                    <summary className="cursor-pointer">Error details</summary>
+                    <pre className="mt-2 p-3 bg-surface-100 rounded text-xs overflow-auto">
                       {this.state.error.message}
                       {'\n\n'}
                       {this.state.error.stack}

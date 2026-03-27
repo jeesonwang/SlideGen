@@ -14,6 +14,7 @@ import { useFiles, useUploadFile } from '../../hooks/useFiles';
 import { useChatStore } from '../../store/chatStore';
 import { Tone, Verbosity } from '../../api/types/slidegen.types';
 import type { FileMetadataPublic } from '../../api/types/file.types';
+import { cn } from '../../utils/classnames';
 
 // Language options
 const LANGUAGE_OPTIONS = [
@@ -227,10 +228,10 @@ export const ConfigurationPanel = ({ onCollapse }: ConfigurationPanelProps) => {
                   checked={exportFormat === 'pptx'}
                   onChange={() => setExportFormat('pptx')}
                 />
-                <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${exportFormat === 'pptx' ? 'border-primary-500 bg-primary-500/20' : 'border-text-secondary group-hover:border-primary-400'}`}>
+                <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center transition-all", exportFormat === 'pptx' ? "border-primary-500 bg-primary-500/20" : "border-text-secondary group-hover:border-primary-400")}>
                   {exportFormat === 'pptx' && <div className="w-2 h-2 rounded-full bg-primary-500 shadow-glow" />}
                 </div>
-                <span className={`text-sm transition-colors ${exportFormat === 'pptx' ? 'text-primary-400 font-medium' : 'text-text-secondary group-hover:text-text-main'}`}>PPTX</span>
+                <span className={cn("text-sm transition-colors", exportFormat === 'pptx' ? "text-primary-400 font-medium" : "text-text-secondary group-hover:text-text-main")}>PPTX</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer group">
                 <input 
@@ -240,10 +241,10 @@ export const ConfigurationPanel = ({ onCollapse }: ConfigurationPanelProps) => {
                   checked={exportFormat === 'pdf'}
                   onChange={() => setExportFormat('pdf')}
                 />
-                <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${exportFormat === 'pdf' ? 'border-primary-500 bg-primary-500/20' : 'border-text-secondary group-hover:border-primary-400'}`}>
+                <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center transition-all", exportFormat === 'pdf' ? "border-primary-500 bg-primary-500/20" : "border-text-secondary group-hover:border-primary-400")}>
                   {exportFormat === 'pdf' && <div className="w-2 h-2 rounded-full bg-primary-500 shadow-glow" />}
                 </div>
-                <span className={`text-sm transition-colors ${exportFormat === 'pdf' ? 'text-primary-400 font-medium' : 'text-text-secondary group-hover:text-text-main'}`}>PDF</span>
+                <span className={cn("text-sm transition-colors", exportFormat === 'pdf' ? "text-primary-400 font-medium" : "text-text-secondary group-hover:text-text-main")}>PDF</span>
               </label>
             </div>
           </div>

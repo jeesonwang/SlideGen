@@ -100,8 +100,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           10MB.
         </p>
       </Dragger>
-      <div style={{ marginTop: 16 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>
+      <div className="mt-4">
+        <Text type="secondary" className="text-xs">
           Uploaded files will be added to your knowledge base and can be used
           for presentation generation.
         </Text>

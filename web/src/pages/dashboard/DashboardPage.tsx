@@ -57,11 +57,11 @@ export const DashboardPage = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case SessionStatus.ACTIVE:
-        return <ClockCircleOutlined style={{ color: '#1890ff' }} />;
+        return <ClockCircleOutlined className="text-blue-500" />;
       case SessionStatus.COMPLETED:
-        return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+        return <CheckCircleOutlined className="text-green-500" />;
       case SessionStatus.FAILED:
-        return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
+        return <CloseCircleOutlined className="text-red-500" />;
       default:
         return <ClockCircleOutlined />;
     }

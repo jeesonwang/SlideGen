@@ -36,7 +36,7 @@ export const EmbeddingConfigList: React.FC<EmbeddingConfigListProps> = ({
 }) => {
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: 40 }}>
+      <div className="text-center p-10">
         <Spin size="large" />
       </div>
     );

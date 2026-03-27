@@ -28,14 +28,14 @@ export const ProfilePage = () => {
 
   if (!user) {
     return (
-      <div style={{ padding: 24 }}>
+      <div className="p-6">
         <Text type="secondary">Loading user information...</Text>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div className="max-w-[800px] mx-auto">
       <Title level={2}>Profile</Title>
       <Text type="secondary">Manage your account information and settings</Text>
 
@@ -46,7 +46,7 @@ export const ProfilePage = () => {
             <span>User Information</span>
           </Space>
         }
-        style={{ marginTop: 24 }}
+        className="mt-6"
       >
         <Descriptions column={1} bordered>
           <Descriptions.Item label="Username">
@@ -86,7 +86,7 @@ export const ProfilePage = () => {
             <span>Change Password</span>
           </Space>
         }
-        style={{ marginTop: 24 }}
+        className="mt-6"
       >
         <Form
           form={passwordForm}
@@ -166,9 +166,9 @@ export const ProfilePage = () => {
       <Divider />
 
       <Card>
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <Space direction="vertical" className="w-full">
           <Text strong>Account Security Tips</Text>
-          <ul style={{ marginLeft: 20, color: '#8c8c8c' }}>
+          <ul className="ml-5 text-text-muted">
             <li>Use a strong password with at least 8 characters</li>
             <li>Avoid using the same password across multiple sites</li>
             <li>Change your password regularly</li>

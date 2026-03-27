@@ -10,6 +10,7 @@ import { useTemplates } from '../../hooks/useTemplates';
 import { Tone, Verbosity } from '../../api/types/slidegen.types';
 import type { Template } from '../../api/types/slidegen.types';
 import { GENERATION_DEFAULTS } from '../../utils/constants';
+import { cn } from '../../utils/classnames';
 
 const { TextArea } = Input;
 const { Panel } = Collapse;
@@ -29,10 +30,10 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, te
         return (
           <div
             key={t.id}
-            className={`
-              cursor-pointer rounded-lg border-2 bg-surface-50/70 p-4 transition-all hover:shadow-md
-              ${isSelected ? 'border-primary-500 bg-primary-500/10' : 'border-border/70 hover:border-primary-300'}
-            `}
+            className={cn(
+              "cursor-pointer rounded-lg border-2 bg-surface-50/70 p-4 transition-all hover:shadow-md",
+              isSelected ? "border-primary-500 bg-primary-500/10" : "border-border/70 hover:border-primary-300"
+            )}
             onClick={() => onChange?.(t.id)}
           >
             <div className="flex items-center gap-3">
@@ -48,22 +49,22 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, te
                     }}
                   />
                   <div
-                    className={`
-                      hidden flex h-full w-full items-center justify-center
-                      ${t.id.includes('purple') ? 'bg-primary-500/12 text-primary-500' : 'bg-surface-100 text-text-secondary'}
-                    `}
+                    className={cn(
+                      "hidden flex h-full w-full items-center justify-center",
+                      t.id.includes('purple') ? "bg-primary-500/12 text-primary-500" : "bg-surface-100 text-text-secondary"
+                    )}
                   >
-                    <div className={`h-6 w-6 rounded-full ${t.id.includes('purple') ? 'bg-accent-purple' : 'bg-surface-400'}`} />
+                    <div className={cn("h-6 w-6 rounded-full", t.id.includes('purple') ? "bg-accent-purple" : "bg-surface-400")} />
                   </div>
                 </div>
               ) : (
                 <div
-                  className={`
-                    flex h-12 w-12 items-center justify-center rounded-lg
-                    ${t.id.includes('purple') ? 'bg-primary-500/12 text-primary-500' : 'bg-surface-100 text-text-secondary'}
-                  `}
+                  className={cn(
+                    "flex h-12 w-12 items-center justify-center rounded-lg",
+                    t.id.includes('purple') ? "bg-primary-500/12 text-primary-500" : "bg-surface-100 text-text-secondary"
+                  )}
                 >
-                  <div className={`h-6 w-6 rounded-full ${t.id.includes('purple') ? 'bg-accent-purple' : 'bg-surface-400'}`} />
+                  <div className={cn("h-6 w-6 rounded-full", t.id.includes('purple') ? "bg-accent-purple" : "bg-surface-400")} />
                 </div>
               )}
               <div>

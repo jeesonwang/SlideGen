@@ -73,16 +73,9 @@ export const FilesPage = () => {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-        }}
-      >
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <Title level={2} style={{ margin: 0 }}>
+          <Title level={2} className="!m-0">
             Knowledge Base
           </Title>
           <Text type="secondary">
@@ -127,11 +120,11 @@ export const FilesPage = () => {
         />
       ) : (
         <>
-          <div style={{ marginBottom: 24 }}>
+          <div className="mb-6">
             <Space>
               <Text strong>Session:</Text>
               <Select
-                style={{ width: 300 }}
+                className="w-[300px]"
                 value={selectedSessionId}
                 onChange={setSelectedSessionId}
                 options={activeSessions.map((session) => ({
@@ -143,7 +136,7 @@ export const FilesPage = () => {
           </div>
 
           {showUpload && (
-            <div style={{ marginBottom: 24 }}>
+            <div className="mb-6">
               <FileUpload
                 sessionId={selectedSessionId}
                 onUploadComplete={handleUploadComplete}
@@ -153,7 +146,7 @@ export const FilesPage = () => {
         </>
       )}
 
-      <div style={{ marginTop: 24 }}>
+      <div className="mt-6">
         {files.length === 0 && !isLoading ? (
           <Empty
             description={

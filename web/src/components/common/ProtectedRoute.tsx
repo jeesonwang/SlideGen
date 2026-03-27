@@ -21,14 +21,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // If we have a token but need to verify it, show loading
   if (!isAuthenticated) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-        }}
-      >
+      <div className="flex justify-center items-center h-screen">
         <Spin size="large" tip="Verifying authentication..." />
       </div>
     );

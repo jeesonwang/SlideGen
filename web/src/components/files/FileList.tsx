@@ -37,15 +37,15 @@ export const FileList: React.FC<FileListProps> = ({
 }) => {
   const getFileIcon = (contentType?: string | null, filename?: string) => {
     if (contentType?.includes('pdf')) {
-      return <FilePdfOutlined style={{ color: '#ff4d4f', fontSize: 20 }} />;
+      return <FilePdfOutlined className="text-red-500 text-xl" />;
     }
     if (contentType?.includes('word') || filename?.endsWith('.docx')) {
-      return <FileWordOutlined style={{ color: '#1890ff', fontSize: 20 }} />;
+      return <FileWordOutlined className="text-blue-500 text-xl" />;
     }
     if (filename?.endsWith('.md')) {
-      return <FileMarkdownOutlined style={{ color: '#52c41a', fontSize: 20 }} />;
+      return <FileMarkdownOutlined className="text-green-500 text-xl" />;
     }
-    return <FileTextOutlined style={{ color: '#8c8c8c', fontSize: 20 }} />;
+    return <FileTextOutlined className="text-gray-400 text-xl" />;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -68,7 +68,7 @@ export const FileList: React.FC<FileListProps> = ({
             <Text strong>{filename}</Text>
             {record.content_type && (
               <div>
-                <Text type="secondary" style={{ fontSize: 12 }}>
+                <Text type="secondary" className="text-xs">
                   {record.content_type}
                 </Text>
               </div>
