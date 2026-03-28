@@ -123,3 +123,7 @@ uploads/
 # images
 generated_images/
 components/**/*.png
+
+# web
+node_modules/
+.tmp-tests/
