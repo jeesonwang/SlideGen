@@ -78,6 +78,9 @@ const toDownloadFilename = (title: string) => {
 const iconButtonClassName =
   'inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-[13px] text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40';
 
+const toolbarActionButtonClassName =
+  'inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-border/60 bg-surface-50 px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40';
+
 const smallActionClassName =
   'inline-flex min-h-7 items-center gap-1 rounded-lg border border-border/60 bg-surface-50 px-2 text-[12px] font-medium text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500';
 
@@ -365,7 +368,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
             <button
               type="button"
               onClick={() => void handleFullscreenToggle()}
-              className={cn(iconButtonClassName, 'w-auto gap-2 px-3')}
+              className={toolbarActionButtonClassName}
               disabled={!allowFullscreen}
               aria-label="Full Screen"
             >
@@ -376,7 +379,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           <button
             type="button"
             onClick={handleDownload}
-            className={cn(iconButtonClassName, 'w-auto gap-2 px-3')}
+            className={toolbarActionButtonClassName}
           >
             <DownloadOutlined />
             <span>Download</span>
@@ -384,7 +387,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           <button
             type="button"
             onClick={() => void onRefresh?.()}
-            className={cn(iconButtonClassName, 'w-auto gap-2 px-3')}
+            className={toolbarActionButtonClassName}
             disabled={!canRefresh || refreshing}
           >
             <ReloadOutlined className={refreshing ? 'animate-spin' : ''} />
