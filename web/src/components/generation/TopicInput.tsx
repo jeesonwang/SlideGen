@@ -28,13 +28,16 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, te
       {templates.map((t) => {
         const isSelected = value === t.id;
         return (
-          <div
+          <button
+            type="button"
             key={t.id}
             className={cn(
-              "cursor-pointer rounded-lg border-2 bg-surface-50/70 p-4 transition-all hover:shadow-md",
+              "w-full rounded-lg border-2 bg-surface-50/70 p-4 text-left transition-all hover:shadow-md",
               isSelected ? "border-primary-500 bg-primary-500/10" : "border-border/70 hover:border-primary-300"
             )}
             onClick={() => onChange?.(t.id)}
+            aria-pressed={isSelected}
+            aria-label={`Select template ${t.name}`}
           >
             <div className="flex items-center gap-3">
               {t.thumbnail ? (
@@ -74,7 +77,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, te
                 </div>
               </div>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>

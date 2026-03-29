@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const files = [
-  'web/src/components/generation/OutlineEditor.tsx',
-  'web/src/components/generation/MarkdownEditor.tsx',
-  'web/src/components/generation/TopicInput.tsx',
-  'web/src/components/generation/GenerationWizard.tsx',
-  'web/src/components/generation/StreamingProgress.tsx',
+  'src/components/generation/OutlineEditor.tsx',
+  'src/components/generation/MarkdownEditor.tsx',
+  'src/components/generation/TopicInput.tsx',
+  'src/components/generation/GenerationWizard.tsx',
+  'src/components/generation/StreamingProgress.tsx',
 ];
 
 const forbiddenPatterns = [

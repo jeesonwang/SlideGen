@@ -7,6 +7,7 @@ import './dashboardSessionSource.test.ts';
 import './dashboardScrollSource.test.ts';
 import './settingsSource.test.ts';
 import './configCardHeaderLayoutSource.test.ts';
+import './hardeningSource.test.ts';
 import './sessionPresentation.test.ts';
 import './outlineModel.test.ts';
 import './chatOutlineSource.test.ts';

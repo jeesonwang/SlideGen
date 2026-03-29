@@ -32,13 +32,13 @@ export const SignupPage = () => {
         username: values.username,
       });
       message.success('Account created successfully! Please login.');
-    } catch (error) {
+    } catch {
       // Error is handled by useAuth hook
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center gradient-bg relative overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
@@ -46,7 +46,7 @@ export const SignupPage = () => {
       </div>
 
       {/* Glass Card */}
-      <Card className="w-full max-w-md glass-card relative z-10 border-0 animate-scale-in">
+      <Card className="glass-panel relative z-10 w-full max-w-md !rounded-3xl !border !border-border/60 animate-scale-in">
         <Space direction="vertical" size="large" className="w-full">
           {/* Logo & Title */}
           <div className="text-center">

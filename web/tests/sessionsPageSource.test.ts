@@ -3,15 +3,15 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const sessionsPageSource = readFileSync(
-  resolve('web/src/pages/sessions/SessionsPage.tsx'),
+  resolve('src/pages/sessions/SessionsPage.tsx'),
   'utf8'
 );
 const sessionListSource = readFileSync(
-  resolve('web/src/components/sessions/SessionList.tsx'),
+  resolve('src/components/sessions/SessionList.tsx'),
   'utf8'
 );
 const useSessionsSource = readFileSync(
-  resolve('web/src/hooks/useSessions.ts'),
+  resolve('src/hooks/useSessions.ts'),
   'utf8'
 );
 

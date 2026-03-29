@@ -1,3 +1,5 @@
+import type { JsonObject } from './common.types';
+
 /**
  * Session types
  */
@@ -16,16 +18,16 @@ export interface SessionBase {
   title: string;
   status: SessionStatus;
   topic?: string | null;
-  extra_data?: Record<string, any> | null;
+  extra_data?: JsonObject | null;
 }
 
-export interface SessionCreate extends SessionBase {}
+export type SessionCreate = SessionBase;
 
 export interface SessionUpdate {
   title?: string | null;
   status?: SessionStatus | null;
   topic?: string | null;
-  extra_data?: Record<string, any> | null;
+  extra_data?: JsonObject | null;
 }
 
 export interface SessionPublic extends SessionBase {

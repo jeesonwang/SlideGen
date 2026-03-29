@@ -37,7 +37,11 @@ import {
 import { getSidebarUserPanelData } from './sidebarUserPanel';
 import { useUIStore } from '../../store/uiStore';
 
-export const Sidebar = () => {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export const Sidebar = ({ onNavigate }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
@@ -81,6 +85,7 @@ export const Sidebar = () => {
       });
       setCurrentSession(newSession.id);
       resetGeneration();
+      onNavigate?.();
       navigate('/generate');
     } catch {
       // Error handled by mutation
@@ -90,6 +95,7 @@ export const Sidebar = () => {
   const handleSessionClick = (sessionId: string) => {
     setCurrentSession(sessionId);
     loadMessages(sessionId);
+    onNavigate?.();
     navigate('/generate');
   };
 
@@ -212,7 +218,10 @@ export const Sidebar = () => {
         {menuItems.map((item) => (
           <Tooltip key={item.key} title={sidebarCollapsed ? item.label : undefined} placement="right">
             <button
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                onNavigate?.();
+                navigate(item.path);
+              }}
               aria-label={item.label}
               className={cn(
                 'w-full flex rounded-lg text-sm font-medium transition-all duration-200',
@@ -293,75 +302,94 @@ export const Sidebar = () => {
                   return (
                     <div
                       key={session.id}
-                      onClick={() => {
-                        if (!isEditing) {
-                          handleSessionClick(session.id);
-                        }
-                      }}
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all duration-200 group border border-transparent cursor-pointer',
+                        'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all duration-200 group border border-transparent',
                         currentSessionId === session.id
                           ? 'bg-surface-100 text-text-main border-border/70 shadow-sm'
                           : 'text-text-secondary hover:bg-surface-100 hover:text-text-main'
                       )}
                     >
-                      <div
-                        className={cn(
-                          'flex items-center justify-center w-6 h-6 rounded flex-shrink-0 transition-colors',
-                          currentSessionId === session.id
-                            ? 'text-primary-400 bg-primary-500/10'
-                            : 'bg-surface-100 group-hover:bg-surface-200'
-                        )}
-                      >
-                        <MessageOutlined className="text-[10px]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        {isEditing ? (
-                          <Input
-                            ref={titleInputRef}
-                            value={titleDraft}
-                            maxLength={120}
-                            size="small"
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={(event) => setTitleDraft(event.target.value)}
-                            onBlur={() => {
-                              if (skipBlurSubmitRef.current) {
-                                skipBlurSubmitRef.current = false;
-                                return;
-                              }
-                              void handleRenameSubmit(session.id, session.title);
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault();
+                      {isEditing ? (
+                        <div className="flex flex-1 min-w-0 items-center gap-2">
+                          <div
+                            className={cn(
+                              'flex items-center justify-center w-6 h-6 rounded flex-shrink-0 transition-colors',
+                              currentSessionId === session.id
+                                ? 'text-primary-400 bg-primary-500/10'
+                                : 'bg-surface-100 group-hover:bg-surface-200'
+                            )}
+                          >
+                            <MessageOutlined className="text-[10px]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <Input
+                              ref={titleInputRef}
+                              value={titleDraft}
+                              maxLength={120}
+                              size="small"
+                              onChange={(event) => setTitleDraft(event.target.value)}
+                              onBlur={() => {
+                                if (skipBlurSubmitRef.current) {
+                                  skipBlurSubmitRef.current = false;
+                                  return;
+                                }
                                 void handleRenameSubmit(session.id, session.title);
-                              }
-                              if (event.key === 'Escape') {
-                                event.preventDefault();
-                                handleRenameCancel();
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            {isPinned ? (
-                              <PushpinOutlined className="text-[10px] text-primary-400 flex-shrink-0" />
-                            ) : null}
-                            <p className="text-sm font-medium truncate m-0 text-text-main group-hover:text-primary-300 transition-colors">
-                              {session.title}
+                              }}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault();
+                                  void handleRenameSubmit(session.id, session.title);
+                                }
+                                if (event.key === 'Escape') {
+                                  event.preventDefault();
+                                  handleRenameCancel();
+                                }
+                              }}
+                            />
+                            <p className="text-xs text-text-muted m-0">
+                              {formatDate(session.update_time)}
                             </p>
                           </div>
-                        )}
-                        <p className="text-xs text-text-muted m-0">
-                          {formatDate(session.update_time)}
-                        </p>
-                      </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSessionClick(session.id)}
+                          aria-current={currentSessionId === session.id ? 'page' : undefined}
+                          className="flex flex-1 min-w-0 items-center gap-2 text-left"
+                        >
+                          <div
+                            className={cn(
+                              'flex items-center justify-center w-6 h-6 rounded flex-shrink-0 transition-colors',
+                              currentSessionId === session.id
+                                ? 'text-primary-400 bg-primary-500/10'
+                                : 'bg-surface-100 group-hover:bg-surface-200'
+                            )}
+                          >
+                            <MessageOutlined className="text-[10px]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              {isPinned ? (
+                                <PushpinOutlined className="text-[10px] text-primary-400 flex-shrink-0" />
+                              ) : null}
+                              <p className="text-sm font-medium truncate m-0 text-text-main group-hover:text-primary-300 transition-colors">
+                                {session.title}
+                              </p>
+                            </div>
+                            <p className="text-xs text-text-muted m-0">
+                              {formatDate(session.update_time)}
+                            </p>
+                          </div>
+                        </button>
+                      )}
                       <Dropdown
                         trigger={['click']}
                         placement="bottomRight"
                         menu={{ items: menuItems }}
                       >
                         <button
+                          type="button"
                           onClick={(event) => event.stopPropagation()}
                           className={cn(
                             'p-1 rounded text-text-secondary transition-all flex-shrink-0 hover:bg-surface-200 hover:text-text-main',
@@ -391,7 +419,10 @@ export const Sidebar = () => {
       <div className={cn('border-t border-border/70 mt-auto', sidebarCollapsed ? 'p-2' : 'p-4')}>
         <Tooltip title={sidebarCollapsed ? 'Settings' : undefined} placement="right">
           <button
-            onClick={() => navigate('/settings')}
+            onClick={() => {
+              onNavigate?.();
+              navigate('/settings');
+            }}
             aria-label="Settings"
             className={cn(
               'flex text-sm font-medium text-text-secondary hover:text-text-main hover:bg-surface-100 transition-colors',

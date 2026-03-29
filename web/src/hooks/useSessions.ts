@@ -9,6 +9,7 @@ import type {
   SessionUpdate,
 } from '../api/types/session.types';
 import { message } from 'antd';
+import { getErrorDetail } from '../utils/errorDetail';
 
 export const useSessions = (params?: {
   skip?: number;
@@ -38,8 +39,8 @@ export const useCreateSession = () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       message.success('Session created successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to create session');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to create session'));
     },
   });
 };
@@ -54,8 +55,8 @@ export const useUpdateSession = () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       message.success('Session updated successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to update session');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to update session'));
     },
   });
 };
@@ -69,8 +70,8 @@ export const useDeleteSession = () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       message.success('Session deleted successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to delete session');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to delete session'));
     },
   });
 };

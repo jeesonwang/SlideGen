@@ -12,6 +12,7 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import type { LLMConfigPublic } from '../../api/types/llmConfig.types';
+import { maskSecret } from './maskSecret';
 
 const { Text, Paragraph } = Typography;
 
@@ -163,7 +164,7 @@ export const LLMConfigList: React.FC<LLMConfigListProps> = ({
               {config.api_key && (
                 <div>
                   <Text className="text-text-secondary">API Key: </Text>
-                  <Text code>{config.api_key}</Text>
+                  <Text code>{maskSecret(config.api_key)}</Text>
                 </div>
               )}
               <div>

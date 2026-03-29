@@ -1,3 +1,5 @@
+import type { JsonObject } from './common.types';
+
 /**
  * LLM Configuration types
  */
@@ -22,7 +24,7 @@ export interface LLMConfigBase {
   temperature: number;
   max_tokens: number;
   description?: string | null;
-  extra_params?: Record<string, any> | null;
+  extra_params?: JsonObject | null;
   is_active: boolean;
   is_default: boolean;
 }
@@ -42,7 +44,7 @@ export interface LLMConfigUpdate {
   is_active?: boolean;
   is_default?: boolean;
   description?: string | null;
-  extra_params?: Record<string, any> | null;
+  extra_params?: JsonObject | null;
 }
 
 export interface LLMConfigPublic extends LLMConfigBase {
@@ -63,7 +65,7 @@ export interface LLMConfigTest {
   base_url?: string | null;
   temperature: number;
   max_tokens?: number | null;
-  extra_params?: Record<string, any> | null;
+  extra_params?: JsonObject | null;
   test_prompt?: string;
 }
 
@@ -71,7 +73,7 @@ export interface LLMModelsFetchRequest {
   provider: LLMProvider;
   api_key?: string | null;
   base_url?: string | null;
-  extra_params?: Record<string, any> | null;
+  extra_params?: JsonObject | null;
 }
 
 export interface LLMConfigTestResult {

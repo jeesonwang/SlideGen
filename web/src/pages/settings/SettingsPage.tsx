@@ -31,6 +31,17 @@ export const SettingsPage = () => {
     }
   };
 
+  const getThemeDescription = (mode: ThemeMode) => {
+    switch (mode) {
+      case 'light':
+        return 'Use a bright interface for daytime work and presentations.';
+      case 'dark':
+        return 'Reduce glare with darker surfaces and stronger contrast.';
+      default:
+        return 'Follow your operating system appearance automatically.';
+    }
+  };
+
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="mx-auto w-full max-w-6xl px-6 py-8 space-y-6">
@@ -68,26 +79,44 @@ export const SettingsPage = () => {
                 key={option.value}
                 type="button"
                 onClick={() => setThemeMode(option.value)}
+                aria-pressed={selected}
                 className={[
-                  'rounded-2xl border px-4 py-4 text-left transition-all duration-200',
+                  'group flex min-h-[124px] w-full flex-col justify-between rounded-2xl border px-4 py-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   selected
-                    ? 'border-primary-500/40 bg-primary-500/10 text-text-main shadow-glow/20'
-                    : 'border-border/70 bg-surface-50/70 text-text-secondary hover:bg-surface-100 hover:text-text-main',
+                    ? 'border-primary-500/45 bg-primary-500/12 text-text-main shadow-soft'
+                    : 'border-border/70 bg-surface-50/70 text-text-secondary hover:border-primary-400/40 hover:bg-surface-100/90 hover:text-text-main',
                 ].join(' ')}
               >
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-3 font-semibold">
+                <div className="flex items-start justify-between gap-3">
+                  <span
+                    className={[
+                      'inline-flex h-11 w-11 items-center justify-center rounded-xl border transition-colors',
+                      selected
+                        ? 'border-primary-400/30 bg-primary-500/15 text-primary-300'
+                        : 'border-border/70 bg-surface-100/80 text-text-secondary group-hover:border-primary-400/30 group-hover:text-primary-300',
+                    ].join(' ')}
+                  >
                     {getThemeIcon(option.value)}
-                    {option.label}
                   </span>
                   <span
                     className={[
-                      'h-4 w-4 rounded-full border transition-colors',
+                      'inline-flex min-w-[72px] items-center justify-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors',
                       selected
-                        ? 'border-primary-400 bg-primary-400'
-                        : 'border-border bg-transparent',
+                        ? 'border-primary-500/30 bg-primary-500/12 text-primary-300'
+                        : 'border-border/70 bg-surface-100/80 text-text-muted group-hover:text-text-secondary',
                     ].join(' ')}
-                  />
+                  >
+                    {selected ? 'Active' : 'Select'}
+                  </span>
+                </div>
+
+                <div className="mt-5 space-y-1.5">
+                  <div className="text-base font-semibold text-text-main">
+                    {option.label}
+                  </div>
+                  <p className="m-0 text-sm leading-6 text-text-secondary">
+                    {getThemeDescription(option.value)}
+                  </p>
                 </div>
               </button>
             );

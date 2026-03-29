@@ -9,19 +9,25 @@ import { useUpdatePassword } from '../../hooks/useUser';
 
 const { Title, Text } = Typography;
 
+interface PasswordFormValues {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export const ProfilePage = () => {
   const { user } = useAuthStore();
-  const [passwordForm] = Form.useForm();
+  const [passwordForm] = Form.useForm<PasswordFormValues>();
   const updatePasswordMutation = useUpdatePassword();
 
-  const handlePasswordUpdate = async (values: any) => {
+  const handlePasswordUpdate = async (values: PasswordFormValues) => {
     try {
       await updatePasswordMutation.mutateAsync({
         current_password: values.currentPassword,
         new_password: values.newPassword,
       });
       passwordForm.resetFields();
-    } catch (error) {
+    } catch {
       // Error is handled by the mutation hook
     }
   };

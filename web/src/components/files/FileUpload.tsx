@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Upload, message, Card, Typography } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
-import type { UploadProps } from 'antd';
+import type { UploadFile, UploadProps } from 'antd';
 import { useUploadMultipleFiles } from '../../hooks/useFiles';
 
 const { Dragger } = Upload;
@@ -20,7 +20,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   sessionId,
   onUploadComplete,
 }) => {
-  const [fileList, setFileList] = useState<any[]>([]);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const uploadMutation = useUploadMultipleFiles();
 
   const handleUpload = async () => {
@@ -35,11 +35,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     }
 
     try {
-      const files = fileList.map((file) => file.originFileObj);
+      const files = fileList.reduce<File[]>((selectedFiles, file) => {
+        if (file.originFileObj instanceof File) {
+          selectedFiles.push(file.originFileObj);
+        }
+
+        return selectedFiles;
+      }, []);
+
+      if (files.length === 0) {
+        message.error('Selected files could not be processed');
+        return;
+      }
+
       await uploadMutation.mutateAsync({ files, sessionId });
       setFileList([]);
       onUploadComplete?.();
-    } catch (error) {
+    } catch {
       // Error is already handled by the mutation
     }
   };
@@ -69,7 +81,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         return false;
       }
 
-      setFileList((prev) => [...prev, file]);
+      setFileList((prev) => [
+        ...prev,
+        {
+          uid: file.uid,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          originFileObj: file,
+        },
+      ]);
       return false; // Prevent auto upload
     },
     onRemove: (file) => {

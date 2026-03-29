@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const helperSource = readFileSync(
-  resolve('web/src/pages/config/embeddingConfigKeyHandling.ts'),
+  resolve('src/pages/config/embeddingConfigKeyHandling.ts'),
   'utf8'
 );
 const pageSource = readFileSync(
-  resolve('web/src/pages/config/EmbeddingConfigPage.tsx'),
+  resolve('src/pages/config/EmbeddingConfigPage.tsx'),
   'utf8'
 );
 

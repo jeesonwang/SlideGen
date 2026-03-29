@@ -1,3 +1,5 @@
+import type { JsonObject } from './common.types';
+
 /**
  * Slidegen types for PPT generation workflow
  */
@@ -88,7 +90,7 @@ export type StreamEventType = (typeof StreamEventType)[keyof typeof StreamEventT
 
 export interface StreamEvent {
   event: StreamEventType;
-  data?: Record<string, any> | null;
+  data?: JsonObject | null;
   message?: string | null;
 }
 

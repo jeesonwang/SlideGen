@@ -17,22 +17,22 @@ export default {
           500: 'rgb(var(--color-surface-500) / <alpha-value>)',
         },
         primary: {
-          50: '#F0F9FF',
-          100: '#E0F2FE',
-          200: '#BAE6FD',
-          300: '#7DD3FC',
-          400: '#38BDF8',
-          500: '#0EA5E9', // Vivid Sky Blue
-          600: '#0284C7',
-          700: '#0369A1',
-          800: '#075985',
-          900: '#0C4A6E',
-          DEFAULT: '#0EA5E9',
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#2563EB',
+          600: '#1D4ED8',
+          700: '#1E40AF',
+          800: '#1E3A8A',
+          900: '#172554',
+          DEFAULT: '#2563EB',
         },
         accent: {
-          purple: '#8B5CF6',
-          pink: '#EC4899',
-          cyan: '#06B6D4',
+          purple: '#6366F1',
+          pink: '#DB2777',
+          cyan: '#0F766E',
         },
         border: 'rgb(var(--color-border) / <alpha-value>)',
         text: {
@@ -43,9 +43,9 @@ export default {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'primary-gradient': 'linear-gradient(135deg, #0EA5E9 0%, #8B5CF6 100%)', // Blue to Purple
-        'surface-gradient': 'linear-gradient(180deg, rgba(24, 28, 41, 0.8) 0%, rgba(17, 21, 33, 0.8) 100%)',
-        'glass-gradient': 'linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%)',
+        'primary-gradient': 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+        'surface-gradient': 'linear-gradient(180deg, rgba(24, 28, 41, 0.9) 0%, rgba(17, 21, 33, 0.94) 100%)',
+        'glass-gradient': 'linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
       },
       fontFamily: {
         heading: ['Inter', 'sans-serif'],
@@ -53,10 +53,10 @@ export default {
         sans: ['Inter', 'sans-serif'],
       },
       boxShadow: {
-        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.4)',
-        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
-        'glow': '0 0 20px rgba(14, 165, 233, 0.25)', // Primary glow
-        'glow-strong': '0 0 30px rgba(139, 92, 246, 0.4)', // Accent glow
+        'soft': '0 10px 28px -12px rgba(15, 23, 42, 0.28)',
+        'glass': '0 14px 36px -20px rgba(15, 23, 42, 0.35)',
+        'glow': '0 10px 24px rgba(37, 99, 235, 0.16)',
+        'glow-strong': '0 18px 38px rgba(37, 99, 235, 0.18)',
       },
       animation: {
         'fade-in': 'fadeIn 0.4s ease-out',

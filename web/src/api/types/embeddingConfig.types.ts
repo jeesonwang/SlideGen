@@ -1,3 +1,5 @@
+import type { JsonObject } from './common.types';
+
 /**
  * Embedding Configuration types
  */
@@ -19,7 +21,7 @@ export interface EmbeddingConfigBase {
   base_url?: string | null;
   dimensions?: number | null;
   description?: string | null;
-  extra_params?: Record<string, any> | null;
+  extra_params?: JsonObject | null;
   is_active: boolean;
   is_default: boolean;
 }
@@ -38,7 +40,7 @@ export interface EmbeddingConfigUpdate {
   is_active?: boolean;
   is_default?: boolean;
   description?: string | null;
-  extra_params?: Record<string, any> | null;
+  extra_params?: JsonObject | null;
 }
 
 export interface EmbeddingConfigPublic extends EmbeddingConfigBase {
@@ -58,7 +60,7 @@ export interface EmbeddingConfigTest {
   api_key?: string | null;
   base_url?: string | null;
   dimensions?: number | null;
-  extra_params?: Record<string, any> | null;
+  extra_params?: JsonObject | null;
   test_text?: string;
 }
 
@@ -66,7 +68,7 @@ export interface EmbeddingModelsFetchRequest {
   provider: EmbeddingProvider;
   api_key?: string | null;
   base_url?: string | null;
-  extra_params?: Record<string, any> | null;
+  extra_params?: JsonObject | null;
 }
 
 export interface EmbeddingConfigTestResult {

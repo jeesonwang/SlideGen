@@ -24,25 +24,33 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
   loading = false,
 }) => {
   const [form] = Form.useForm();
-  const [availableModels, setAvailableModels] = useState<AvailableModels['models']>([]);
+  const [fetchedModelsState, setFetchedModelsState] = useState<{
+    key: string;
+    models: AvailableModels['models'];
+  }>({
+    key: '',
+    models: [],
+  });
   const { data: providersData } = useLLMProviders();
   const fetchModelsMutation = useFetchLLMModels();
 
   const selectedProvider = Form.useWatch('provider', form);
   const selectedApiKey = Form.useWatch('api_key', form);
   const selectedBaseUrl = Form.useWatch('base_url', form);
+  const currentModelQueryKey = JSON.stringify([
+    selectedProvider ?? '',
+    selectedApiKey ?? '',
+    selectedBaseUrl ?? '',
+  ]);
+  const availableModels =
+    fetchedModelsState.key === currentModelQueryKey ? fetchedModelsState.models : [];
 
   // Reset model when provider changes
   useEffect(() => {
     if (selectedProvider && selectedProvider !== initialValues?.provider) {
       form.setFieldValue('model_id', undefined);
-      setAvailableModels([]);
     }
   }, [selectedProvider, form, initialValues?.provider]);
-
-  useEffect(() => {
-    setAvailableModels([]);
-  }, [selectedProvider, selectedApiKey, selectedBaseUrl]);
 
   const handleFinish = (values: Omit<LLMConfigCreate, 'user_id'>) => {
     onSubmit(values);
@@ -81,7 +89,10 @@ export const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
         extra_params: values.extra_params,
       });
 
-      setAvailableModels(result.models);
+      setFetchedModelsState({
+        key: currentModelQueryKey,
+        models: result.models,
+      });
 
       if (result.models.length === 0) {
         message.warning('No models were returned. You can still enter a model ID manually.');

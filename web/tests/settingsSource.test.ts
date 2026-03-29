@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const settingsSource = readFileSync(resolve('web/src/pages/settings/SettingsPage.tsx'), 'utf8');
-const llmSource = readFileSync(resolve('web/src/pages/config/LLMConfigPage.tsx'), 'utf8');
-const embeddingSource = readFileSync(resolve('web/src/pages/config/EmbeddingConfigPage.tsx'), 'utf8');
+const settingsSource = readFileSync(resolve('src/pages/settings/SettingsPage.tsx'), 'utf8');
+const llmSource = readFileSync(resolve('src/pages/config/LLMConfigPage.tsx'), 'utf8');
+const embeddingSource = readFileSync(resolve('src/pages/config/EmbeddingConfigPage.tsx'), 'utf8');
 
 assert.equal(
   settingsSource.includes('overflow-y-auto'),

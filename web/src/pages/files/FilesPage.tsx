@@ -2,7 +2,7 @@
  * Files / Knowledge Base Management Page
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Typography, Button, Space, Select, Alert, Empty } from 'antd';
 import { ReloadOutlined, PlusOutlined } from '@ant-design/icons';
 import { FileUpload } from '../../components/files/FileUpload';
@@ -23,23 +23,17 @@ export const FilesPage = () => {
   const [showUpload, setShowUpload] = useState(false);
 
   const { data: sessionsData } = useSessions();
+  const sessions = sessionsData?.data || [];
+  const activeSessions = sessions.filter((s) => s.status === SessionStatus.ACTIVE);
+  const effectiveSelectedSessionId = selectedSessionId ?? activeSessions[0]?.id;
   const { data: filesData, isLoading, refetch } = useFiles({
-    session_id: selectedSessionId,
+    session_id: effectiveSelectedSessionId,
   });
   const deleteMutation = useDeleteFile();
   const downloadMutation = useDownloadFile();
   const createSessionMutation = useCreateSession();
 
   const files = filesData?.data || [];
-  const sessions = sessionsData?.data || [];
-  const activeSessions = sessions.filter((s) => s.status === SessionStatus.ACTIVE);
-
-  // Auto-select first active session if available
-  useEffect(() => {
-    if (!selectedSessionId && activeSessions.length > 0) {
-      setSelectedSessionId(activeSessions[0].id);
-    }
-  }, [activeSessions, selectedSessionId]);
 
   const handleDelete = async (id: string) => {
     await deleteMutation.mutateAsync(id);
@@ -73,7 +67,7 @@ export const FilesPage = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Title level={2} className="!m-0">
             Knowledge Base
@@ -82,7 +76,7 @@ export const FilesPage = () => {
             Upload and manage files for presentation generation
           </Text>
         </div>
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
             Refresh
           </Button>
@@ -121,11 +115,11 @@ export const FilesPage = () => {
       ) : (
         <>
           <div className="mb-6">
-            <Space>
+            <Space wrap className="!flex">
               <Text strong>Session:</Text>
               <Select
-                className="w-[300px]"
-                value={selectedSessionId}
+                className="w-full sm:w-[300px]"
+                value={effectiveSelectedSessionId}
                 onChange={setSelectedSessionId}
                 options={activeSessions.map((session) => ({
                   label: session.title,
@@ -138,7 +132,7 @@ export const FilesPage = () => {
           {showUpload && (
             <div className="mb-6">
               <FileUpload
-                sessionId={selectedSessionId}
+                sessionId={effectiveSelectedSessionId}
                 onUploadComplete={handleUploadComplete}
               />
             </div>
@@ -150,13 +144,13 @@ export const FilesPage = () => {
         {files.length === 0 && !isLoading ? (
           <Empty
             description={
-              selectedSessionId
+              effectiveSelectedSessionId
                 ? 'No files uploaded yet'
                 : 'Select a session to view files'
             }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
-            {selectedSessionId && (
+            {effectiveSelectedSessionId && (
               <Button
                 type="primary"
                 onClick={() => setShowUpload(true)}

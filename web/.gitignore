@@ -27,3 +27,7 @@ dist-ssr
 
 # Testing
 .tmp-tests
+
+# TypeScript incremental caches
+.tmp
+.vite

@@ -11,6 +11,7 @@ import type {
   EmbeddingModelsFetchRequest,
 } from '../api/types/embeddingConfig.types';
 import { message } from 'antd';
+import { getErrorDetail } from '../utils/errorDetail';
 
 export const useEmbeddingConfigs = () => {
   return useQuery({
@@ -37,8 +38,8 @@ export const useCreateEmbeddingConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['embedding-configs'] });
       message.success('Embedding configuration created successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to create Embedding configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to create Embedding configuration'));
     },
   });
 };
@@ -53,8 +54,8 @@ export const useUpdateEmbeddingConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['embedding-configs'] });
       message.success('Embedding configuration updated successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to update Embedding configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to update Embedding configuration'));
     },
   });
 };
@@ -68,8 +69,8 @@ export const useDeleteEmbeddingConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['embedding-configs'] });
       message.success('Embedding configuration deleted successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to delete Embedding configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to delete Embedding configuration'));
     },
   });
 };
@@ -86,8 +87,8 @@ export const useTestEmbeddingConfig = () => {
         message.error(result.error || 'Test failed');
       }
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to test configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to test configuration'));
     },
   });
 };
@@ -101,8 +102,8 @@ export const useSetDefaultEmbeddingConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['embedding-configs'] });
       message.success('Default configuration updated');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to set default configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to set default configuration'));
     },
   });
 };
@@ -110,8 +111,8 @@ export const useSetDefaultEmbeddingConfig = () => {
 export const useFetchEmbeddingModels = () => {
   return useMutation({
     mutationFn: (data: EmbeddingModelsFetchRequest) => embeddingConfigApi.fetchModels(data),
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to fetch models');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to fetch models'));
     },
   });
 };

@@ -7,6 +7,7 @@ import { message } from 'antd';
 import { userApi } from '../api/endpoints/user';
 import { useAuthStore } from '../store/authStore';
 import type { UserUpdate, UpdatePassword } from '../api/types/auth.types';
+import { getErrorDetail } from '../utils/errorDetail';
 
 /**
  * Get current user information
@@ -33,8 +34,8 @@ export const useUpdateUser = () => {
       setUser(data);
       message.success('Profile updated successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to update profile');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to update profile'));
     },
   });
 };
@@ -48,8 +49,8 @@ export const useUpdatePassword = () => {
     onSuccess: () => {
       message.success('Password updated successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to update password');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to update password'));
     },
   });
 };

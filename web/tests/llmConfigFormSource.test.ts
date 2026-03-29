@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const llmFormSource = readFileSync(
-  resolve('web/src/components/config/LLMConfigForm.tsx'),
+  resolve('src/components/config/LLMConfigForm.tsx'),
   'utf8'
 );
 

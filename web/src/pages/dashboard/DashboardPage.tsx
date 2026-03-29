@@ -53,6 +53,7 @@ export const DashboardPage = () => {
   const totalFiles = filesData?.count || 0;
 
   const recentSessions = visibleSessions.slice(0, 5);
+  const metricValueStyle = { fontWeight: 600, fontSize: 28 };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -97,34 +98,34 @@ export const DashboardPage = () => {
       {/* Stats Cards */}
       <Row gutter={[16, 16]} className="mb-6 animate-slide-up">
         <Col xs={24} sm={12} lg={8}>
-          <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
+          <Card className="modern-card stat-card border-0 hover:scale-[1.01] transition-transform duration-200">
             <Statistic
               title={<span className="text-text-secondary font-medium">Active Sessions</span>}
               value={activeSessions}
               prefix={<ClockCircleOutlined className="text-accent-500" />}
-              valueStyle={{ color: '#2563EB', fontWeight: 600, fontSize: 28 }}
+              valueStyle={{ ...metricValueStyle, color: 'rgb(var(--color-primary-500))' }}
               loading={sessionsLoading}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={8}>
-          <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
+          <Card className="modern-card stat-card border-0 hover:scale-[1.01] transition-transform duration-200">
             <Statistic
               title={<span className="text-text-secondary font-medium">Completed</span>}
               value={completedSessions}
               prefix={<CheckCircleOutlined className="text-success-500" />}
-              valueStyle={{ color: '#16A34A', fontWeight: 600, fontSize: 28 }}
+              valueStyle={{ ...metricValueStyle, color: 'rgb(var(--color-success-500))' }}
               loading={sessionsLoading}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={8}>
-          <Card className="modern-card stat-card border-0 hover:scale-[1.02] transition-transform duration-200">
+          <Card className="modern-card stat-card border-0 hover:scale-[1.01] transition-transform duration-200">
             <Statistic
               title={<span className="text-text-secondary font-medium">Knowledge Base</span>}
               value={totalFiles}
               prefix={<DatabaseOutlined className="text-primary-500" />}
-              valueStyle={{ color: 'rgb(var(--color-text-main))', fontWeight: 600, fontSize: 28 }}
+              valueStyle={{ ...metricValueStyle, color: 'rgb(var(--color-text-main))' }}
               loading={filesLoading}
             />
           </Card>

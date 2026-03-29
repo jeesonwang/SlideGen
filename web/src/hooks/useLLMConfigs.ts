@@ -11,6 +11,7 @@ import type {
   LLMModelsFetchRequest,
 } from '../api/types/llmConfig.types';
 import { message } from 'antd';
+import { getErrorDetail } from '../utils/errorDetail';
 
 export const useLLMConfigs = () => {
   return useQuery({
@@ -37,8 +38,8 @@ export const useCreateLLMConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] });
       message.success('LLM configuration created successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to create LLM configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to create LLM configuration'));
     },
   });
 };
@@ -53,8 +54,8 @@ export const useUpdateLLMConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] });
       message.success('LLM configuration updated successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to update LLM configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to update LLM configuration'));
     },
   });
 };
@@ -68,8 +69,8 @@ export const useDeleteLLMConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] });
       message.success('LLM configuration deleted successfully');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to delete LLM configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to delete LLM configuration'));
     },
   });
 };
@@ -84,8 +85,8 @@ export const useTestLLMConfig = () => {
         message.error(result.error || 'Test failed');
       }
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to test configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to test configuration'));
     },
   });
 };
@@ -99,8 +100,8 @@ export const useSetDefaultLLMConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] });
       message.success('Default configuration updated');
     },
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to set default configuration');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to set default configuration'));
     },
   });
 };
@@ -108,8 +109,8 @@ export const useSetDefaultLLMConfig = () => {
 export const useFetchLLMModels = () => {
   return useMutation({
     mutationFn: (data: LLMModelsFetchRequest) => llmConfigApi.fetchModels(data),
-    onError: (error: any) => {
-      message.error(error?.detail || 'Failed to fetch models');
+    onError: (error: unknown) => {
+      message.error(getErrorDetail(error, 'Failed to fetch models'));
     },
   });
 };

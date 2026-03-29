@@ -71,6 +71,7 @@ export const SessionList: React.FC<SessionListProps> = ({
       dataIndex: 'status',
       key: 'status',
       width: 140,
+      responsive: ['sm'],
       render: (status: string) => {
         const presentation = getSessionStatusPresentation(status);
         const Icon = presentation.icon;
@@ -93,6 +94,7 @@ export const SessionList: React.FC<SessionListProps> = ({
       key: 'file_count',
       width: 90,
       align: 'center',
+      responsive: ['xl'],
       render: (count: number) => <Text className="!text-text-main">{count}</Text>,
     },
     {
@@ -101,6 +103,7 @@ export const SessionList: React.FC<SessionListProps> = ({
       key: 'message_count',
       width: 110,
       align: 'center',
+      responsive: ['xl'],
       render: (count: number) => <Text className="!text-text-main">{count}</Text>,
     },
     {
@@ -108,6 +111,7 @@ export const SessionList: React.FC<SessionListProps> = ({
       dataIndex: 'create_time',
       key: 'create_time',
       width: 180,
+      responsive: ['lg'],
       render: (time: string) => (
         <div className="space-y-1">
           <Text className="block !text-text-main">{dayjs(time).fromNow()}</Text>
@@ -220,7 +224,6 @@ export const SessionList: React.FC<SessionListProps> = ({
           showSizeChanger: false,
           showTotal: (total) => `Total ${total} sessions`,
         }}
-        scroll={{ x: 980 }}
       />
     </div>
   );

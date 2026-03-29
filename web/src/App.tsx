@@ -43,7 +43,6 @@ const AppShell = () => {
       setSystemPrefersDark(event.matches);
     };
 
-    setSystemPrefersDark(mediaQuery.matches);
     mediaQuery.addEventListener('change', handleChange);
 
     return () => {
@@ -62,7 +61,7 @@ const AppShell = () => {
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
           colorPrimary: '#2563EB',
-          colorSuccess: '#16A34A',
+          colorSuccess: '#15803D',
           colorWarning: '#F59E0B',
           colorError: '#EF4444',
           colorInfo: '#2563EB',
@@ -78,7 +77,7 @@ const AppShell = () => {
         },
         components: {
           Button: {
-            primaryShadow: '0 2px 8px rgba(37, 99, 235, 0.15)',
+            primaryShadow: '0 10px 24px rgba(37, 99, 235, 0.14)',
             controlHeight: 40,
             controlHeightLG: 48,
             borderRadius: 8,

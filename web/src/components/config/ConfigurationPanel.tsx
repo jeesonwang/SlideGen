@@ -1,4 +1,4 @@
-import { Button, Switch, Select, InputNumber, Upload, message } from 'antd';
+import { Button, Switch, Select, InputNumber, Upload, message, Radio } from 'antd';
 import type { UploadProps } from 'antd';
 import { 
   MenuFoldOutlined,
@@ -219,34 +219,36 @@ export const ConfigurationPanel = ({ onCollapse }: ConfigurationPanelProps) => {
           
           <div className="space-y-3">
             <label className="text-xs text-text-secondary block font-medium">Export As</label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <input 
-                  type="radio" 
-                  name="export" 
-                  className="hidden" 
-                  checked={exportFormat === 'pptx'}
-                  onChange={() => setExportFormat('pptx')}
-                />
-                <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center transition-all", exportFormat === 'pptx' ? "border-primary-500 bg-primary-500/20" : "border-text-secondary group-hover:border-primary-400")}>
-                  {exportFormat === 'pptx' && <div className="w-2 h-2 rounded-full bg-primary-500 shadow-glow" />}
-                </div>
-                <span className={cn("text-sm transition-colors", exportFormat === 'pptx' ? "text-primary-400 font-medium" : "text-text-secondary group-hover:text-text-main")}>PPTX</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <input 
-                  type="radio" 
-                  name="export" 
-                  className="hidden" 
-                  checked={exportFormat === 'pdf'}
-                  onChange={() => setExportFormat('pdf')}
-                />
-                <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center transition-all", exportFormat === 'pdf' ? "border-primary-500 bg-primary-500/20" : "border-text-secondary group-hover:border-primary-400")}>
-                  {exportFormat === 'pdf' && <div className="w-2 h-2 rounded-full bg-primary-500 shadow-glow" />}
-                </div>
-                <span className={cn("text-sm transition-colors", exportFormat === 'pdf' ? "text-primary-400 font-medium" : "text-text-secondary group-hover:text-text-main")}>PDF</span>
-              </label>
-            </div>
+            <Radio.Group
+              value={exportFormat}
+              onChange={(event) => setExportFormat(event.target.value)}
+              optionType="button"
+              buttonStyle="solid"
+              className="grid grid-cols-2 gap-3 export-format-group"
+            >
+              <Radio.Button
+                value="pptx"
+                className={cn(
+                  "!m-0 !h-10 !rounded-lg !border !border-border/70 !bg-surface-100/50 !text-center !leading-[38px] !shadow-none",
+                  exportFormat === 'pptx'
+                    ? "!border-primary-500/60 !bg-primary-500/12 !text-primary-400"
+                    : "!text-text-secondary hover:!border-primary-400/50 hover:!text-text-main"
+                )}
+              >
+                PPTX
+              </Radio.Button>
+              <Radio.Button
+                value="pdf"
+                className={cn(
+                  "!m-0 !h-10 !rounded-lg !border !border-border/70 !bg-surface-100/50 !text-center !leading-[38px] !shadow-none",
+                  exportFormat === 'pdf'
+                    ? "!border-primary-500/60 !bg-primary-500/12 !text-primary-400"
+                    : "!text-text-secondary hover:!border-primary-400/50 hover:!text-text-main"
+                )}
+              >
+                PDF
+              </Radio.Button>
+            </Radio.Group>
           </div>
 
           <div className="space-y-3 pt-2">

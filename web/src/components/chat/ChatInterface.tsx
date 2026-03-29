@@ -134,12 +134,6 @@ export const ChatInterface = () => {
   }, [currentSessionId, loadMessages]);
 
   useEffect(() => {
-    if (!isEditingTitle) {
-      setTitleDraft(chatHeaderTitle);
-    }
-  }, [chatHeaderTitle, isEditingTitle]);
-
-  useEffect(() => {
     if (isEditingTitle) {
       titleInputRef.current?.focus();
       titleInputRef.current?.select();
@@ -489,12 +483,12 @@ export const ChatInterface = () => {
                         </div>
                       )}
                       {msg.role === 'user' && (
-                        <div className="flex gap-1 justify-end mt-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity duration-150">
+                        <div className="mt-1 flex gap-1 justify-end opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover/bubble:opacity-100">
                           <Tooltip title="Copy">
                             <button
                               type="button"
                               onClick={() => void handleCopyMessage(msg.content)}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-200/40 hover:bg-surface-200/70 text-text-secondary hover:text-text-main transition-colors"
+                              className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-200/40 text-text-secondary transition-colors hover:bg-surface-200/70 hover:text-text-main sm:h-7 sm:w-7"
                             >
                               <CopyOutlined className="text-xs" />
                             </button>
@@ -504,7 +498,7 @@ export const ChatInterface = () => {
                               type="button"
                               onClick={() => handleEditMessageStart(msg.id, msg.content)}
                               disabled={isStreaming}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-200/40 hover:bg-surface-200/70 text-text-secondary hover:text-text-main transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                              className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-200/40 text-text-secondary transition-colors hover:bg-surface-200/70 hover:text-text-main disabled:cursor-not-allowed disabled:opacity-30 sm:h-7 sm:w-7"
                             >
                               <EditOutlined className="text-xs" />
                             </button>
@@ -563,9 +557,9 @@ export const ChatInterface = () => {
                 <Tooltip title="Upload Reference">
                   <Button 
                     type="text" 
-                    size="small"
+                    size="middle"
                     icon={<PaperClipOutlined />} 
-                    className="!text-text-secondary hover:!text-primary-400 hover:!bg-primary-500/10 transition-colors"
+                    className="!h-11 !w-11 !min-w-0 !rounded-xl !text-text-secondary hover:!bg-primary-500/10 hover:!text-primary-400 transition-colors"
                   />
                 </Tooltip>
               </div>
@@ -576,7 +570,7 @@ export const ChatInterface = () => {
                 onClick={handleSend}
                 disabled={!input.trim() || isStreaming}
                 className={cn(
-                  "!flex items-center justify-center !w-9 !h-9 !min-w-0 !rounded-xl transition-all duration-300",
+                  "!flex items-center justify-center !w-11 !h-11 !min-w-0 !rounded-xl transition-all duration-300",
                    !input.trim() || isStreaming ? "!bg-surface-300 !text-text-secondary" : "!bg-primary-gradient !shadow-glow hover:!opacity-90 hover:!scale-105"
                 )}
               />

@@ -6,9 +6,17 @@ import { useState, useMemo } from 'react';
 import { Card, Typography, Tabs, Input, Button, Space } from 'antd';
 import { EyeOutlined, EditOutlined, CopyOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
+import type { Components, ExtraProps } from 'react-markdown';
+import type { ComponentPropsWithoutRef } from 'react';
 
 const { TextArea } = Input;
 const { Title } = Typography;
+
+type MarkdownHeadingProps<Tag extends 'h1' | 'h2' | 'h3' | 'ul' | 'ol'> =
+  ComponentPropsWithoutRef<Tag> & ExtraProps;
+type MarkdownCodeProps = ComponentPropsWithoutRef<'code'> & ExtraProps & {
+  inline?: boolean;
+};
 
 interface MarkdownEditorProps {
   value: string;
@@ -29,25 +37,25 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     navigator.clipboard.writeText(value);
   };
 
-  const markdownComponents = useMemo(
+  const markdownComponents = useMemo<Components>(
     () => ({
-      h1: ({ node, ...props }: any) => (
+      h1: (props: MarkdownHeadingProps<'h1'>) => (
         <h1 className="border-b-2 border-primary-500 pb-2 text-primary-500" {...props} />
       ),
-      h2: ({ node, ...props }: any) => (
+      h2: (props: MarkdownHeadingProps<'h2'>) => (
         <h2 className="mt-6 text-primary-500" {...props} />
       ),
-      h3: ({ node, ...props }: any) => (
+      h3: (props: MarkdownHeadingProps<'h3'>) => (
         <h3 className="text-primary-400" {...props} />
       ),
-      ul: ({ node, ...props }: any) => (
+      ul: (props: MarkdownHeadingProps<'ul'>) => (
         <ul className="leading-relaxed" {...props} />
       ),
-      ol: ({ node, ...props }: any) => (
+      ol: (props: MarkdownHeadingProps<'ol'>) => (
         <ol className="leading-relaxed" {...props} />
       ),
-      code: ({ node, ...props }: any) =>
-        props.inline ? (
+      code: ({ inline, ...props }: MarkdownCodeProps) =>
+        inline ? (
           <code
             className="rounded bg-surface-100 px-1.5 py-0.5 font-mono text-text-main"
             {...props}

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const slidegenSource = readFileSync(resolve('web/src/api/endpoints/slidegen.ts'), 'utf8');
-const sseHookSource = readFileSync(resolve('web/src/hooks/useSSE.ts'), 'utf8');
+const slidegenSource = readFileSync(resolve('src/api/endpoints/slidegen.ts'), 'utf8');
+const sseHookSource = readFileSync(resolve('src/hooks/useSSE.ts'), 'utf8');
 
 assert.equal(slidegenSource.includes('getMarkdownStreamRequest'), true);
 assert.equal(slidegenSource.includes("method: 'POST'"), true);

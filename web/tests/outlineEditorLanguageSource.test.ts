@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const outlineEditorSource = readFileSync(
-  resolve('web/src/components/generation/OutlineEditor.tsx'),
+  resolve('src/components/generation/OutlineEditor.tsx'),
   'utf8'
 );
 const chatSource = readFileSync(
-  resolve('web/src/components/chat/ChatInterface.tsx'),
+  resolve('src/components/chat/ChatInterface.tsx'),
   'utf8'
 );
 

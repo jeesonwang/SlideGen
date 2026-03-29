@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const embeddingFormSource = readFileSync(
-  resolve('web/src/components/config/EmbeddingConfigForm.tsx'),
+  resolve('src/components/config/EmbeddingConfigForm.tsx'),
   'utf8'
 );
 

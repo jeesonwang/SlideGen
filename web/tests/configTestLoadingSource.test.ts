@@ -3,19 +3,19 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const llmListSource = readFileSync(
-  resolve('web/src/components/config/LLMConfigList.tsx'),
+  resolve('src/components/config/LLMConfigList.tsx'),
   'utf8'
 );
 const embeddingListSource = readFileSync(
-  resolve('web/src/components/config/EmbeddingConfigList.tsx'),
+  resolve('src/components/config/EmbeddingConfigList.tsx'),
   'utf8'
 );
 const llmPageSource = readFileSync(
-  resolve('web/src/pages/config/LLMConfigPage.tsx'),
+  resolve('src/pages/config/LLMConfigPage.tsx'),
   'utf8'
 );
 const embeddingPageSource = readFileSync(
-  resolve('web/src/pages/config/EmbeddingConfigPage.tsx'),
+  resolve('src/pages/config/EmbeddingConfigPage.tsx'),
   'utf8'
 );
 

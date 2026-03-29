@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Input, Tooltip } from 'antd';
 import {
   CaretDownOutlined,
@@ -76,13 +76,10 @@ const toDownloadFilename = (title: string) => {
 };
 
 const iconButtonClassName =
-  'inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-[13px] text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40';
-
-const toolbarActionButtonClassName =
-  'inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-border/60 bg-surface-50 px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40';
+  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-[13px] text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9';
 
 const smallActionClassName =
-  'inline-flex min-h-7 items-center gap-1 rounded-lg border border-border/60 bg-surface-50 px-2 text-[12px] font-medium text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500';
+  'inline-flex min-h-10 items-center gap-1 rounded-lg border border-border/60 bg-surface-50 px-3 text-[12px] font-medium text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500';
 
 export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   value,
@@ -92,33 +89,23 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   refreshing = false,
   allowFullscreen = true,
 }) => {
-  const [outline, setOutline] = useState<OutlineDocument>(EMPTY_OUTLINE);
   const [activeView, setActiveView] = useState<'outline' | 'markdown'>('outline');
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [collapsedSectionIds, setCollapsedSectionIds] = useState<string[]>([]);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
-  const isInternalUpdate = useRef(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const outline = useMemo<OutlineDocument>(
+    () => (value.trim() ? parseMarkdownToOutline(value) : EMPTY_OUTLINE),
+    [value]
+  );
+  const resolvedActiveSectionId =
+    activeSectionId && outline.sections.some((section) => section.id === activeSectionId)
+      ? activeSectionId
+      : outline.sections[0]?.id ?? null;
   const currentMarkdown = serializeOutlineToMarkdown(outline);
   const canRefresh = !!onRefresh && !refreshDisabled;
   const isFullscreen = isBrowserFullscreen || isPseudoFullscreen;
-
-  useEffect(() => {
-    if (isInternalUpdate.current) {
-      isInternalUpdate.current = false;
-      return;
-    }
-
-    setOutline(parseMarkdownToOutline(value));
-  }, [value]);
-
-  useEffect(() => {
-    const nextSectionId = outline.sections[0]?.id ?? null;
-    if (!activeSectionId || !outline.sections.some((section) => section.id === activeSectionId)) {
-      setActiveSectionId(nextSectionId);
-    }
-  }, [activeSectionId, outline.sections]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -137,8 +124,6 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   }, []);
 
   const syncMarkdown = (nextOutline: OutlineDocument) => {
-    setOutline(nextOutline);
-    isInternalUpdate.current = true;
     onChange(serializeOutlineToMarkdown(nextOutline));
   };
 
@@ -363,12 +348,12 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           <Tooltip title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}>
             <button
               type="button"
               onClick={() => void handleFullscreenToggle()}
-              className={toolbarActionButtonClassName}
+              className={cn(iconButtonClassName, 'w-auto gap-2 whitespace-nowrap px-3')}
               disabled={!allowFullscreen}
               aria-label="Full Screen"
             >
@@ -379,7 +364,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           <button
             type="button"
             onClick={handleDownload}
-            className={toolbarActionButtonClassName}
+            className={cn(iconButtonClassName, 'w-auto gap-2 whitespace-nowrap px-3')}
           >
             <DownloadOutlined />
             <span>Download</span>
@@ -387,7 +372,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           <button
             type="button"
             onClick={() => void onRefresh?.()}
-            className={toolbarActionButtonClassName}
+            className={cn(iconButtonClassName, 'w-auto gap-2 whitespace-nowrap px-3')}
             disabled={!canRefresh || refreshing}
           >
             <ReloadOutlined className={refreshing ? 'animate-spin' : ''} />
@@ -454,7 +439,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           ) : (
             <div className="space-y-4">
               {outline.sections.map((section, index) => {
-                const isActive = activeSectionId === section.id;
+                const isActive = resolvedActiveSectionId === section.id;
                 const isCollapsed = collapsedSectionIds.includes(section.id);
 
                 return (
@@ -554,7 +539,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                   type="button"
                                   onClick={() => handleItemKindToggle(section.id, item.id)}
                                   className={cn(
-                                    'rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors',
+                                    'min-h-10 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors',
                                     item.kind === 'heading'
                                       ? 'bg-primary-500/12 text-primary-500'
                                       : 'bg-surface-100 text-text-secondary'
@@ -620,7 +605,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                       <button
                         type="button"
                         onClick={() => handleAddSection(index)}
-                        className="inline-flex min-h-8 items-center gap-2 rounded-full border border-dashed border-border/70 bg-surface-50 px-3 text-[12px] font-medium text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500"
+                        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-dashed border-border/70 bg-surface-50 px-4 text-[12px] font-medium text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500"
                       >
                         <PlusOutlined />
                         <span>Add Section Below</span>
@@ -642,7 +627,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                   <button
                     type="button"
                     onClick={() => handleAddSection()}
-                    className="mt-5 inline-flex min-h-9 items-center gap-2 rounded-full bg-primary-500 px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+                    className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary-500 px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
                   >
                     <PlusOutlined />
                     <span>Add First Section</span>

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const source = readFileSync(resolve('web/src/pages/dashboard/DashboardPage.tsx'), 'utf8');
+const source = readFileSync(resolve('src/pages/dashboard/DashboardPage.tsx'), 'utf8');
 
 assert.equal(
   source.includes('overflow-y-auto'),

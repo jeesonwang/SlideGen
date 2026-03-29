@@ -1,3 +1,5 @@
+import type { JsonObject } from './common.types';
+
 /**
  * Chat message types for session conversations
  */
@@ -14,7 +16,7 @@ export type MessageRole = (typeof MessageRole)[keyof typeof MessageRole];
 export interface ChatMessageBase {
   role: MessageRole;
   content: string;
-  extra_data?: Record<string, any> | null;
+  extra_data?: JsonObject | null;
 }
 
 // Properties for creating a new message

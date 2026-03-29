@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const source = readFileSync(
-  resolve('web/src/pages/dashboard/DashboardPage.tsx'),
+  resolve('src/pages/dashboard/DashboardPage.tsx'),
   'utf8'
 );
 

@@ -3,12 +3,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const files = [
-  'web/src/pages/dashboard/DashboardPage.tsx',
-  'web/src/components/common/Sidebar.tsx',
-  'web/src/pages/sessions/SessionsPage.tsx',
-  'web/src/components/sessions/SessionList.tsx',
-  'web/src/pages/config/LLMConfigPage.tsx',
-  'web/src/pages/config/EmbeddingConfigPage.tsx',
+  'src/pages/dashboard/DashboardPage.tsx',
+  'src/components/common/Sidebar.tsx',
+  'src/pages/sessions/SessionsPage.tsx',
+  'src/components/sessions/SessionList.tsx',
+  'src/pages/config/LLMConfigPage.tsx',
+  'src/pages/config/EmbeddingConfigPage.tsx',
 ];
 
 const forbiddenPatterns = [

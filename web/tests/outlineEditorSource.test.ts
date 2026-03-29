@@ -3,10 +3,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const source = readFileSync(
-  resolve('web/src/components/generation/OutlineEditor.tsx'),
+  resolve('src/components/generation/OutlineEditor.tsx'),
   'utf8'
 );
-const globalStyles = readFileSync(resolve('web/src/index.css'), 'utf8');
+const globalStyles = readFileSync(resolve('src/index.css'), 'utf8');
 
 assert.match(
   source,

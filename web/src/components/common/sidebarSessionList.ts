@@ -1,3 +1,4 @@
+import type { JsonObject } from '../../api/types/common.types';
 import type { SessionPublic } from '../../api/types/session.types';
 
 export const isSidebarSessionPinned = (session: SessionPublic) =>
@@ -16,7 +17,7 @@ export const sortSidebarSessions = (sessions: SessionPublic[]) =>
   });
 
 export const togglePinnedExtraData = (
-  extraData: Record<string, any> | null | undefined,
+  extraData: JsonObject | null | undefined,
   pinned: boolean
 ) => ({
   ...(extraData || {}),

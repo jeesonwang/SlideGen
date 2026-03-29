@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const embeddingListSource = readFileSync(
-  resolve('web/src/components/config/EmbeddingConfigList.tsx'),
+  resolve('src/components/config/EmbeddingConfigList.tsx'),
   'utf8'
 );
 const llmListSource = readFileSync(
-  resolve('web/src/components/config/LLMConfigList.tsx'),
+  resolve('src/components/config/LLMConfigList.tsx'),
   'utf8'
 );
 

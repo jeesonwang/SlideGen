@@ -13,6 +13,7 @@ import { slidegenApi } from '../../api/endpoints/slidegen';
 import { useAuthStore } from '../../store/authStore';
 import { GENERATION_DEFAULTS } from '../../utils/constants';
 import { cn } from '../../utils/classnames';
+import { getErrorDetail } from '../../utils/errorDetail';
 import type { GenerateMarkdownRequest } from '../../api/types/slidegen.types';
 import type { MarkdownStreamRequestConfig } from '../../api/types/slidegen.types';
 import { Tone, Verbosity } from '../../api/types/slidegen.types';
@@ -135,8 +136,8 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
         window.URL.revokeObjectURL(url);
         message.success('Presentation downloaded successfully!');
       }
-    } catch (error: any) {
-      message.error(error?.detail || 'Failed to generate PPTX');
+    } catch (error: unknown) {
+      message.error(getErrorDetail(error, 'Failed to generate PPTX'));
     } finally {
       setExporting(false);
     }
