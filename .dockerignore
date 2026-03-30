@@ -45,6 +45,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+tests/
 
 # Translations
 *.mo
@@ -86,7 +87,6 @@ celerybeat-schedule
 # mypy
 .mypy_cache/
 .idea
-datagrand/
 logs/
 .env
 driver
