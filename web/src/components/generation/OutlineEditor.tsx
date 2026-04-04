@@ -463,7 +463,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                       aria-pressed={isActive}
                     >
                       <div className="flex flex-col gap-3 border-b border-border/60 bg-surface-100/55 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
                           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-50 text-text-secondary">
                             <HolderOutlined />
                           </span>
@@ -473,14 +473,16 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                           <span className="rounded-full border border-primary-500/15 bg-primary-500/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-500">
                             Section
                           </span>
-                          <Input
-                            value={section.title}
-                            onChange={(event) =>
-                              handleSectionTitleChange(section.id, event.target.value)
-                            }
-                            placeholder="Section title"
-                            className="!h-9 min-w-0 flex-1 !rounded-xl !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
-                          />
+                          <div className="min-w-0 flex-1">
+                            <Input
+                              value={section.title}
+                              onChange={(event) =>
+                                handleSectionTitleChange(section.id, event.target.value)
+                              }
+                              placeholder="Section title"
+                              className="!h-9 w-full !rounded-xl !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
+                            />
+                          </div>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
