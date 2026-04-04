@@ -20,6 +20,7 @@ from slidegen.models.session import (
     SessionUpdate,
 )
 from slidegen.utils.file import file_manager
+from slidegen.utils.time import now_datetime
 
 router = APIRouter()
 
@@ -71,7 +72,8 @@ async def validate_session_ownership(db_session: SessionDep, session_id: uuid.UU
     Raises:
         HTTPException: if session not found or access denied
     """
-    session = await db_session.get(SessionModel, session_id)
+    statement = select(SessionModel).where(SessionModel.id == session_id).limit(1)
+    session = (await db_session.execute(statement)).scalar_one_or_none()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.user_id != user_id:
@@ -303,15 +305,10 @@ async def update_session(
         # Validate ownership
         session = await validate_session_ownership(db_session, session_id, current_user.id)
 
-        # Update fields
-        if session_in.title is not None:
-            session.title = session_in.title
-        if session_in.status is not None:
-            session.status = session_in.status
-        if session_in.topic is not None:
-            session.topic = session_in.topic
-        if session_in.extra_data is not None:
-            session.extra_data = session_in.extra_data
+        update_data = session_in.model_dump(exclude_unset=True)
+        if update_data:
+            session.sqlmodel_update(update_data)
+            session.update_time = now_datetime()
 
         db_session.add(session)
         await db_session.commit()
