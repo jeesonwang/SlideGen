@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import { getRightPanelVisibility } from '../src/components/layout/rightPanelVisibility.ts';
 
 assert.deepEqual(getRightPanelVisibility(false), {
-  showPanel: true,
+  showPanel: false,
   showExpandTrigger: false,
 });
 
 assert.deepEqual(getRightPanelVisibility(true), {
   showPanel: false,
-  showExpandTrigger: true,
+  showExpandTrigger: false,
 });
 
 console.log('rightPanelVisibility.test.ts passed');

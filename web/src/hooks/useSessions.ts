@@ -10,6 +10,10 @@ import type {
 } from '../api/types/session.types';
 import { message } from 'antd';
 import { getErrorDetail } from '../utils/errorDetail';
+import {
+  mergeSessionWithUpdate,
+  syncUpdatedSessionInCache,
+} from './sessionQueryCache';
 
 export const useSessions = (params?: {
   skip?: number;
@@ -37,10 +41,10 @@ export const useCreateSession = () => {
     mutationFn: (data: SessionCreate) => sessionsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      message.success('Session created successfully');
+      message.success('Project created');
     },
     onError: (error: unknown) => {
-      message.error(getErrorDetail(error, 'Failed to create session'));
+      message.error(getErrorDetail(error, 'Failed to create project'));
     },
   });
 };
@@ -51,12 +55,16 @@ export const useUpdateSession = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: SessionUpdate }) =>
       sessionsApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedSession, variables) => {
+      syncUpdatedSessionInCache(
+        queryClient,
+        mergeSessionWithUpdate(updatedSession, variables.data)
+      );
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      message.success('Session updated successfully');
+      message.success('Project updated');
     },
     onError: (error: unknown) => {
-      message.error(getErrorDetail(error, 'Failed to update session'));
+      message.error(getErrorDetail(error, 'Failed to update project'));
     },
   });
 };
@@ -68,10 +76,10 @@ export const useDeleteSession = () => {
     mutationFn: (id: string) => sessionsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      message.success('Session deleted successfully');
+      message.success('Project deleted');
     },
     onError: (error: unknown) => {
-      message.error(getErrorDetail(error, 'Failed to delete session'));
+      message.error(getErrorDetail(error, 'Failed to delete project'));
     },
   });
 };

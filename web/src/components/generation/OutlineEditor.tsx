@@ -29,6 +29,7 @@ interface OutlineEditorProps {
   refreshDisabled?: boolean;
   refreshing?: boolean;
   allowFullscreen?: boolean;
+  toolbarActions?: React.ReactNode;
 }
 
 const EMPTY_OUTLINE: OutlineDocument = {
@@ -76,10 +77,10 @@ const toDownloadFilename = (title: string) => {
 };
 
 const iconButtonClassName =
-  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-[13px] text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9';
+  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-[13px] text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong disabled:cursor-not-allowed disabled:opacity-40';
 
 const smallActionClassName =
-  'inline-flex min-h-10 items-center gap-1 rounded-lg border border-border/60 bg-surface-50 px-3 text-[12px] font-medium text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500';
+  'inline-flex min-h-11 items-center gap-1 rounded-lg border border-border/60 bg-surface-50 px-3 text-[12px] font-medium text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong';
 
 export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   value,
@@ -88,6 +89,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   refreshDisabled = false,
   refreshing = false,
   allowFullscreen = true,
+  toolbarActions,
 }) => {
   const [activeView, setActiveView] = useState<'outline' | 'markdown'>('outline');
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
@@ -349,6 +351,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {toolbarActions}
           <Tooltip title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}>
             <button
               type="button"
@@ -405,12 +408,12 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
         'outline-editor-shell w-full',
         isFullscreen && 'flex h-full flex-col bg-surface-50',
         isPseudoFullscreen &&
-          'fixed inset-4 z-50 flex flex-col rounded-[28px] bg-surface-50 shadow-[0_40px_120px_rgba(15,23,42,0.18)]'
+          'fixed inset-4 z-50 flex flex-col rounded-[28px] bg-surface-50 shadow-[0_24px_60px_rgba(15,23,42,0.14)]'
       )}
     >
       <div
         className={cn(
-          'overflow-hidden rounded-[28px] border border-border/70 bg-surface-50/95 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl',
+          'overflow-hidden rounded-[28px] border border-border/70 bg-surface-50 shadow-[0_16px_40px_rgba(15,23,42,0.08)]',
           isFullscreen && 'flex min-h-0 flex-1 flex-col'
         )}
       >
@@ -423,7 +426,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           )}
         >
           {activeView === 'markdown' ? (
-            <div className="rounded-[24px] border border-border/70 bg-surface-50 px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+            <div className="rounded-[24px] border border-border/70 bg-surface-50 px-4 py-4 shadow-[0_8px_22px_rgba(15,23,42,0.05)]">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <span className="text-xs font-semibold uppercase tracking-[0.22em] text-text-secondary">
                   Markdown Source
@@ -446,10 +449,10 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                   <div key={section.id} className="space-y-2">
                     <div
                       className={cn(
-                        'group overflow-hidden rounded-[24px] border bg-surface-50 shadow-[0_10px_24px_rgba(15,23,42,0.04)] transition-all duration-200',
+                        'group overflow-hidden rounded-[24px] border bg-surface-50 shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition-all duration-200',
                         isActive
-                          ? 'border-primary-500/80 shadow-[0_0_0_1px_rgba(139,92,246,0.18)]'
-                          : 'border-border/70 hover:border-primary-400/45'
+                          ? 'border-brand-border shadow-[0_0_0_1px_rgba(49,95,143,0.16)]'
+                          : 'border-border/70 hover:border-brand-border'
                       )}
                       onClick={() => setActiveSectionId(section.id)}
                       onKeyDown={(event) => {
@@ -467,10 +470,10 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-50 text-text-secondary">
                             <HolderOutlined />
                           </span>
-                          <span className="text-[20px] font-semibold text-primary-500">
+                          <span className="text-[20px] font-semibold text-brand-strong">
                             {index + 1}
                           </span>
-                          <span className="rounded-full border border-primary-500/15 bg-primary-500/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-500">
+                          <span className="rounded-full border border-brand-border bg-brand-surface px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-strong">
                             Section
                           </span>
                           <div className="min-w-0 flex-1">
@@ -558,9 +561,9 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                   type="button"
                                   onClick={() => handleItemKindToggle(section.id, item.id)}
                                   className={cn(
-                                    'min-h-10 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors',
+                                    'min-h-11 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors',
                                     item.kind === 'heading'
-                                      ? 'bg-primary-500/12 text-primary-500'
+                                      ? 'bg-brand-surface text-brand-strong'
                                       : 'bg-surface-100 text-text-secondary'
                                   )}
                                 >
@@ -626,7 +629,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                       <button
                         type="button"
                         onClick={() => handleAddSection(index)}
-                        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-dashed border-border/70 bg-surface-50 px-4 text-[12px] font-medium text-text-secondary transition-colors hover:border-primary-400/60 hover:text-primary-500"
+                        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-dashed border-border/70 bg-surface-50 px-4 text-[12px] font-medium text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong"
                       >
                         <PlusOutlined />
                         <span>Add Section Below</span>
@@ -638,7 +641,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
 
               {outline.sections.length === 0 && (
                 <div className="rounded-[24px] border border-dashed border-border/70 bg-surface-100/55 px-6 py-10 text-center">
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-500/12 text-primary-500">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-surface text-brand-strong">
                     <OrderedListOutlined className="text-lg" />
                   </div>
                   <p className="text-[15px] font-semibold text-text-main">No sections yet</p>

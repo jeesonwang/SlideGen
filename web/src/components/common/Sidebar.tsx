@@ -28,7 +28,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useChatStore } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
 import { useGenerationStore } from '../../store/generationStore';
-import { getUpdatedSessionTitle } from '../chat/chatSessionTitle';
+import { getSessionDisplayTitle, getUpdatedSessionTitle } from '../chat/chatSessionTitle';
 import {
   isSidebarSessionPinned,
   sortSidebarSessions,
@@ -36,6 +36,7 @@ import {
 } from './sidebarSessionList';
 import { getSidebarUserPanelData } from './sidebarUserPanel';
 import { useUIStore } from '../../store/uiStore';
+import { DEFAULT_PRESENTATION_TITLE } from '../../utils/constants';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -72,15 +73,16 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
   }, [editingSessionId]);
 
   const menuItems = [
-    { key: 'dashboard', icon: <AppstoreOutlined />, label: 'Dashboard', path: '/dashboard' },
+    { key: 'dashboard', icon: <AppstoreOutlined />, label: 'Home', path: '/dashboard' },
     { key: 'new', icon: <MessageOutlined />, label: 'New Presentation', path: '/generate' },
     { key: 'projects', icon: <FileOutlined />, label: 'Projects', path: '/sessions' },
+    { key: 'knowledge-base', icon: <FileOutlined />, label: 'Reference Library', path: '/knowledge-base' },
   ];
 
   const handleNewChat = async () => {
     try {
       const newSession = await createSessionMutation.mutateAsync({
-        title: 'New Presentation',
+        title: DEFAULT_PRESENTATION_TITLE,
         status: 'active',
       });
       setCurrentSession(newSession.id);
@@ -99,9 +101,9 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
     navigate('/generate');
   };
 
-  const handleRenameStart = (sessionId: string, title: string) => {
+  const handleRenameStart = (sessionId: string, title: string, topic?: string | null) => {
     setEditingSessionId(sessionId);
-    setTitleDraft(title);
+    setTitleDraft(getSessionDisplayTitle(title, topic));
   };
 
   const handleRenameCancel = () => {
@@ -171,7 +173,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       >
         {!sidebarCollapsed && (
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-primary-gradient flex items-center justify-center shadow-glow">
+            <div className="brand-mark w-8 h-8 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">S</span>
             </div>
             <h1 className="text-base font-bold m-0 leading-tight tracking-tight">SlideGen</h1>
@@ -195,20 +197,20 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
         </Tooltip>
       </div>
 
-      {/* New Chat Button */}
+      {/* Primary creation button */}
       <div className={cn(sidebarCollapsed ? 'px-2 mb-4' : 'px-3 mb-4')}>
-        <Tooltip title={sidebarCollapsed ? 'New Chat' : undefined} placement="right">
+        <Tooltip title={sidebarCollapsed ? 'New Presentation' : undefined} placement="right">
           <button
             onClick={handleNewChat}
             disabled={createSessionMutation.isPending}
-            aria-label="New Chat"
+            aria-label="New Presentation"
             className={cn(
-              'flex items-center justify-center rounded-lg bg-primary-gradient hover:opacity-90 text-white text-sm font-semibold shadow-glow transition-all active:scale-[0.98] disabled:opacity-50',
+              'brand-solid-button flex items-center justify-center rounded-lg text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50',
               sidebarCollapsed ? 'w-14 h-11 mx-auto' : 'w-full gap-2 px-4 py-2.5'
             )}
           >
             {createSessionMutation.isPending ? <LoadingOutlined /> : <PlusOutlined />}
-            {!sidebarCollapsed && <span>New Chat</span>}
+            {!sidebarCollapsed && <span>New Presentation</span>}
           </button>
         </Tooltip>
       </div>
@@ -229,7 +231,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                   ? 'h-11 items-center justify-center px-0'
                   : 'items-center gap-3 px-3 py-2.5',
                 location.pathname === item.path
-                  ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20 pointer-events-none'
+                  ? 'bg-brand-surface text-brand-strong border border-brand-border pointer-events-none'
                   : 'text-text-secondary hover:bg-surface-100 hover:text-text-main border border-transparent'
               )}
             >
@@ -245,7 +247,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
         {!sidebarCollapsed && (
           <>
             <h3 className="text-[11px] font-bold text-text-muted uppercase tracking-[0.18em] mb-3 px-3">
-              Recent Chats
+              Recent Projects
             </h3>
             <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-1">
               {sessionsLoading ? (
@@ -260,26 +262,26 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                     {
                       key: 'pin',
                       icon: <PushpinOutlined />,
-                      label: isPinned ? '取消固定' : '固定',
+                      label: isPinned ? 'Unpin' : 'Pin',
                       onClick: () => void handleTogglePinned(session),
                     },
                     {
                       key: 'rename',
                       icon: <EditOutlined />,
-                      label: '重命名',
-                      onClick: () => handleRenameStart(session.id, session.title),
+                      label: 'Rename',
+                      onClick: () => handleRenameStart(session.id, session.title, session.topic),
                     },
                     {
                       key: 'delete',
                       icon: <DeleteOutlined />,
-                      label: '删除',
+                      label: 'Delete',
                       danger: true,
                       onClick: () => {
                         Modal.confirm({
-                          title: '删除对话',
-                          content: '确定要删除这个对话吗？',
-                          okText: '删除',
-                          cancelText: '取消',
+                          title: 'Delete project',
+                          content: 'Are you sure you want to delete this presentation project?',
+                          okText: 'Delete',
+                          cancelText: 'Cancel',
                           okButtonProps: { danger: true },
                           onOk: () =>
                             new Promise<void>((resolve, reject) => {
@@ -315,7 +317,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                             className={cn(
                               'flex items-center justify-center w-6 h-6 rounded flex-shrink-0 transition-colors',
                               currentSessionId === session.id
-                                ? 'text-primary-400 bg-primary-500/10'
+                                ? 'text-brand-strong bg-brand-surface'
                                 : 'bg-surface-100 group-hover:bg-surface-200'
                             )}
                           >
@@ -336,6 +338,10 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                                 void handleRenameSubmit(session.id, session.title);
                               }}
                               onKeyDown={(event) => {
+                                if (event.nativeEvent.isComposing || event.keyCode === 229) {
+                                  return;
+                                }
+
                                 if (event.key === 'Enter') {
                                   event.preventDefault();
                                   void handleRenameSubmit(session.id, session.title);
@@ -362,7 +368,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                             className={cn(
                               'flex items-center justify-center w-6 h-6 rounded flex-shrink-0 transition-colors',
                               currentSessionId === session.id
-                                ? 'text-primary-400 bg-primary-500/10'
+                                ? 'text-brand-strong bg-brand-surface'
                                 : 'bg-surface-100 group-hover:bg-surface-200'
                             )}
                           >
@@ -371,10 +377,10 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 min-w-0">
                               {isPinned ? (
-                                <PushpinOutlined className="text-[10px] text-primary-400 flex-shrink-0" />
+                                <PushpinOutlined className="text-[10px] text-brand-strong flex-shrink-0" />
                               ) : null}
-                              <p className="text-sm font-medium truncate m-0 text-text-main group-hover:text-primary-300 transition-colors">
-                                {session.title}
+                              <p className="text-sm font-medium truncate m-0 text-text-main group-hover:text-brand-strong transition-colors">
+                                {getSessionDisplayTitle(session.title, session.topic)}
                               </p>
                             </div>
                             <p className="text-xs text-text-muted m-0">
@@ -395,9 +401,9 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                             'p-1 rounded text-text-secondary transition-all flex-shrink-0 hover:bg-surface-200 hover:text-text-main',
                             currentSessionId === session.id || isEditing
                               ? 'opacity-100'
-                              : 'opacity-0 group-hover:opacity-100'
+                              : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                           )}
-                          title="更多操作"
+                          title="More actions"
                         >
                           <MoreOutlined className="text-sm" />
                         </button>
@@ -407,7 +413,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                 })
               ) : (
                 <p className="text-sm text-text-muted text-center py-4">
-                  No recent chats
+                  No recent projects
                 </p>
               )}
             </div>
@@ -444,7 +450,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
           content={
             <div className="w-72 rounded-2xl bg-surface-50 p-3 text-text-main">
               <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-accent-purple to-primary-600 flex items-center justify-center text-sm font-bold text-white shadow-glow">
+                <div className="brand-mark w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white">
                   {userPanelData.initials}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -467,7 +473,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                     logout();
                   }}
                 >
-                  退出登录
+                  Sign out
                 </Button>
               </div>
             </div>
@@ -487,12 +493,12 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                 : 'flex items-center gap-3 px-3 py-2'
             )}
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-accent-purple to-primary-600 flex items-center justify-center text-xs font-bold text-white shadow-glow">
+            <div className="brand-mark w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white">
               {userPanelData.initials}
             </div>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-text-main truncate group-hover:text-primary-300 transition-colors">
+                <p className="text-sm font-medium text-text-main truncate group-hover:text-brand-strong transition-colors">
                   {userPanelData.displayName}
                 </p>
                 <p className="text-xs text-text-muted truncate">{userPanelData.email}</p>

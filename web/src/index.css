@@ -6,61 +6,102 @@
 @tailwind utilities;
 
 :root {
-  --color-background: 11 15 25;
-  --color-surface-50: 17 21 33;
-  --color-surface-100: 24 28 41;
-  --color-surface-200: 34 39 54;
-  --color-surface-300: 45 51 68;
-  --color-surface-400: 61 69 89;
-  --color-surface-500: 85 96 122;
-  --color-border: 45 51 68;
-  --color-text-main: 248 250 252;
-  --color-text-secondary: 148 163 184;
-  --color-text-muted: 100 116 139;
-  --color-primary-500: 37 99 235;
-  --color-success-500: 21 128 61;
-  --app-gradient-start: 26 34 54;
-  --app-gradient-end: 11 15 25;
-  --glass-panel-bg: 17 21 33;
-  --glass-panel-hover-bg: 24 28 41;
-  --glass-panel-border: 255 255 255;
-  --modern-card-from: 15 23 42;
-  --modern-card-to: 15 23 42;
-  --hero-overlay-from: 37 99 235;
-  --hero-overlay-mid: 15 23 42;
-  --hero-overlay-to: 14 165 233;
-  --shadow-soft: 2 6 23;
-  --shadow-glass: 0 0 0;
-  color-scheme: dark;
+  --color-background: 244 239 231;
+  --color-surface-50: 252 250 246;
+  --color-surface-100: 246 242 235;
+  --color-surface-200: 237 231 221;
+  --color-surface-300: 220 211 198;
+  --color-surface-400: 187 174 159;
+  --color-surface-500: 145 131 116;
+  --color-border: 214 205 193;
+  --color-text-main: 47 55 65;
+  --color-text-secondary: 97 108 121;
+  --color-text-muted: 129 137 147;
+  --color-primary-500: 61 120 179;
+  --color-success-500: 38 128 91;
+  --color-brand-strong: 49 95 143;
+  --color-brand-surface: 233 237 239;
+  --color-brand-border: 182 199 215;
+  --color-brand-contrast: 252 250 246;
+  --app-gradient-start: 252 250 246;
+  --app-gradient-end: 246 242 235;
+  --glass-panel-bg: 252 250 246;
+  --glass-panel-hover-bg: 248 245 240;
+  --glass-panel-border: 82 91 102;
+  --modern-card-from: 252 250 246;
+  --modern-card-to: 244 239 231;
+  --hero-overlay-from: 61 120 179;
+  --hero-overlay-mid: 252 250 246;
+  --hero-overlay-to: 161 117 84;
+  --shadow-soft: 61 72 84;
+  --shadow-glass: 61 72 84;
+  color-scheme: light;
 }
 
 :root[data-theme='light'] {
-  --color-background: 255 255 255;
-  --color-surface-50: 255 255 255;
-  --color-surface-100: 252 253 255;
-  --color-surface-200: 248 250 252;
-  --color-surface-300: 241 245 249;
-  --color-surface-400: 203 213 225;
-  --color-surface-500: 148 163 184;
-  --color-border: 203 213 225;
-  --color-text-main: 15 23 42;
-  --color-text-secondary: 71 85 105;
-  --color-text-muted: 100 116 139;
-  --color-primary-500: 37 99 235;
-  --color-success-500: 21 128 61;
-  --app-gradient-start: 255 255 255;
-  --app-gradient-end: 248 250 252;
-  --glass-panel-bg: 255 255 255;
-  --glass-panel-hover-bg: 252 253 255;
-  --glass-panel-border: 148 163 184;
-  --modern-card-from: 255 255 255;
-  --modern-card-to: 252 253 255;
-  --hero-overlay-from: 37 99 235;
-  --hero-overlay-mid: 255 255 255;
-  --hero-overlay-to: 14 165 233;
-  --shadow-soft: 15 23 42;
-  --shadow-glass: 15 23 42;
+  --color-background: 244 239 231;
+  --color-surface-50: 252 250 246;
+  --color-surface-100: 246 242 235;
+  --color-surface-200: 237 231 221;
+  --color-surface-300: 220 211 198;
+  --color-surface-400: 187 174 159;
+  --color-surface-500: 145 131 116;
+  --color-border: 214 205 193;
+  --color-text-main: 47 55 65;
+  --color-text-secondary: 97 108 121;
+  --color-text-muted: 129 137 147;
+  --color-primary-500: 61 120 179;
+  --color-success-500: 38 128 91;
+  --color-brand-strong: 49 95 143;
+  --color-brand-surface: 233 237 239;
+  --color-brand-border: 182 199 215;
+  --color-brand-contrast: 252 250 246;
+  --app-gradient-start: 252 250 246;
+  --app-gradient-end: 246 242 235;
+  --glass-panel-bg: 252 250 246;
+  --glass-panel-hover-bg: 248 245 240;
+  --glass-panel-border: 82 91 102;
+  --modern-card-from: 252 250 246;
+  --modern-card-to: 244 239 231;
+  --hero-overlay-from: 61 120 179;
+  --hero-overlay-mid: 252 250 246;
+  --hero-overlay-to: 161 117 84;
+  --shadow-soft: 61 72 84;
+  --shadow-glass: 61 72 84;
   color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --color-background: 26 31 39;
+  --color-surface-50: 34 40 49;
+  --color-surface-100: 42 49 59;
+  --color-surface-200: 55 63 74;
+  --color-surface-300: 73 82 95;
+  --color-surface-400: 106 118 133;
+  --color-surface-500: 141 152 167;
+  --color-border: 83 93 106;
+  --color-text-main: 237 240 243;
+  --color-text-secondary: 181 189 198;
+  --color-text-muted: 140 149 159;
+  --color-primary-500: 103 156 211;
+  --color-success-500: 78 170 128;
+  --color-brand-strong: 147 184 223;
+  --color-brand-surface: 48 57 68;
+  --color-brand-border: 88 110 133;
+  --color-brand-contrast: 26 31 39;
+  --app-gradient-start: 34 40 49;
+  --app-gradient-end: 26 31 39;
+  --glass-panel-bg: 34 40 49;
+  --glass-panel-hover-bg: 42 49 59;
+  --glass-panel-border: 228 233 238;
+  --modern-card-from: 40 46 56;
+  --modern-card-to: 31 37 46;
+  --hero-overlay-from: 103 156 211;
+  --hero-overlay-mid: 34 40 49;
+  --hero-overlay-to: 155 122 93;
+  --shadow-soft: 7 10 14;
+  --shadow-glass: 7 10 14;
+  color-scheme: dark;
 }
 
 @layer base {
@@ -76,11 +117,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     @apply bg-background text-text-main overflow-x-hidden;
-    background: radial-gradient(
-      circle at 50% 0%,
-      rgb(var(--app-gradient-start)) 0%,
-      rgb(var(--app-gradient-end)) 100%
-    );
+    background:
+      linear-gradient(180deg, rgb(var(--app-gradient-start)) 0%, rgb(var(--app-gradient-end)) 100%);
     min-height: 100vh;
     transition:
       background-color 0.2s ease,
@@ -95,12 +133,11 @@
 }
 
 @layer components {
-  /* Premium Glass Card Effect */
   .glass-panel {
-    background: rgb(var(--glass-panel-bg) / 0.88);
-    border-color: rgb(var(--glass-panel-border) / 0.08);
-    box-shadow: 0 18px 42px -28px rgb(var(--shadow-glass) / 0.32);
-    @apply backdrop-blur-xl border;
+    background: rgb(var(--color-surface-50) / 0.98);
+    border-color: rgb(var(--color-border) / 0.7);
+    box-shadow: 0 12px 28px -24px rgb(var(--shadow-glass) / 0.14);
+    @apply border;
   }
 
   .glass-panel-hover {
@@ -108,23 +145,47 @@
   }
 
   .glass-panel-hover:hover {
-    background: rgb(var(--glass-panel-hover-bg) / 0.92);
-    border-color: rgb(var(--glass-panel-border) / 0.12);
+    background: rgb(var(--color-surface-50) / 1);
+    border-color: rgb(var(--color-border) / 0.82);
   }
 
   /* Modern Input */
   .dark-input {
-    @apply bg-surface-100/80 border border-border/70 rounded-lg px-4 py-2.5 text-text-main placeholder-text-muted focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 transition-all duration-200;
+    @apply bg-surface-50 border border-border/70 rounded-xl px-4 py-2.5 text-text-main placeholder-text-muted focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all duration-200;
   }
 
   /* Primary Button with Gradient */
   .btn-primary {
-    @apply bg-primary-gradient text-white px-5 py-2.5 rounded-lg font-semibold tracking-wide hover:opacity-90 transition-all duration-300 shadow-glow active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed border-0;
+    @apply bg-primary-gradient text-white px-5 py-2.5 rounded-xl font-semibold tracking-wide hover:opacity-95 transition-all duration-300 shadow-glow active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed border-0;
   }
 
   /* Secondary Button */
   .btn-secondary {
-    @apply bg-surface-200/70 text-text-main px-5 py-2.5 rounded-lg font-medium hover:bg-surface-300/70 transition-all active:scale-[0.98] border border-border/70 hover:border-border;
+    @apply bg-surface-100 text-text-main px-5 py-2.5 rounded-xl font-medium hover:bg-surface-200 transition-all active:scale-[0.98] border border-border/70 hover:border-border;
+  }
+
+  .brand-mark {
+    background: rgb(var(--color-brand-strong));
+    color: rgb(var(--color-brand-contrast));
+    box-shadow: 0 10px 22px rgb(var(--shadow-soft) / 0.12);
+  }
+
+  .brand-solid-button {
+    background: rgb(var(--color-brand-strong));
+    color: rgb(var(--color-brand-contrast));
+    border: 1px solid rgb(var(--color-brand-strong));
+    box-shadow: 0 10px 22px rgb(var(--shadow-soft) / 0.12);
+  }
+
+  .brand-solid-button:hover {
+    background: rgb(var(--color-brand-strong) / 0.92);
+    color: rgb(var(--color-brand-contrast));
+  }
+
+  .brand-solid-button:disabled {
+    background: rgb(var(--color-brand-strong) / 0.55);
+    border-color: rgb(var(--color-brand-strong) / 0.45);
+    color: rgb(var(--color-brand-contrast) / 0.88);
   }
   
   /* Scrollbar Styling */
@@ -142,13 +203,9 @@
   }
   
   .modern-card {
-    background: linear-gradient(
-      180deg,
-      rgb(var(--modern-card-from) / 0.96) 0%,
-      rgb(var(--modern-card-to) / 0.9) 100%
-    );
-    box-shadow: 0 18px 42px -24px rgb(var(--shadow-soft) / 0.2);
-    @apply backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden;
+    background: rgb(var(--color-surface-50) / 0.98);
+    box-shadow: 0 12px 28px -24px rgb(var(--shadow-soft) / 0.12);
+    @apply border border-border/60 rounded-2xl overflow-hidden;
   }
 
   .section-card {
@@ -157,22 +214,13 @@
   }
 
   .stat-card {
-    background: linear-gradient(
-      180deg,
-      rgb(var(--modern-card-from) / 0.96) 0%,
-      rgb(var(--modern-card-to) / 0.86) 100%
-    );
+    background: rgb(var(--color-surface-50) / 0.98);
     @apply border-border/60;
   }
 
   .dashboard-hero {
-    background: linear-gradient(
-      135deg,
-      rgb(var(--hero-overlay-from) / 0.08) 0%,
-      rgb(var(--hero-overlay-mid) / 0.04) 55%,
-      rgb(var(--hero-overlay-to) / 0.06) 100%
-    );
-    box-shadow: 0 16px 34px -24px rgb(var(--shadow-soft) / 0.24);
+    background: rgb(var(--color-surface-50) / 0.98);
+    box-shadow: 0 12px 28px -24px rgb(var(--shadow-soft) / 0.12);
     @apply rounded-3xl border border-border/60 px-6 py-5;
   }
 
@@ -215,7 +263,7 @@
 
 /* Global Reset for AntD in Dark Mode context */
 :where(.css-dev-only-do-not-override-1k979oh).ant-btn-primary {
-  background-color: #2563EB !important;
+  background-color: rgb(var(--color-brand-strong)) !important;
 }
 
 .ant-select-selector {
@@ -315,12 +363,12 @@
 }
 
 .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
-  @apply !bg-primary-500/20;
-  color: #60A5FA !important;
+  background-color: rgb(var(--color-brand-surface) / 0.8) !important;
+  color: rgb(var(--color-brand-strong)) !important;
 }
 
 .ant-select-item-option-selected:not(.ant-select-item-option-disabled) .ant-select-item-option-content {
-  color: #60A5FA !important;
+  color: rgb(var(--color-brand-strong)) !important;
 }
 
 .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
@@ -429,13 +477,9 @@
 }
 
 .session-shell {
-  background: linear-gradient(
-    180deg,
-    rgb(var(--color-surface-50) / 0.98) 0%,
-    rgb(var(--color-surface-100) / 0.96) 100%
-  );
+  background: rgb(var(--color-surface-50) / 0.98);
   border: 1px solid rgb(var(--color-border) / 0.7);
-  box-shadow: 0 24px 60px rgb(var(--shadow-soft) / 0.12);
+  box-shadow: 0 14px 32px rgb(var(--shadow-soft) / 0.10);
 }
 
 .session-table .ant-table {

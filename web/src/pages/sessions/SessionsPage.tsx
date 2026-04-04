@@ -72,19 +72,19 @@ export const SessionsPage = () => {
   return (
     <div className={getSessionsPageContainerClassName()}>
       <div className={getSessionsPageContentClassName()}>
-        <div className="flex flex-col gap-5 rounded-3xl border border-border/70 bg-surface-50 p-6 shadow-soft lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-5 rounded-[2rem] border border-border/70 bg-surface-50 p-6 shadow-soft lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-3">
             <Title level={2} className="!mb-0 !text-text-main">
-              Sessions
+              Projects
             </Title>
             <Text className="block max-w-3xl leading-relaxed text-text-secondary">
-              Manage your presentation-generation sessions, track status, and jump back into active projects.
+              Manage your presentation projects, monitor status, and jump back into active work.
             </Text>
             <div className="flex flex-wrap gap-3">
               <span className="rounded-full border border-border/70 bg-surface-100 px-3 py-1.5 text-sm text-text-secondary">
                 Total {summary.total}
               </span>
-              <span className="rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300">
+              <span className="rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-600">
                 Active {summary.active}
               </span>
             </div>
@@ -99,12 +99,12 @@ export const SessionsPage = () => {
               onClick={handleCreateNew}
               className="!h-11 !rounded-xl !px-5 !font-semibold"
             >
-              New Session
+              New Presentation
             </Button>
           </Space>
         </div>
 
-        <div className="glass-panel rounded-3xl p-6 session-shell">
+        <div className="rounded-[2rem] border border-border/70 bg-surface-50 p-6 shadow-soft session-shell">
           <SessionList
             sessions={filteredSessions}
             loading={isLoading}

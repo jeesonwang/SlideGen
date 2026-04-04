@@ -55,7 +55,7 @@ assert.match(
 
 assert.match(
   sidebarSource,
-  /!\s*sidebarCollapsed\s*&&[\s\S]*w-8 h-8 rounded-lg bg-primary-gradient flex items-center justify-center shadow-glow/,
+  /!\s*sidebarCollapsed\s*&&[\s\S]*brand-mark w-8 h-8 rounded-lg flex items-center justify-center/,
   'Sidebar brand icon should only render in expanded mode'
 );
 

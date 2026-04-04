@@ -82,7 +82,7 @@ export const Header: React.FC = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={toggleSidebar}
-          className="w-10 h-10 rounded-lg hover:bg-surface-100 flex items-center justify-center transition-all duration-200 cursor-pointer text-text-secondary hover:text-text-main"
+          className="w-11 h-11 rounded-lg hover:bg-surface-100 flex items-center justify-center transition-all duration-200 cursor-pointer text-text-secondary hover:text-text-main"
           aria-label="Toggle sidebar"
         >
           {sidebarCollapsed ? (
@@ -108,7 +108,7 @@ export const Header: React.FC = () => {
             aria-label="Theme menu"
             aria-haspopup="true"
           >
-            <BgColorsOutlined className="text-primary-400" />
+            <BgColorsOutlined className="text-brand-strong" />
             <span className="hidden sm:inline text-sm font-medium">
               {getThemeModeLabel(themeMode)}
             </span>

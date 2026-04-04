@@ -1,28 +1,21 @@
-/**
- * Session List component
- */
-
-import { Table, Tag, Button, Popconfirm, Typography, Input, Dropdown, Empty } from 'antd';
+import { Button, Empty, Input, Popconfirm, Tag, Typography } from 'antd';
 import {
-  EyeOutlined,
-  DeleteOutlined,
-  MoreOutlined,
-  MessageOutlined,
-  FileTextOutlined,
   CalendarOutlined,
+  DeleteOutlined,
+  FileTextOutlined,
+  MessageOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
 import type { SessionPublic } from '../../api/types/session.types';
-import { SessionStatus } from '../../api/types/session.types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { getSessionDisplayTitle } from '../chat/chatSessionTitle';
 import { getSessionMetaLine, getSessionStatusPresentation } from './sessionPresentation';
 
 dayjs.extend(relativeTime);
 
-const { Text } = Typography;
 const { Search } = Input;
+const { Text } = Typography;
 
 interface SessionListProps {
   sessions: SessionPublic[];
@@ -41,190 +34,113 @@ export const SessionList: React.FC<SessionListProps> = ({
   searchTerm,
   onSearchChange,
 }) => {
-  const columns: ColumnsType<SessionPublic> = [
-    {
-      title: 'Session',
-      dataIndex: 'title',
-      key: 'title',
-      render: (title: string, record: SessionPublic) => (
-        <div className="space-y-1.5">
-          <Text strong className="!text-text-main !text-base">{title}</Text>
-          <div className="flex items-center gap-3 text-xs text-text-muted">
-            <span className="inline-flex items-center gap-1">
-              <MessageOutlined />
-              {record.message_count} messages
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <FileTextOutlined />
-              {record.file_count} files
-            </span>
-          </div>
-          <Text className="block text-sm !text-text-muted" ellipsis>
-            {getSessionMetaLine(record)}
-          </Text>
-        </div>
-      ),
-      ellipsis: true,
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      width: 140,
-      responsive: ['sm'],
-      render: (status: string) => {
-        const presentation = getSessionStatusPresentation(status);
-        const Icon = presentation.icon;
-        return (
-        <Tag icon={<Icon />} color={presentation.color} className="!rounded-full !px-3 !py-1 !text-sm">
-          {presentation.label}
-        </Tag>
-      );
-      },
-      filters: [
-        { text: 'Active', value: SessionStatus.ACTIVE },
-        { text: 'Completed', value: SessionStatus.COMPLETED },
-        { text: 'Failed', value: SessionStatus.FAILED },
-      ],
-      onFilter: (value, record) => record.status === value,
-    },
-    {
-      title: 'Files',
-      dataIndex: 'file_count',
-      key: 'file_count',
-      width: 90,
-      align: 'center',
-      responsive: ['xl'],
-      render: (count: number) => <Text className="!text-text-main">{count}</Text>,
-    },
-    {
-      title: 'Messages',
-      dataIndex: 'message_count',
-      key: 'message_count',
-      width: 110,
-      align: 'center',
-      responsive: ['xl'],
-      render: (count: number) => <Text className="!text-text-main">{count}</Text>,
-    },
-    {
-      title: 'Created',
-      dataIndex: 'create_time',
-      key: 'create_time',
-      width: 180,
-      responsive: ['lg'],
-      render: (time: string) => (
-        <div className="space-y-1">
-          <Text className="block !text-text-main">{dayjs(time).fromNow()}</Text>
-          <Text className="inline-flex items-center gap-1 text-xs !text-text-muted">
-            <CalendarOutlined />
-            {dayjs(time).format('YYYY/M/D')}
-          </Text>
-        </div>
-      ),
-      sorter: (a, b) =>
-        dayjs(a.create_time).unix() - dayjs(b.create_time).unix(),
-      defaultSortOrder: 'descend',
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 180,
-      render: (_, record) => (
-        <div className="flex items-center justify-end gap-2">
-          {onView && (
-            <Button
-              type="link"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => onView(record)}
-              className="!px-0 !text-primary-400 hover:!text-primary-300"
-            >
-              View
-            </Button>
-          )}
-          <Dropdown
-            trigger={['click']}
-            menu={{
-              items: [
-                {
-                  key: 'delete',
-                  label: (
-                    <Popconfirm
-                      title="Delete session?"
-                      description="This action cannot be undone."
-                      onConfirm={() => onDelete(record.id)}
-                      okText="Delete"
-                      cancelText="Cancel"
-                      okButtonProps={{ danger: true }}
-                    >
-                      <span>Delete</span>
-                    </Popconfirm>
-                  ),
-                  icon: <DeleteOutlined />,
-                  danger: true,
-                },
-              ],
-            }}
-          >
-            <Button
-              size="small"
-              icon={<MoreOutlined />}
-              className="!rounded-lg !border-border/70 !bg-surface-100 !text-text-secondary hover:!border-border hover:!bg-surface-200"
-            />
-          </Dropdown>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div className="space-y-5">
-      {onSearchChange && (
+      {onSearchChange ? (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <Search
-            placeholder="Search sessions by title or topic"
+            placeholder="Search projects by title or topic"
             allowClear
             value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={(event) => onSearchChange(event.target.value)}
             className="max-w-2xl"
             size="large"
             enterButton={<SearchOutlined />}
           />
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-full border border-border/70 bg-surface-100 px-3 py-1.5 text-sm text-text-secondary">
               {sessions.length} results
             </span>
             {searchTerm ? (
-              <span className="rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-300">
+              <span className="rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1.5 text-sm text-primary-600">
                 Filtering: {searchTerm}
               </span>
             ) : null}
           </div>
         </div>
+      ) : null}
+
+      {sessions.length === 0 && !loading ? (
+        <div className="rounded-[2rem] border border-dashed border-border/70 bg-surface-50 px-6 py-12">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={searchTerm ? 'No matching projects found' : 'No presentation projects yet'}
+          />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {sessions.map((session) => {
+            const status = getSessionStatusPresentation(session.status);
+
+            return (
+              <article
+                key={session.id}
+                className="rounded-[1.75rem] border border-border/70 bg-background px-5 py-5 shadow-soft"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <Text strong className="!text-lg !text-text-main">
+                        {getSessionDisplayTitle(session.title, session.topic)}
+                      </Text>
+                      <Tag color={status.color} className="!rounded-full !px-3">
+                        {status.label}
+                      </Tag>
+                    </div>
+
+                    <Text className="block text-sm leading-6 !text-text-secondary">
+                      {getSessionMetaLine(session)}
+                    </Text>
+
+                    <div className="mt-4 flex flex-wrap gap-4 text-xs text-text-secondary">
+                      <span className="inline-flex items-center gap-1">
+                        <CalendarOutlined />
+                        Updated {dayjs(session.update_time).fromNow()}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <FileTextOutlined />
+                        {session.file_count} files
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <MessageOutlined />
+                        {session.message_count} messages
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    {onView ? (
+                      <Button
+                        type="primary"
+                        onClick={() => onView(session)}
+                        className="!h-10 !rounded-xl !px-4"
+                      >
+                        Continue editing
+                      </Button>
+                    ) : null}
+                    <Popconfirm
+                      title="Delete project?"
+                      description="This action cannot be undone."
+                      onConfirm={() => onDelete(session.id)}
+                      okText="Delete"
+                      cancelText="Cancel"
+                      okButtonProps={{ danger: true }}
+                    >
+                      <Button
+                        danger
+                        icon={<DeleteOutlined />}
+                        className="!h-10 !rounded-xl"
+                      >
+                        Delete
+                      </Button>
+                    </Popconfirm>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       )}
-      <Table
-        className="session-table [&_.ant-table-tbody>tr]:cursor-default"
-        columns={columns}
-        dataSource={sessions}
-        rowKey="id"
-        loading={loading}
-        locale={{
-          emptyText: (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={
-                searchTerm ? '没有找到符合条件的会话' : '暂无会话记录'
-                
-              }
-            />
-          ),
-        }}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: false,
-          showTotal: (total) => `Total ${total} sessions`,
-        }}
-      />
     </div>
   );
 };

@@ -76,7 +76,9 @@ export const API_ENDPOINTS = {
 };
 
 // Application defaults
-export const APP_NAME = import.meta.env.VITE_APP_NAME || 'SlideGen';
+const env = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
+export const APP_NAME = env?.VITE_APP_NAME || 'SlideGen';
+export const DEFAULT_PRESENTATION_TITLE = 'Untitled Presentation';
 
 // Local storage keys
 export const STORAGE_KEYS = {

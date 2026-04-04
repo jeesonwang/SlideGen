@@ -12,9 +12,15 @@ const generationWizardSource = readFileSync(
 );
 
 assert.equal(
-  chatInterfaceSource.includes('px-3 sm:px-4 lg:px-8'),
+  chatInterfaceSource.includes('px-4 py-6 sm:px-6 lg:px-8'),
   true,
   'ChatInterface should use adaptive horizontal padding for narrow and wide screens'
+);
+
+assert.equal(
+  chatInterfaceSource.includes('mb-8 flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-background px-4 py-4 shadow-soft sm:px-5'),
+  true,
+  'ChatInterface should keep the inline composer card responsive inside the chat flow'
 );
 
 assert.equal(

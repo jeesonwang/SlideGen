@@ -29,10 +29,10 @@ assert.match(
   'TemplateSelector should expose each template card as a real toggle button'
 );
 
-assert.match(
+assert.doesNotMatch(
   configurationPanelSource,
   /<Radio\.Group[\s\S]*value=\{exportFormat\}/,
-  'ConfigurationPanel should use an accessible Radio.Group for export format'
+  'ConfigurationPanel should no longer render export format controls in the inline composer strip'
 );
 
 assert.match(

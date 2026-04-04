@@ -45,9 +45,9 @@ export const SettingsPage = () => {
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="mx-auto w-full max-w-6xl px-6 py-8 space-y-6">
-      <section className="glass-panel rounded-3xl p-8">
+      <section className="rounded-[2rem] border border-border/70 bg-surface-50 p-8 shadow-soft">
         <div className="max-w-3xl space-y-3">
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary-300">
+          <span className="inline-flex items-center gap-2 rounded-full border border-brand-border bg-brand-surface px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-brand-strong">
             <SettingOutlined />
             System Settings
           </span>
@@ -60,7 +60,7 @@ export const SettingsPage = () => {
         </div>
       </section>
 
-      <section className="glass-panel rounded-3xl p-6 sm:p-8">
+      <section className="rounded-[2rem] border border-border/70 bg-surface-50 p-6 shadow-soft sm:p-8">
         <div className="max-w-3xl space-y-2">
           <Title level={4} className="!mb-0 !text-text-main">
             Appearance Theme
@@ -83,8 +83,8 @@ export const SettingsPage = () => {
                 className={[
                   'group flex min-h-[124px] w-full flex-col justify-between rounded-2xl border px-4 py-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   selected
-                    ? 'border-primary-500/45 bg-primary-500/12 text-text-main shadow-soft'
-                    : 'border-border/70 bg-surface-50/70 text-text-secondary hover:border-primary-400/40 hover:bg-surface-100/90 hover:text-text-main',
+                    ? 'border-brand-border bg-brand-surface text-text-main shadow-soft'
+                    : 'border-border/70 bg-surface-50 text-text-secondary hover:border-brand-border hover:bg-surface-100/90 hover:text-text-main',
                 ].join(' ')}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -92,8 +92,8 @@ export const SettingsPage = () => {
                     className={[
                       'inline-flex h-11 w-11 items-center justify-center rounded-xl border transition-colors',
                       selected
-                        ? 'border-primary-400/30 bg-primary-500/15 text-primary-300'
-                        : 'border-border/70 bg-surface-100/80 text-text-secondary group-hover:border-primary-400/30 group-hover:text-primary-300',
+                        ? 'border-brand-border bg-brand-surface text-brand-strong'
+                        : 'border-border/70 bg-surface-100/80 text-text-secondary group-hover:border-brand-border group-hover:text-brand-strong',
                     ].join(' ')}
                   >
                     {getThemeIcon(option.value)}
@@ -102,7 +102,7 @@ export const SettingsPage = () => {
                     className={[
                       'inline-flex min-w-[72px] items-center justify-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors',
                       selected
-                        ? 'border-primary-500/30 bg-primary-500/12 text-primary-300'
+                        ? 'border-brand-border bg-brand-surface text-brand-strong'
                         : 'border-border/70 bg-surface-100/80 text-text-muted group-hover:text-text-secondary',
                     ].join(' ')}
                   >
@@ -124,7 +124,7 @@ export const SettingsPage = () => {
         </div>
       </section>
 
-      <section className="glass-panel rounded-3xl p-4 sm:p-6">
+      <section className="rounded-[2rem] border border-border/70 bg-surface-50 p-4 shadow-soft sm:p-6">
         <Tabs
           className="[&_.ant-tabs-nav]:!mb-6 [&_.ant-tabs-tab]:!rounded-xl [&_.ant-tabs-tab]:!px-4 [&_.ant-tabs-tab]:!py-3 [&_.ant-tabs-tab]:!text-sm [&_.ant-tabs-tab]:!font-semibold"
           items={[

@@ -4,17 +4,10 @@ export interface RightPanelVisibility {
 }
 
 export const getRightPanelVisibility = (
-  rightPanelCollapsed: boolean
+  _rightPanelCollapsed: boolean
 ): RightPanelVisibility => {
-  if (rightPanelCollapsed) {
-    return {
-      showPanel: false,
-      showExpandTrigger: true,
-    };
-  }
-
   return {
-    showPanel: true,
+    showPanel: false,
     showExpandTrigger: false,
   };
 };

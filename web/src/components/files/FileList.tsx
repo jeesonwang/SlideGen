@@ -1,19 +1,14 @@
-/**
- * File List component
- */
-
-import { Table, Button, Space, Popconfirm, Typography, Tag, Tooltip } from 'antd';
+import { Button, Popconfirm, Tag, Tooltip, Typography } from 'antd';
 import {
-  DeleteOutlined,
-  DownloadOutlined,
-  FileTextOutlined,
-  FilePdfOutlined,
-  FileWordOutlined,
-  FileMarkdownOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  FileMarkdownOutlined,
+  FilePdfOutlined,
+  FileTextOutlined,
+  FileWordOutlined,
 } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
 import type { FileMetadataPublic } from '../../api/types/file.types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -40,139 +35,98 @@ export const FileList: React.FC<FileListProps> = ({
       return <FilePdfOutlined className="text-red-500 text-xl" />;
     }
     if (contentType?.includes('word') || filename?.endsWith('.docx')) {
-      return <FileWordOutlined className="text-blue-500 text-xl" />;
+      return <FileWordOutlined className="text-primary-500 text-xl" />;
     }
     if (filename?.endsWith('.md')) {
-      return <FileMarkdownOutlined className="text-green-500 text-xl" />;
+      return <FileMarkdownOutlined className="text-emerald-600 text-xl" />;
     }
-    return <FileTextOutlined className="text-gray-400 text-xl" />;
+    return <FileTextOutlined className="text-text-secondary text-xl" />;
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const index = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${Math.round((bytes / 1024 ** index) * 100) / 100} ${units[index]}`;
   };
 
-  const columns: ColumnsType<FileMetadataPublic> = [
-    {
-      title: 'File',
-      dataIndex: 'filename',
-      key: 'filename',
-      render: (filename: string, record: FileMetadataPublic) => (
-        <Space>
-          {getFileIcon(record.content_type, filename)}
-          <div>
-            <Text strong>{filename}</Text>
-            {record.content_type && (
-              <div>
-                <Text type="secondary" className="text-xs">
-                  {record.content_type}
-                </Text>
-              </div>
-            )}
-          </div>
-        </Space>
-      ),
-      ellipsis: true,
-    },
-    {
-      title: 'Size',
-      dataIndex: 'file_size',
-      key: 'file_size',
-      width: 100,
-      render: (size: number) => <Text>{formatFileSize(size)}</Text>,
-      sorter: (a, b) => a.file_size - b.file_size,
-    },
-    {
-      title: 'Status',
-      dataIndex: 'parsed',
-      key: 'parsed',
-      width: 120,
-      render: (parsed: boolean, record: FileMetadataPublic) => {
-        if (record.parse_error) {
-          return (
-            <Tooltip title={record.parse_error}>
-              <Tag icon={<CloseCircleOutlined />} color="error">
-                Failed
-              </Tag>
-            </Tooltip>
-          );
-        }
-        if (parsed) {
-          return (
-            <Tag icon={<CheckCircleOutlined />} color="success">
-              Parsed
-            </Tag>
-          );
-        }
-        return <Tag color="default">Pending</Tag>;
-      },
-      filters: [
-        { text: 'Parsed', value: true },
-        { text: 'Failed', value: false },
-      ],
-      onFilter: (value, record) => {
-        if (value === true) return record.parsed;
-        return !record.parsed || !!record.parse_error;
-      },
-    },
-    {
-      title: 'Uploaded',
-      dataIndex: 'create_time',
-      key: 'create_time',
-      width: 150,
-      render: (time: string) => (
-        <Text type="secondary">{dayjs(time).fromNow()}</Text>
-      ),
-      sorter: (a, b) =>
-        dayjs(a.create_time).unix() - dayjs(b.create_time).unix(),
-      defaultSortOrder: 'descend',
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 150,
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="link"
-            size="small"
-            icon={<DownloadOutlined />}
-            onClick={() => onDownload(record)}
-          >
-            Download
-          </Button>
-          <Popconfirm
-            title="Delete file?"
-            description="This action cannot be undone."
-            onConfirm={() => onDelete(record.id)}
-            okText="Delete"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  const getStatusTag = (file: FileMetadataPublic) => {
+    if (file.parse_error) {
+      return (
+        <Tooltip title={file.parse_error}>
+          <Tag icon={<CloseCircleOutlined />} color="error" className="!rounded-full !px-3">
+            Failed
+          </Tag>
+        </Tooltip>
+      );
+    }
+    if (file.parsed) {
+      return (
+        <Tag icon={<CheckCircleOutlined />} color="success" className="!rounded-full !px-3">
+          Ready
+        </Tag>
+      );
+    }
+    return (
+      <Tag className="!rounded-full !border-border/70 !bg-surface-100 !px-3 !text-text-secondary">
+        Processing
+      </Tag>
+    );
+  };
+
+  if (loading) {
+    return <div className="py-8 text-sm text-text-secondary">Loading references...</div>;
+  }
 
   return (
-    <Table
-      columns={columns}
-      dataSource={files}
-      rowKey="id"
-      loading={loading}
-      pagination={{
-        pageSize: 10,
-        showSizeChanger: true,
-        showTotal: (total) => `Total ${total} files`,
-      }}
-    />
+    <div className="space-y-3">
+      {files.map((file) => (
+        <article
+          key={file.id}
+          className="flex flex-col gap-4 rounded-[1.5rem] border border-border/70 bg-background px-4 py-4 shadow-soft sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex min-w-0 flex-1 items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface-100">
+              {getFileIcon(file.content_type, file.filename)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <Text strong className="!text-base !text-text-main">
+                  {file.filename}
+                </Text>
+                {getStatusTag(file)}
+              </div>
+              <div className="flex flex-wrap gap-4 text-xs text-text-secondary">
+                <span>{formatFileSize(file.file_size)}</span>
+                <span>Uploaded {dayjs(file.create_time).fromNow()}</span>
+                {file.content_type ? <span>{file.content_type}</span> : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={() => onDownload(file)}
+              className="!h-10 !rounded-xl !border-border/70 !bg-surface-100 !text-text-main"
+            >
+              Download
+            </Button>
+            <Popconfirm
+              title="Remove reference?"
+              description="This action cannot be undone."
+              onConfirm={() => onDelete(file.id)}
+              okText="Remove"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <Button danger icon={<DeleteOutlined />} className="!h-10 !rounded-xl">
+                Remove
+              </Button>
+            </Popconfirm>
+          </div>
+        </article>
+      ))}
+    </div>
   );
 };

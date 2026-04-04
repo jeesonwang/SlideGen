@@ -25,12 +25,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
   const handleUpload = async () => {
     if (fileList.length === 0) {
-      message.warning('Please select files to upload');
+      message.warning('Select reference files to upload');
       return;
     }
 
     if (!sessionId) {
-      message.error('No session selected. Please create a session first.');
+      message.error('Select or create a project first');
       return;
     }
 
@@ -44,7 +44,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       }, []);
 
       if (files.length === 0) {
-        message.error('Selected files could not be processed');
+        message.error('The selected files could not be processed');
         return;
       }
 
@@ -77,7 +77,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       // Check file size (max 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
-        message.error(`${file.name} is larger than 10MB`);
+        message.error(`${file.name} exceeds the 10MB limit`);
         return false;
       }
 
@@ -114,17 +114,15 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           <InboxOutlined />
         </p>
         <p className="ant-upload-text">
-          Click or drag files to this area to upload
+          Click or drag files here to upload
         </p>
         <p className="ant-upload-hint">
-          Support for PDF, DOCX, TXT, and Markdown files. Maximum file size:
-          10MB.
+          Supports PDF, DOCX, TXT, and Markdown files. Maximum size: 10MB each.
         </p>
       </Dragger>
       <div className="mt-4">
         <Text type="secondary" className="text-xs">
-          Uploaded files will be added to your knowledge base and can be used
-          for presentation generation.
+          Uploaded references are linked to the current project and will be used during generation.
         </Text>
       </div>
     </Card>

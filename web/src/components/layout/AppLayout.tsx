@@ -1,38 +1,26 @@
-import { useState } from 'react';
 import { Button, Drawer, Grid, Layout } from 'antd';
 import { MenuUnfoldOutlined } from '@ant-design/icons';
 import { Sidebar } from '../common/Sidebar';
-import { ConfigurationPanel } from '../config/ConfigurationPanel';
-import { Outlet, useLocation } from 'react-router-dom';
-import { LayoutContext } from '../../context/LayoutContext';
-import { getRightPanelVisibility } from './rightPanelVisibility';
-import { getDefaultRightPanelCollapsed } from './rightPanelPolicy';
+import { Outlet } from 'react-router-dom';
 import { useUIStore } from '../../store/uiStore';
 
 const { Content, Sider } = Layout;
 const { useBreakpoint } = Grid;
 
 interface RouteScopedLayoutProps {
-  pathname: string;
   sidebarCollapsed: boolean;
 }
 
 const RouteScopedLayout = ({
-  pathname,
   sidebarCollapsed,
 }: RouteScopedLayoutProps) => {
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(() =>
-    getDefaultRightPanelCollapsed(pathname)
-  );
   const { setSidebarCollapsed } = useUIStore();
   const screens = useBreakpoint();
   const isMobile = !screens.lg;
-  const { showPanel } = getRightPanelVisibility(rightPanelCollapsed);
 
   return (
-    <LayoutContext.Provider value={{ rightPanelCollapsed, setRightPanelCollapsed }}>
+    <>
       <Layout className="h-screen w-screen overflow-hidden bg-background flex flex-row">
-        {/* Left Sidebar */}
         {!isMobile && (
           <Sider
             width={260}
@@ -45,7 +33,6 @@ const RouteScopedLayout = ({
           </Sider>
         )}
 
-        {/* Main Content Area (Chat/Dashboard) */}
         <Content className="flex-1 h-full relative overflow-hidden flex flex-col min-w-0">
           {isMobile && sidebarCollapsed && (
             <Button
@@ -59,17 +46,6 @@ const RouteScopedLayout = ({
           )}
           <Outlet />
         </Content>
-
-        {/* Right Configuration Panel */}
-        {!isMobile && showPanel && (
-          <Sider 
-            width={320} 
-            className="!bg-surface-50 border-l border-border h-full"
-            trigger={null}
-          >
-            <ConfigurationPanel onCollapse={() => setRightPanelCollapsed(true)} />
-          </Sider>
-        )}
       </Layout>
 
       {isMobile && (
@@ -87,35 +63,12 @@ const RouteScopedLayout = ({
           <Sidebar onNavigate={() => setSidebarCollapsed(true)} />
         </Drawer>
       )}
-
-      {isMobile && showPanel && (
-        <Drawer
-          placement="right"
-          open={!rightPanelCollapsed}
-          onClose={() => setRightPanelCollapsed(true)}
-          closable={false}
-          width={320}
-          className="[&_.ant-drawer-content]:!bg-surface-50"
-          styles={{
-            body: { padding: 0 },
-          }}
-        >
-          <ConfigurationPanel onCollapse={() => setRightPanelCollapsed(true)} />
-        </Drawer>
-      )}
-    </LayoutContext.Provider>
+    </>
   );
 };
 
 export const AppLayout = () => {
-  const location = useLocation();
   const { sidebarCollapsed } = useUIStore();
 
-  return (
-    <RouteScopedLayout
-      key={location.pathname}
-      pathname={location.pathname}
-      sidebarCollapsed={sidebarCollapsed}
-    />
-  );
+  return <RouteScopedLayout sidebarCollapsed={sidebarCollapsed} />;
 };

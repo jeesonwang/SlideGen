@@ -10,10 +10,6 @@ const chatInterfaceSource = readFileSync(
   resolve('src/components/chat/ChatInterface.tsx'),
   'utf8'
 );
-const configurationPanelSource = readFileSync(
-  resolve('src/components/config/ConfigurationPanel.tsx'),
-  'utf8'
-);
 
 assert.match(
   outlineEditorSource,
@@ -35,9 +31,9 @@ for (const label of [
 }
 
 assert.match(
-  configurationPanelSource,
-  /aria-label=\{`Remove reference file \$\{file\.filename\}`\}/,
-  'ConfigurationPanel should expose an accessible label for removing uploaded files'
+  chatInterfaceSource,
+  /aria-label=\{`Remove reference \$\{file\.filename\}`\}/,
+  'ChatInterface should expose an accessible label for removing uploaded files'
 );
 
 console.log('accessibilityAuditFixesSource.test.ts passed');

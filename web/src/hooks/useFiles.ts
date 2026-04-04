@@ -26,10 +26,10 @@ export const useUploadFile = () => {
       filesApi.upload(file, sessionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
-      message.success('File uploaded successfully');
+      message.success('Reference uploaded');
     },
     onError: (error: unknown) => {
-      message.error(getErrorDetail(error, 'Failed to upload file'));
+      message.error(getErrorDetail(error, 'Failed to upload reference'));
     },
   });
 };
@@ -42,10 +42,10 @@ export const useUploadMultipleFiles = () => {
       filesApi.uploadMultiple(files, sessionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
-      message.success('Files uploaded successfully');
+      message.success('Reference files uploaded');
     },
     onError: (error: unknown) => {
-      message.error(getErrorDetail(error, 'Failed to upload files'));
+      message.error(getErrorDetail(error, 'Failed to upload reference files'));
     },
   });
 };
@@ -57,10 +57,10 @@ export const useDeleteFile = () => {
     mutationFn: (id: string) => filesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
-      message.success('File deleted successfully');
+      message.success('Reference removed');
     },
     onError: (error: unknown) => {
-      message.error(getErrorDetail(error, 'Failed to delete file'));
+      message.error(getErrorDetail(error, 'Failed to remove reference'));
     },
   });
 };
@@ -83,7 +83,7 @@ export const useDownloadFile = () => {
       window.URL.revokeObjectURL(url);
     },
     onError: (error: unknown) => {
-      message.error(getErrorDetail(error, 'Failed to download file'));
+      message.error(getErrorDetail(error, 'Failed to download reference'));
     },
   });
 };
