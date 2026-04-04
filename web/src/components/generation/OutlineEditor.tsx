@@ -353,7 +353,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
             <button
               type="button"
               onClick={() => void handleFullscreenToggle()}
-              className={cn(iconButtonClassName, 'w-auto gap-2 whitespace-nowrap px-3')}
+              className={cn(iconButtonClassName, '!w-auto gap-2 whitespace-nowrap px-3')}
               disabled={!allowFullscreen}
               aria-label="Full Screen"
             >
@@ -364,7 +364,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           <button
             type="button"
             onClick={handleDownload}
-            className={cn(iconButtonClassName, 'w-auto gap-2 whitespace-nowrap px-3')}
+            className={cn(iconButtonClassName, '!w-auto gap-2 whitespace-nowrap px-3')}
           >
             <DownloadOutlined />
             <span>Download</span>
@@ -372,7 +372,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           <button
             type="button"
             onClick={() => void onRefresh?.()}
-            className={cn(iconButtonClassName, 'w-auto gap-2 whitespace-nowrap px-3')}
+            className={cn(iconButtonClassName, '!w-auto gap-2 whitespace-nowrap px-3')}
             disabled={!canRefresh || refreshing}
           >
             <ReloadOutlined className={refreshing ? 'animate-spin' : ''} />
@@ -452,6 +452,15 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                           : 'border-border/70 hover:border-primary-400/45'
                       )}
                       onClick={() => setActiveSectionId(section.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setActiveSectionId(section.id);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isActive}
                     >
                       <div className="flex flex-col gap-3 border-b border-border/60 bg-surface-100/55 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex min-w-0 items-center gap-3">
@@ -483,6 +492,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                 handleAddItem(section.id, 'heading');
                               }}
                               className={iconButtonClassName}
+                              aria-label={`Add topic to ${section.title}`}
                             >
                               <PlusOutlined />
                             </button>
@@ -495,6 +505,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                 handleDuplicateSection(section.id);
                               }}
                               className={iconButtonClassName}
+                              aria-label={`Duplicate ${section.title}`}
                             >
                               <CopyOutlined />
                             </button>
@@ -507,6 +518,11 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                 handleToggleSection(section.id);
                               }}
                               className={iconButtonClassName}
+                              aria-label={
+                                isCollapsed
+                                  ? `Expand ${section.title}`
+                                  : `Collapse ${section.title}`
+                              }
                             >
                               {isCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
                             </button>
@@ -519,6 +535,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                 handleDeleteSection(section.id);
                               }}
                               className={cn(iconButtonClassName, 'hover:text-red-500')}
+                              aria-label={`Delete ${section.title}`}
                             >
                               <DeleteOutlined />
                             </button>
@@ -562,6 +579,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                     type="button"
                                     onClick={() => handleInsertBlankItem(section.id, item.id)}
                                     className={iconButtonClassName}
+                                    aria-label={`Add row after ${item.text || 'current item'}`}
                                   >
                                     <PlusOutlined />
                                   </button>
@@ -571,6 +589,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                     type="button"
                                     onClick={() => handleDeleteItem(section.id, item.id)}
                                     className={cn(iconButtonClassName, 'hover:text-red-500')}
+                                    aria-label={`Delete ${item.text || 'current item'}`}
                                   >
                                     <DeleteOutlined />
                                   </button>

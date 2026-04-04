@@ -34,29 +34,22 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent-500/10 rounded-full blur-3xl"></div>
-      </div>
-
-      {/* Glass Card */}
-      <Card className="glass-panel relative z-10 w-full max-w-md !rounded-3xl !border !border-border/60 animate-scale-in">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10 sm:px-6">
+      <Card className="relative z-10 w-full max-w-md !rounded-3xl !border !border-border/70 !bg-surface-50 !shadow-soft">
         <Space direction="vertical" size="large" className="w-full">
           {/* Logo & Title */}
           <div className="text-center">
             <div className="mb-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 shadow-soft-lg mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="SlideGen application logo">
+              <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-primary-500/20 bg-primary-500/12 text-primary-600 shadow-glow">
+                <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="SlideGen application logo">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                 </svg>
               </div>
             </div>
-            <Title level={2} className="!mb-2 !font-heading !text-secondary-900">
+            <Title level={2} className="!mb-2 !font-heading !text-text-main">
               {APP_NAME}
             </Title>
-            <Text type="secondary" className="text-base">
+            <Text type="secondary" className="!text-text-secondary text-base">
               Sign in to your account
             </Text>
           </div>
@@ -85,14 +78,14 @@ export const LoginPage = () => {
           >
             <Form.Item
               name="username"
-              label={<span className="text-secondary-700 font-medium">Email</span>}
+              label={<span className="font-medium text-text-main">Email</span>}
               rules={[
                 { required: true, message: 'Please input your email!' },
                 { type: 'email', message: 'Please enter a valid email!' },
               ]}
             >
               <Input
-                prefix={<UserOutlined className="text-secondary-400" />}
+                prefix={<UserOutlined className="text-text-secondary" />}
                 placeholder="you@example.com"
                 size="large"
                 className="!rounded-lg"
@@ -101,13 +94,13 @@ export const LoginPage = () => {
 
             <Form.Item
               name="password"
-              label={<span className="text-secondary-700 font-medium">Password</span>}
+              label={<span className="font-medium text-text-main">Password</span>}
               rules={[
                 { required: true, message: 'Please input your password!' },
               ]}
             >
               <Input.Password
-                prefix={<LockOutlined className="text-secondary-400" />}
+                prefix={<LockOutlined className="text-text-secondary" />}
                 placeholder="Enter your password"
                 size="large"
                 className="!rounded-lg"
@@ -121,15 +114,15 @@ export const LoginPage = () => {
                 size="large"
                 block
                 loading={isLoggingIn}
-                className="!h-12 !rounded-lg !bg-primary-600 hover:!bg-primary-700 !font-medium !shadow-soft hover:!shadow-soft-lg transition-all duration-200"
+                className="!h-12 !rounded-lg !bg-primary-600 hover:!bg-primary-700 !font-medium !shadow-soft transition-all duration-200"
               >
                 Sign In
               </Button>
             </Form.Item>
           </Form>
 
-          <div className="text-center pt-4 border-t border-secondary-200/50">
-            <Text type="secondary" className="text-sm">
+          <div className="border-t border-border/70 pt-4 text-center">
+            <Text type="secondary" className="!text-text-secondary text-sm">
               Don't have an account?{' '}
               <Link to="/signup" className="text-primary-600 hover:text-primary-700 font-medium transition-colors">
                 Sign up

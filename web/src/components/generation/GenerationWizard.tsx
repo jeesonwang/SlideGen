@@ -273,9 +273,8 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
                 />
 
                 <div className={cn(
-                  "mt-8 flex justify-end gap-3 sticky bottom-0",
-                  "bg-surface-50/85 backdrop-blur p-4",
-                  "border-t border-border/70 shadow-lg -mx-4 px-8"
+                  "mt-8 sticky bottom-0 flex flex-col gap-3 border-t border-border/70 bg-surface-50/85 backdrop-blur p-4 shadow-lg sm:flex-row sm:justify-end",
+                  "-mx-3 px-3 sm:-mx-4 sm:px-4 lg:px-8"
                 )}>
                      <Button size="large" onClick={handleReset}>
                         Start New

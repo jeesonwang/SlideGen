@@ -72,7 +72,7 @@ const AppShell = () => {
           colorTextSecondary: isDark ? '#94A3B8' : '#475569',
           colorBorder: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(148, 163, 184, 0.28)',
           borderRadius: 8,
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+          fontFamily: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif",
           fontSize: 14,
         },
         components: {

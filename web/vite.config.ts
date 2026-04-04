@@ -44,6 +44,15 @@ export default defineConfig({
             return 'misc-vendor'
           }
 
+          if (id.includes('/node_modules/antd/es/form') ||
+              id.includes('/node_modules/antd/es/input') ||
+              id.includes('/node_modules/antd/es/select') ||
+              id.includes('/node_modules/antd/es/radio') ||
+              id.includes('/node_modules/antd/es/switch') ||
+              id.includes('/node_modules/antd/es/checkbox')) {
+            return 'antd-form-vendor';
+          }
+
           if (
             packageName === 'react' ||
             packageName === 'react-dom' ||
@@ -55,26 +64,6 @@ export default defineConfig({
 
           if (packageName === 'react-router' || packageName === 'react-router-dom') {
             return 'router-vendor';
-          }
-
-          if (
-            packageName === '@ant-design/icons'
-          ) {
-            return 'antd-icons-vendor';
-          }
-
-          if (
-            packageName.startsWith('@rc-component/') ||
-            packageName.startsWith('rc-')
-          ) {
-            return 'antd-rc-vendor';
-          }
-
-          if (
-            packageName === 'antd' ||
-            packageName.startsWith('@ant-design/')
-          ) {
-            return 'antd-vendor';
           }
 
           if (
@@ -122,7 +111,7 @@ export default defineConfig({
             return 'utils-vendor';
           }
 
-          return 'misc-vendor';
+          return undefined;
         },
       },
     },

@@ -86,7 +86,7 @@ export const DashboardPage = () => {
   return (
     <div className="h-full overflow-y-auto custom-scrollbar pr-2 space-y-6">
       {/* Welcome Section */}
-      <div className="dashboard-hero mb-8 animate-fade-in">
+      <div className="mb-8 rounded-3xl border border-border/70 bg-surface-50 px-6 py-6 shadow-soft">
         <Title level={2} className="!mb-2 !font-heading !text-text-main">
           Welcome back, {greetingName}
         </Title>
@@ -96,20 +96,20 @@ export const DashboardPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <Row gutter={[16, 16]} className="mb-6 animate-slide-up">
+      <Row gutter={[16, 16]} className="mb-6">
         <Col xs={24} sm={12} lg={8}>
-          <Card className="modern-card stat-card border-0 hover:scale-[1.01] transition-transform duration-200">
+          <Card className="modern-card stat-card border-0">
             <Statistic
               title={<span className="text-text-secondary font-medium">Active Sessions</span>}
               value={activeSessions}
-              prefix={<ClockCircleOutlined className="text-accent-500" />}
+              prefix={<ClockCircleOutlined className="text-primary-500" />}
               valueStyle={{ ...metricValueStyle, color: 'rgb(var(--color-primary-500))' }}
               loading={sessionsLoading}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={8}>
-          <Card className="modern-card stat-card border-0 hover:scale-[1.01] transition-transform duration-200">
+          <Card className="modern-card stat-card border-0">
             <Statistic
               title={<span className="text-text-secondary font-medium">Completed</span>}
               value={completedSessions}
@@ -120,7 +120,7 @@ export const DashboardPage = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={8}>
-          <Card className="modern-card stat-card border-0 hover:scale-[1.01] transition-transform duration-200">
+          <Card className="modern-card stat-card border-0">
             <Statistic
               title={<span className="text-text-secondary font-medium">Knowledge Base</span>}
               value={totalFiles}
@@ -143,7 +143,7 @@ export const DashboardPage = () => {
             icon={<ThunderboltOutlined />}
             size="large"
             onClick={() => navigate('/generate')}
-            className="!h-12 !px-6 !rounded-lg !bg-primary-600 hover:!bg-primary-700 !font-medium !shadow-soft hover:!shadow-soft-lg transition-all duration-200"
+            className="!h-12 !px-6 !rounded-lg !bg-primary-600 hover:!bg-primary-700 !font-medium !shadow-soft transition-all duration-200"
           >
             Generate New Presentation
           </Button>
@@ -188,7 +188,7 @@ export const DashboardPage = () => {
               icon={<ThunderboltOutlined />}
               size="large"
               onClick={() => navigate('/generate')}
-              className="!h-12 !px-6 !rounded-lg !bg-primary-600 hover:!bg-primary-700 !font-medium !shadow-soft hover:!shadow-soft-lg transition-all duration-200"
+              className="!h-12 !px-6 !rounded-lg !bg-primary-600 hover:!bg-primary-700 !font-medium !shadow-soft transition-all duration-200"
             >
               Get Started
             </Button>

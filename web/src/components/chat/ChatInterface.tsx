@@ -318,8 +318,9 @@ export const ChatInterface = () => {
   return (
     <div className="flex flex-col h-full bg-transparent relative">
       {/* Top Header Strip */}
-      <div className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-surface-50/20 backdrop-blur-md z-10">
-        <div className="flex items-center gap-3">
+      <div className="min-h-16 border-b border-white/5 bg-surface-50/20 px-3 sm:px-4 lg:px-8 py-3 backdrop-blur-md z-10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className={cn(
             "w-2 h-2 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)]",
             isConnected || isStreaming ? "bg-accent-cyan animate-pulse shadow-[0_0_15px_rgba(6,182,212,0.6)]" : "bg-green-500"
@@ -343,7 +344,7 @@ export const ChatInterface = () => {
               }}
               disabled={updateSessionMutation.isPending}
               maxLength={120}
-              className="w-[min(28rem,55vw)]"
+              className="w-full max-w-full sm:w-[min(28rem,55vw)]"
             />
           ) : (
             <button
@@ -351,7 +352,7 @@ export const ChatInterface = () => {
               onClick={handleTitleEditStart}
               disabled={!currentSessionId || updateSessionMutation.isPending}
               className={cn(
-                'm-0 max-w-[min(28rem,55vw)] truncate border-0 bg-transparent p-0 text-left text-lg font-bold tracking-tight text-text-main transition-colors',
+                'm-0 max-w-full truncate border-0 bg-transparent p-0 text-left text-lg font-bold tracking-tight text-text-main transition-colors sm:max-w-[min(28rem,55vw)]',
                 currentSessionId
                   ? 'cursor-text hover:text-primary-300'
                   : 'cursor-default'
@@ -363,7 +364,7 @@ export const ChatInterface = () => {
           )}
           {isStreaming && <Spin size="small" indicator={<LoadingOutlined spin className="text-primary-400" />} />}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:justify-end">
           <Button 
             icon={<ReloadOutlined />} 
             onClick={handleReset}
@@ -381,6 +382,7 @@ export const ChatInterface = () => {
               />
             </Tooltip>
           )}
+        </div>
         </div>
       </div>
 
@@ -488,7 +490,8 @@ export const ChatInterface = () => {
                             <button
                               type="button"
                               onClick={() => void handleCopyMessage(msg.content)}
-                              className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-200/40 text-text-secondary transition-colors hover:bg-surface-200/70 hover:text-text-main sm:h-7 sm:w-7"
+                              aria-label="Copy message"
+                              className="flex h-11 w-11 items-center justify-center rounded-lg bg-surface-200/40 text-text-secondary transition-colors hover:bg-surface-200/70 hover:text-text-main"
                             >
                               <CopyOutlined className="text-xs" />
                             </button>
@@ -498,7 +501,8 @@ export const ChatInterface = () => {
                               type="button"
                               onClick={() => handleEditMessageStart(msg.id, msg.content)}
                               disabled={isStreaming}
-                              className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-200/40 text-text-secondary transition-colors hover:bg-surface-200/70 hover:text-text-main disabled:cursor-not-allowed disabled:opacity-30 sm:h-7 sm:w-7"
+                              aria-label="Edit message"
+                              className="flex h-11 w-11 items-center justify-center rounded-lg bg-surface-200/40 text-text-secondary transition-colors hover:bg-surface-200/70 hover:text-text-main disabled:cursor-not-allowed disabled:opacity-30"
                             >
                               <EditOutlined className="text-xs" />
                             </button>
@@ -534,7 +538,7 @@ export const ChatInterface = () => {
       </div>
 
       {/* Input Area */}
-      <div className="p-4 sm:p-8 pt-0 bg-transparent">
+      <div className="bg-transparent p-3 pt-0 sm:p-4 sm:pt-0 lg:p-8 lg:pt-0">
         <div className="max-w-4xl mx-auto relative group">
           <div className="relative bg-surface-50/60 backdrop-blur-xl rounded-2xl border border-white/10 transition-all duration-300 p-2 flex flex-col gap-2 shadow-glass group-focus-within:border-primary-500/50 group-focus-within:shadow-glow/20 group-focus-within:bg-surface-50/80">
             <TextArea 
@@ -559,6 +563,7 @@ export const ChatInterface = () => {
                     type="text" 
                     size="middle"
                     icon={<PaperClipOutlined />} 
+                    aria-label="Upload reference files"
                     className="!h-11 !w-11 !min-w-0 !rounded-xl !text-text-secondary hover:!bg-primary-500/10 hover:!text-primary-400 transition-colors"
                   />
                 </Tooltip>
@@ -569,6 +574,7 @@ export const ChatInterface = () => {
                 icon={isStreaming ? <LoadingOutlined /> : <SendOutlined />}
                 onClick={handleSend}
                 disabled={!input.trim() || isStreaming}
+                aria-label="Send prompt"
                 className={cn(
                   "!flex items-center justify-center !w-11 !h-11 !min-w-0 !rounded-xl transition-all duration-300",
                    !input.trim() || isStreaming ? "!bg-surface-300 !text-text-secondary" : "!bg-primary-gradient !shadow-glow hover:!opacity-90 hover:!scale-105"

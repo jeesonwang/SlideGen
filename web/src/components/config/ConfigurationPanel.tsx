@@ -290,7 +290,9 @@ export const ConfigurationPanel = ({ onCollapse }: ConfigurationPanelProps) => {
                      {getFileIcon(file.filename)}
                      <span className="text-xs flex-1 truncate">{file.filename}</span>
                      <button 
+                       type="button"
                        onClick={() => handleRemoveFile(file.id)}
+                       aria-label={`Remove reference file ${file.filename}`}
                        className="text-text-secondary hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                      >
                        <DeleteOutlined />

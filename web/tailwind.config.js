@@ -48,9 +48,9 @@ export default {
         'glass-gradient': 'linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
       },
       fontFamily: {
-        heading: ['Inter', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
-        sans: ['Inter', 'sans-serif'],
+        heading: ['"IBM Plex Sans"', 'sans-serif'],
+        body: ['"IBM Plex Sans"', 'sans-serif'],
+        sans: ['"IBM Plex Sans"', 'sans-serif'],
       },
       boxShadow: {
         'soft': '0 10px 28px -12px rgba(15, 23, 42, 0.28)',
