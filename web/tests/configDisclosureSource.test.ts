@@ -16,7 +16,7 @@ assert.equal(
   'ChatInterface should visually separate fixed inline settings beneath the composer actions'
 );
 assert.equal(
-  configSource.includes('xl:grid xl:grid-cols-[7.5rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_11rem]'),
+  configSource.includes('xl:flex-nowrap xl:gap-2.5'),
   true,
   'ConfigurationPanel should keep the inline settings on one row for wide viewports'
 );

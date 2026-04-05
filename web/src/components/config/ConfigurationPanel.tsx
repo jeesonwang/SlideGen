@@ -28,9 +28,9 @@ const VERBOSITY_OPTIONS = [
   { value: Verbosity.TEXT_HEAVY, label: 'Text heavy' },
 ];
 
-const fieldClassName = 'flex min-w-0 items-center gap-2';
-const labelClassName = 'shrink-0 text-[0.95rem] font-medium text-text-secondary';
-const selectClassName = 'w-full min-w-0';
+const fieldClassName = 'flex min-w-0 items-center gap-2 xl:flex-none';
+const labelClassName = 'shrink-0 text-[0.875rem] font-medium text-text-secondary';
+const selectClassName = 'min-w-0 flex-1 [&_.ant-select-selector]:!px-2.5 [&_.ant-select-selector]:!text-[0.95rem]';
 
 export const ConfigurationPanel = () => {
   const {
@@ -47,15 +47,15 @@ export const ConfigurationPanel = () => {
   } = useGenerationStore();
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-3 text-text-main xl:grid xl:grid-cols-[7.5rem_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_11rem] xl:gap-3">
-      <div className={cn(fieldClassName, 'xl:w-[7.5rem]')}>
+    <div className="flex w-full flex-wrap items-center gap-3 text-text-main xl:flex-nowrap xl:gap-2.5">
+      <div className={cn(fieldClassName, 'xl:w-[7rem]')}>
         <label htmlFor="generation-slide-count" className={labelClassName}>
           Pages
         </label>
         <InputNumber
           id="generation-slide-count"
           aria-label="Slide count"
-          className="!w-[4.75rem]"
+          className="!w-[4rem] [&_.ant-input-number-input]:!text-[0.95rem]"
           value={slideCount}
           onChange={(value) => setSlideCount(value || 8)}
           min={1}
@@ -64,7 +64,7 @@ export const ConfigurationPanel = () => {
         />
       </div>
 
-      <div className={fieldClassName}>
+      <div className={cn(fieldClassName, 'xl:w-[12rem]')}>
         <label htmlFor="generation-language" className={labelClassName}>
           Language
         </label>
@@ -78,7 +78,7 @@ export const ConfigurationPanel = () => {
         />
       </div>
 
-      <div className={fieldClassName}>
+      <div className={cn(fieldClassName, 'xl:w-[11.75rem]')}>
         <label htmlFor="generation-tone" className={labelClassName}>
           Tone
         </label>
@@ -92,7 +92,7 @@ export const ConfigurationPanel = () => {
         />
       </div>
 
-      <div className={fieldClassName}>
+      <div className={cn(fieldClassName, 'xl:w-[12.75rem]')}>
         <label htmlFor="generation-verbosity" className={labelClassName}>
           Text Volume
         </label>
@@ -106,7 +106,7 @@ export const ConfigurationPanel = () => {
         />
       </div>
 
-      <div className="flex h-11 min-w-0 items-center justify-between gap-2 rounded-2xl border border-border/70 bg-surface-50 px-3.5">
+      <div className="flex h-11 shrink-0 items-center justify-between gap-2.5 rounded-2xl border border-border/70 bg-surface-50 px-3 xl:w-[12.75rem] xl:flex-none">
         <label htmlFor="generation-web-search" className={labelClassName}>
           Web research
         </label>

@@ -472,7 +472,7 @@ export const ChatInterface = () => {
           </Button>
         </div>
 
-        <div className="border-t border-border/70 pt-4">
+        <div className="border-t border-border/70 pt-3.5">
           <ConfigurationPanel />
         </div>
       </div>
@@ -717,30 +717,30 @@ export const ChatInterface = () => {
               </div>
             </>
           ) : (
-            <div className="mx-auto flex h-full max-w-4xl flex-col justify-center">
-              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                <section className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-8 shadow-soft">
-                  <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-surface text-brand-strong">
+            <div className="mx-auto flex h-full max-w-5xl flex-col justify-center">
+              <div className="grid items-start gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+                <section className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft">
+                  <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-surface text-brand-strong">
                     <RobotOutlined className="text-2xl" />
                   </div>
-                  <h2 className="m-0 text-[clamp(1.6rem,1.35rem+0.8vw,2.25rem)] font-semibold tracking-tight text-text-main">
+                  <h2 className="m-0 text-[clamp(1.5rem,1.28rem+0.72vw,2.1rem)] font-semibold tracking-tight text-text-main">
                     Start with a clear topic and build a presentation structure fast
                   </h2>
-                  <p className="mt-4 max-w-2xl text-base leading-7 text-text-secondary">
+                  <p className="mt-3 max-w-2xl text-[0.95rem] leading-6 text-text-secondary">
                     Describe the topic, target audience, and the outcome you want. If you already have PDFs, Word files, or notes, upload them first and let the system organize the outline.
                   </p>
                 </section>
 
-                <section className="rounded-[2rem] border border-border/70 bg-surface-100/80 px-6 py-8">
+                <section className="rounded-[2rem] border border-border/70 bg-surface-100/80 px-6 py-5.5">
                   <div className="text-sm font-semibold text-text-main">Prompt ingredients</div>
-                  <ul className="mt-4 space-y-3 text-sm leading-6 text-text-secondary">
+                  <ul className="mt-3 space-y-2.5 text-sm leading-6 text-text-secondary">
                     <li>State the topic and what kind of presentation you need.</li>
                     <li>Describe the audience and what they care about most.</li>
                     <li>Call out the arguments, examples, or data you want emphasized.</li>
                   </ul>
                 </section>
               </div>
-              {renderComposerCard()}
+              <div className="mt-2.5">{renderComposerCard()}</div>
             </div>
           )}
         </div>
