@@ -4,6 +4,7 @@
 
 import { Navigate } from 'react-router-dom';
 import { Spin } from 'antd';
+import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
 
 interface ProtectedRouteProps {
@@ -12,19 +13,24 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, token } = useAuthStore();
+  const { user, isCheckingAuth } = useAuth();
 
   // If no token, redirect to login
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
-  // If we have a token but need to verify it, show loading
-  if (!isAuthenticated) {
+  // Hold protected content until the persisted token has been validated.
+  if (isCheckingAuth) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Spin size="large" tip="Verifying authentication..." />
       </div>
     );
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

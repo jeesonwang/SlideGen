@@ -33,7 +33,7 @@ interface ChatState {
   // Actions
   setCurrentSession: (sessionId: string | null) => void;
   loadMessages: (sessionId: string) => Promise<void>;
-  addLocalMessage: (role: MessageRole, content: string) => void;
+  addLocalMessage: (role: MessageRole, content: string) => string;
   updateLocalMessage: (messageId: string, content: string) => void;
   sendMessage: (content: string) => Promise<ChatMessagePublic | null>;
   appendStreamChunk: (chunk: string) => void;
@@ -76,8 +76,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   addLocalMessage: (role: MessageRole, content: string) => {
+    const tempMessageId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const tempMessage: ChatMessagePublic = {
-      id: `temp-${Date.now()}`,
+      id: tempMessageId,
       session_id: get().currentSessionId || '',
       user_id: '',
       role,
@@ -87,6 +88,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((state) => ({ 
       messages: [...state.messages, tempMessage] 
     }));
+
+    return tempMessageId;
   },
 
   updateLocalMessage: (messageId: string, content: string) => {
@@ -105,7 +108,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
 
     // Add user message locally first for immediate feedback
-    get().addLocalMessage('user', content);
+    const tempMessageId = get().addLocalMessage('user', content);
 
     try {
       // Persist to backend
@@ -118,7 +121,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Replace temp message with saved one
       set((state) => ({
         messages: state.messages.map((msg) =>
-          msg.id.startsWith('temp-') && msg.content === content
+          msg.id === tempMessageId
             ? savedMessage
             : msg
         ),
@@ -164,7 +167,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   resetChat: () => {
-    set({ ...initialState, currentSessionId: get().currentSessionId });
+    set({ ...initialState });
   },
 
   clearError: () => {

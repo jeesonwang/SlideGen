@@ -74,7 +74,6 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
 
   const menuItems = [
     { key: 'dashboard', icon: <AppstoreOutlined />, label: 'Home', path: '/dashboard' },
-    { key: 'new', icon: <MessageOutlined />, label: 'New Presentation', path: '/generate' },
     { key: 'projects', icon: <FileOutlined />, label: 'Projects', path: '/sessions' },
     { key: 'knowledge-base', icon: <FileOutlined />, label: 'Reference Library', path: '/knowledge-base' },
   ];

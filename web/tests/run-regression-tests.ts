@@ -1,7 +1,5 @@
 import './chatLogic.test.ts';
 import './generationRequest.test.ts';
-import './rightPanelVisibility.test.ts';
-import './rightPanelPolicy.test.ts';
 import './dashboardDisplay.test.ts';
 import './dashboardSessionSource.test.ts';
 import './dashboardScrollSource.test.ts';
@@ -24,6 +22,8 @@ import './leftSidebarCollapseSource.test.ts';
 import './sidebarSessionList.test.ts';
 import './sidebarUserPanel.test.ts';
 import './sidebarOverlaySource.test.ts';
+import './sidebarNavigationDedupSource.test.ts';
+import './sidebarMessageIconImportSource.test.ts';
 import './workbenchTerminologySource.test.ts';
 import './composerAttachmentSource.test.ts';
 import './configDisclosureSource.test.ts';
@@ -41,5 +41,10 @@ import './settingsApiEndpoints.test.ts';
 import './apiBaseUrl.test.ts';
 import './slidegenStreamRequest.test.ts';
 import './loginRedirect.test.ts';
+import './apiClient401RedirectSource.test.ts';
+import './authReviewRegressionsSource.test.ts';
+import './chatStoreReviewRegressionsSource.test.ts';
+import './authStorePersistenceSource.test.ts';
+import './deadCodeCleanupSource.test.ts';
 
 console.log('All regression tests passed');

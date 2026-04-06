@@ -6,7 +6,6 @@ const appSource = readFileSync(resolve('src/App.tsx'), 'utf8');
 const chatSource = readFileSync(resolve('src/components/chat/ChatInterface.tsx'), 'utf8');
 const configSource = readFileSync(resolve('src/components/config/ConfigurationPanel.tsx'), 'utf8');
 const sidebarSource = readFileSync(resolve('src/components/common/Sidebar.tsx'), 'utf8');
-const headerSource = readFileSync(resolve('src/components/common/Header.tsx'), 'utf8');
 const outlineSource = readFileSync(resolve('src/components/generation/OutlineEditor.tsx'), 'utf8');
 const settingsSource = readFileSync(resolve('src/pages/settings/SettingsPage.tsx'), 'utf8');
 
@@ -89,10 +88,7 @@ assert.doesNotMatch(
   'Sidebar title renaming should compare against the raw persisted title instead of the derived display title'
 );
 
-for (const [name, source] of [
-  ['Header', headerSource],
-  ['ChatInterface', chatSource],
-]) {
+for (const [name, source] of [['ChatInterface', chatSource]]) {
   assert.equal(
     source.includes('h-10 w-10'),
     false,

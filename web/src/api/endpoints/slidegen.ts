@@ -5,6 +5,7 @@
 import apiClient from '../client';
 import { buildApiUrl } from '../baseUrl';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { useAuthStore } from '../../store/authStore';
 import type {
   GenerateMarkdownRequest,
   MarkdownStreamRequestConfig,
@@ -12,7 +13,6 @@ import type {
   GeneratePPTXResponse,
   Template,
 } from '../types/slidegen.types';
-import { storage } from '../../utils/storage';
 
 export const slidegenApi = {
   /**
@@ -41,7 +41,7 @@ export const slidegenApi = {
     const payload = Object.fromEntries(
       Object.entries(params).filter(([, value]) => value !== undefined && value !== null)
     );
-    const token = storage.getToken();
+    const token = useAuthStore.getState().token;
 
     return {
       url: url.toString(),

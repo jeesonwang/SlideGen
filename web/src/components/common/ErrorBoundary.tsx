@@ -47,6 +47,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const devError = import.meta.env.DEV ? this.state.error : null;
+
       return (
         <div className="flex justify-center items-center min-h-screen p-6">
           <Result
@@ -56,13 +58,13 @@ export class ErrorBoundary extends Component<Props, State> {
             subTitle={
               <div>
                 <p>We're sorry, but an unexpected error occurred.</p>
-                {this.state.error && (
+                {devError && (
                   <details className="mt-4 text-left">
                     <summary className="cursor-pointer">Error details</summary>
                     <pre className="mt-2 p-3 bg-surface-100 rounded text-xs overflow-auto">
-                      {this.state.error.message}
+                      {devError.message}
                       {'\n\n'}
-                      {this.state.error.stack}
+                      {devError.stack}
                     </pre>
                   </details>
                 )}

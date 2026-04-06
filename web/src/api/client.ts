@@ -52,9 +52,8 @@ apiClient.interceptors.response.use(
 
       // Only redirect if we're not already on the login page
       if (!window.location.pathname.includes('/login')) {
-        // We can rely on the store update to trigger the redirect via ProtectedRoute
-        // But forcing a check is safer if the user is in a non-protected route that uses API
-        // window.location.href = '/login'; 
+        // Force navigation so public pages that issue API calls also recover cleanly.
+        window.location.replace('/login');
       }
     }
 

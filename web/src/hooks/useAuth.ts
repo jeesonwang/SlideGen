@@ -11,7 +11,7 @@ import type { LoginRequest, UserRegister } from '../api/types/auth.types';
 export const useAuth = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { login: setAuthState, logout: clearAuthState, user } = useAuthStore();
+  const { setUser, logout: clearAuthState, user } = useAuthStore();
 
   // Login mutation
   const loginMutation = useMutation({
@@ -23,15 +23,15 @@ export const useAuth = () => {
 
       try {
         const userData = await authApi.testToken();
-        return { token: tokenData.access_token, user: userData };
+        return userData;
       } catch (error) {
         // If validation fails, clear the token
         useAuthStore.getState().logout();
         throw error;
       }
     },
-    onSuccess: ({ token, user }) => {
-      setAuthState(token, user);
+    onSuccess: (user) => {
+      setUser(user);
       navigate('/dashboard');
     },
   });
