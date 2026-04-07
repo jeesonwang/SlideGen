@@ -4,7 +4,7 @@ import type { ResolvedTheme } from './themeMode';
 
 const sharedTypography = {
   borderRadius: 10,
-  fontFamily: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+  fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
   fontSize: 14,
 };
 
@@ -41,31 +41,31 @@ const lightTheme: ThemeConfig = {
   algorithm: theme.defaultAlgorithm,
   token: {
     ...sharedTypography,
-    colorPrimary: '#315f8f',
-    colorSuccess: '#26805b',
+    colorPrimary: '#4380de',
+    colorSuccess: '#34aa7f',
     colorWarning: '#9a6700',
     colorError: '#b42318',
-    colorInfo: '#315f8f',
-    colorBgBase: '#f4efe7',
-    colorBgContainer: '#fcfaf6',
-    colorBgElevated: '#fcfaf6',
-    colorText: '#2f3741',
-    colorTextSecondary: '#616c79',
-    colorBorder: '#d6cdc1',
+    colorInfo: '#4380de',
+    colorBgBase: '#f3ede5',
+    colorBgContainer: '#fefcf8',
+    colorBgElevated: '#fefcf8',
+    colorText: '#2e394a',
+    colorTextSecondary: '#677484',
+    colorBorder: '#d7cfc3',
   },
   components: {
     ...baseComponents,
     Button: {
       ...baseComponents.Button,
-      primaryShadow: '0 10px 22px rgba(49, 95, 143, 0.14)',
+      primaryShadow: '0 16px 30px rgba(57, 95, 150, 0.18)',
     },
     Card: {
       ...baseComponents.Card,
-      boxShadow: '0 14px 30px rgba(61, 72, 84, 0.08)',
+      boxShadow: '0 24px 60px rgba(57, 72, 98, 0.12)',
     },
     Select: {
       ...baseComponents.Select,
-      optionSelectedBg: 'rgba(49, 95, 143, 0.10)',
+      optionSelectedBg: 'rgba(67, 128, 222, 0.1)',
     },
   },
 };

@@ -83,7 +83,7 @@ export const FileList: React.FC<FileListProps> = ({
       {files.map((file) => (
         <article
           key={file.id}
-          className="flex flex-col gap-4 rounded-[1.5rem] border border-border/70 bg-background px-4 py-4 shadow-soft sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-4 rounded-[1.5rem] border border-border/70 bg-background px-4 py-4 shadow-soft workbench-muted-panel sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex min-w-0 flex-1 items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface-100">

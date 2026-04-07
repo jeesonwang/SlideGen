@@ -68,98 +68,103 @@ export const FilesPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft lg:flex-row lg:items-start lg:justify-between">
-        <div className="max-w-3xl">
-          <Title level={2} className="!m-0 !text-text-main">
-            Reference Library
-          </Title>
-          <Text className="mt-2 block leading-7 !text-text-secondary">
-            Organize PDFs, Word files, Markdown, and text references for the current project. These files will be used during presentation generation.
-          </Text>
-        </div>
-        <Space wrap>
-          <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-            Refresh
-          </Button>
-          {activeSessions.length === 0 ? (
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateSession}>
-              Create Project
-            </Button>
-          ) : (
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowUpload(!showUpload)}>
-              {showUpload ? 'Hide Upload' : 'Upload References'}
-            </Button>
-          )}
-        </Space>
-      </div>
-
-      {activeSessions.length === 0 ? (
-        <Alert
-          message="No active project yet"
-          description="Create a presentation project first, then link reference files to it so the system knows where to use them."
-          type="info"
-          showIcon
-          action={
-            <Button size="small" type="primary" onClick={handleCreateSession}>
-              Create Project
-            </Button>
-          }
-        />
-      ) : (
-        <>
-          <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-5 shadow-soft">
-            <Space wrap className="!flex">
-              <Text strong className="!text-text-main">
-                Current project:
-              </Text>
-              <Select
-                className="w-full sm:w-[320px]"
-                value={effectiveSelectedSessionId}
-                onChange={setSelectedSessionId}
-                options={activeSessions.map((session) => ({
-                  label: getSessionDisplayTitle(session.title, session.topic),
-                  value: session.id,
-                }))}
-              />
-            </Space>
-          </div>
-
-          {showUpload ? (
-            <div className="rounded-[2rem] border border-border/70 bg-surface-50 p-5 shadow-soft">
-              <FileUpload
-                sessionId={effectiveSelectedSessionId}
-                onUploadComplete={handleUploadComplete}
-              />
+    <div className="workbench-page h-full overflow-y-auto custom-scrollbar">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft workbench-panel lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
+              Reference workspace
             </div>
-          ) : null}
-        </>
-      )}
-
-      <div className="rounded-[2rem] border border-border/70 bg-surface-50 p-5 shadow-soft">
-        {files.length === 0 && !isLoading ? (
-          <Empty
-            description={
-              effectiveSelectedSessionId
-                ? 'No references have been uploaded for this project yet'
-                : 'Select a project to view its references'
-            }
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          >
-            {effectiveSelectedSessionId ? (
-              <Button type="primary" onClick={() => setShowUpload(true)}>
-                Upload References
+            <Title level={2} className="!m-0 !mt-3 !text-text-main">
+              Reference Library
+            </Title>
+            <Text className="mt-2 block leading-7 !text-text-secondary">
+              Organize PDFs, Word files, Markdown, and text references for the current project. These files will be used during presentation generation.
+            </Text>
+          </div>
+          <Space wrap>
+            <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
+              Refresh
+            </Button>
+            {activeSessions.length === 0 ? (
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateSession}>
+                Create Project
               </Button>
-            ) : null}
-          </Empty>
-        ) : (
-          <FileList
-            files={files}
-            loading={isLoading}
-            onDelete={handleDelete}
-            onDownload={handleDownload}
+            ) : (
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowUpload(!showUpload)}>
+                {showUpload ? 'Hide Upload' : 'Upload References'}
+              </Button>
+            )}
+          </Space>
+        </div>
+
+        {activeSessions.length === 0 ? (
+          <Alert
+            message="No active project yet"
+            description="Create a presentation project first, then link reference files to it so the system knows where to use them."
+            type="info"
+            showIcon
+            action={
+              <Button size="small" type="primary" onClick={handleCreateSession}>
+                Create Project
+              </Button>
+            }
           />
+        ) : (
+          <>
+            <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-5 shadow-soft workbench-panel">
+              <Space wrap className="!flex">
+                <Text strong className="!text-text-main">
+                  Current project:
+                </Text>
+                <Select
+                  className="w-full sm:w-[320px]"
+                  value={effectiveSelectedSessionId}
+                  onChange={setSelectedSessionId}
+                  options={activeSessions.map((session) => ({
+                    label: getSessionDisplayTitle(session.title, session.topic),
+                    value: session.id,
+                  }))}
+                />
+              </Space>
+            </div>
+
+            {showUpload ? (
+              <div className="rounded-[2rem] border border-border/70 bg-surface-50 p-5 shadow-soft workbench-panel">
+                <FileUpload
+                  sessionId={effectiveSelectedSessionId}
+                  onUploadComplete={handleUploadComplete}
+                />
+              </div>
+            ) : null}
+          </>
         )}
+
+        <div className="rounded-[2rem] border border-border/70 bg-surface-50 p-5 shadow-soft workbench-panel">
+          {files.length === 0 && !isLoading ? (
+            <Empty
+              description={
+                effectiveSelectedSessionId
+                  ? 'No references have been uploaded for this project yet'
+                  : 'Select a project to view its references'
+              }
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            >
+              {effectiveSelectedSessionId ? (
+                <Button type="primary" onClick={() => setShowUpload(true)}>
+                  Upload References
+                </Button>
+              ) : null}
+            </Empty>
+          ) : (
+            <FileList
+              files={files}
+              loading={isLoading}
+              onDelete={handleDelete}
+              onDownload={handleDownload}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

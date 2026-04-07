@@ -8,7 +8,6 @@ import {
   FileAddOutlined,
   FileTextOutlined,
   LoadingOutlined,
-  ReloadOutlined,
   RobotOutlined,
   SendOutlined,
   UserOutlined,
@@ -72,7 +71,6 @@ export const ChatInterface = () => {
     appendStreamChunk,
     finalizeStreamingMessage,
     setStreaming,
-    resetChat,
     clearError,
   } = useChatStore();
 
@@ -115,7 +113,7 @@ export const ChatInterface = () => {
       },
     ];
 
-  const { connect: connectSSE, disconnect: disconnectSSE, isConnected } = useSSE({
+  const { connect: connectSSE, isConnected } = useSSE({
     onMessage: (event: SSEEvent) => {
       if (event.event === 'content_generated' && 'content' in event) {
         appendStreamChunk(event.content);
@@ -222,27 +220,6 @@ export const ChatInterface = () => {
       const request = getGenerationRequest(userContent, user.id, sessionId, currentFileIds);
       const streamRequest = slidegenApi.getMarkdownStreamRequest(request);
       connectSSE(streamRequest);
-    }
-  };
-
-  const handleReset = async () => {
-    if (isStreaming) {
-      disconnectSSE();
-      setStreaming(false);
-    }
-    shouldAutoScrollToGenerationRef.current = false;
-    resetChat();
-
-    if (user) {
-      try {
-        const newSession = await sessionsApi.create({
-          title: DEFAULT_PRESENTATION_TITLE,
-          status: 'active',
-        });
-        setCurrentSession(newSession.id);
-      } catch {
-        message.error('Failed to create presentation project');
-      }
     }
   };
 
@@ -386,7 +363,21 @@ export const ChatInterface = () => {
 
   const renderComposerCard = () => (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-background px-4 py-4 shadow-soft sm:px-5">
+      <div className="workbench-tip-panel mb-5 flex items-start gap-3 rounded-[1.6rem] px-4 py-4 sm:px-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-surface text-brand-strong">
+          <RobotOutlined className="text-lg" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[0.95rem] font-semibold text-text-main">
+            Tip: shape the structure first, then refine the slides
+          </div>
+          <p className="mt-1 text-sm leading-6 text-text-secondary">
+            Describe the topic, the audience, and the outcome you want. Upload references when you want the outline grounded in source material.
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-background px-4 py-4 shadow-soft sm:px-5 workbench-stage-panel">
         <input
           ref={fileInputRef}
           type="file"
@@ -435,7 +426,7 @@ export const ChatInterface = () => {
             }
           }}
           disabled={isStreaming}
-          className="!border-none !bg-transparent !px-1 !py-2 !text-base !text-text-main !shadow-none placeholder:!text-text-muted"
+          className="!border-none !bg-transparent !px-2 !py-3 !text-base !leading-8 !text-text-main !shadow-none placeholder:!text-text-muted"
         />
 
         <div className="flex flex-col gap-3 border-t border-border/70 pt-4 lg:flex-row lg:items-start lg:justify-between">
@@ -460,16 +451,16 @@ export const ChatInterface = () => {
             </Button>
           </div>
 
-          <Button
-            type="primary"
-            icon={isStreaming ? <LoadingOutlined /> : <SendOutlined />}
+            <Button
+              type="primary"
+              icon={isStreaming ? <LoadingOutlined /> : <SendOutlined />}
             onClick={() => void handleSend()}
             disabled={!input.trim() || isStreaming}
             aria-label="Send prompt"
-            className="!h-11 !rounded-xl !px-5 !font-semibold"
-          >
-            Generate
-          </Button>
+              className="!h-12 !rounded-2xl !px-6 !font-semibold"
+            >
+              Generate Outline
+            </Button>
         </div>
 
         <div className="border-t border-border/70 pt-3.5">
@@ -480,8 +471,8 @@ export const ChatInterface = () => {
   );
 
   return (
-    <div className="relative flex h-full flex-col bg-transparent">
-      <div className="border-b border-border/70 bg-surface-50/95 px-4 py-4 sm:px-6 lg:px-8">
+    <div className="workbench-page relative flex h-full flex-col bg-transparent">
+      <div className="border-b border-border/70 bg-surface-50/88 px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-5xl flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
@@ -535,16 +526,6 @@ export const ChatInterface = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={handleReset}
-              disabled={isStreaming}
-              className="!h-11 !rounded-xl !border-border/70 !bg-surface-100 !px-4 !text-text-main hover:!border-brand-border hover:!bg-surface-50"
-            >
-              New project
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -658,25 +639,27 @@ export const ChatInterface = () => {
                           }
                         />
                       ) : (
-                        <div
-                          className={cn(
-                            'rounded-[1.75rem] border px-5 py-4 text-sm leading-7 shadow-sm',
-                            msg.role === 'assistant'
-                              ? 'border-border/70 bg-surface-50 text-text-main'
-                              : 'border-brand-border bg-brand-surface/60 text-text-main'
-                          )}
-                        >
-                          <div className="whitespace-pre-wrap">{msg.content}</div>
+                        <div className={cn('flex flex-col', msg.role === 'user' ? 'items-end group/user' : '')}>
+                          <div
+                            className={cn(
+                              'rounded-[1.75rem] border px-5 py-4 text-sm leading-7 shadow-sm',
+                              msg.role === 'assistant'
+                                ? 'border-border/70 bg-surface-50 text-text-main'
+                                : 'border-brand-border bg-brand-surface/60 text-text-main'
+                            )}
+                          >
+                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                          </div>
                           {msg.role === 'user' ? (
-                            <div className="mt-4 flex justify-end gap-2">
+                            <div className="mt-2 flex items-center justify-end gap-1.5 pr-1 text-text-secondary opacity-0 pointer-events-none transition-opacity duration-150 group-hover/user:opacity-100 group-hover/user:pointer-events-auto">
                               <Tooltip title="Copy">
                                 <button
                                   type="button"
                                   onClick={() => void handleCopyMessage(msg.content)}
                                   aria-label="Copy message"
-                                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-border/70 bg-surface-100 text-text-secondary transition-colors hover:border-brand-border hover:text-text-main"
+                                  className="flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-text-secondary transition-colors hover:bg-surface-100/80 hover:text-text-main"
                                 >
-                                  <CopyOutlined className="text-xs" />
+                                  <CopyOutlined className="text-[0.9rem]" />
                                 </button>
                               </Tooltip>
                               <Tooltip title="Edit">
@@ -685,9 +668,9 @@ export const ChatInterface = () => {
                                   onClick={() => handleEditMessageStart(msg.id, msg.content)}
                                   disabled={isStreaming}
                                   aria-label="Edit message"
-                                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-border/70 bg-surface-100 text-text-secondary transition-colors hover:border-brand-border hover:text-text-main disabled:cursor-not-allowed disabled:opacity-40"
+                                  className="flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-text-secondary transition-colors hover:bg-surface-100/80 hover:text-text-main disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                  <EditOutlined className="text-xs" />
+                                  <EditOutlined className="text-[0.9rem]" />
                                 </button>
                               </Tooltip>
                             </div>
@@ -718,29 +701,7 @@ export const ChatInterface = () => {
             </>
           ) : (
             <div className="mx-auto flex h-full max-w-5xl flex-col justify-center">
-              <div className="grid items-start gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-                <section className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft">
-                  <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-surface text-brand-strong">
-                    <RobotOutlined className="text-2xl" />
-                  </div>
-                  <h2 className="m-0 text-[clamp(1.5rem,1.28rem+0.72vw,2.1rem)] font-semibold tracking-tight text-text-main">
-                    Start with a clear topic and build a presentation structure fast
-                  </h2>
-                  <p className="mt-3 max-w-2xl text-[0.95rem] leading-6 text-text-secondary">
-                    Describe the topic, target audience, and the outcome you want. If you already have PDFs, Word files, or notes, upload them first and let the system organize the outline.
-                  </p>
-                </section>
-
-                <section className="rounded-[2rem] border border-border/70 bg-surface-100/80 px-6 py-5.5">
-                  <div className="text-sm font-semibold text-text-main">Prompt ingredients</div>
-                  <ul className="mt-3 space-y-2.5 text-sm leading-6 text-text-secondary">
-                    <li>State the topic and what kind of presentation you need.</li>
-                    <li>Describe the audience and what they care about most.</li>
-                    <li>Call out the arguments, examples, or data you want emphasized.</li>
-                  </ul>
-                </section>
-              </div>
-              <div className="mt-2.5">{renderComposerCard()}</div>
+              {renderComposerCard()}
             </div>
           )}
         </div>

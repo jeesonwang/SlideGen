@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { Upload, message, Card, Typography } from 'antd';
+import { Upload, message, Typography } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import { useUploadMultipleFiles } from '../../hooks/useFiles';
@@ -108,8 +108,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   return (
-    <Card>
-      <Dragger {...uploadProps}>
+    <div className="rounded-[1.75rem] border border-border/70 bg-background p-5 workbench-muted-panel">
+      <Dragger
+        {...uploadProps}
+        className="[&_.ant-upload]:!py-8 [&_.ant-upload-btn]:!px-4 [&_.ant-upload-drag]:!rounded-[1.5rem] [&_.ant-upload-drag]:!border-border/70 [&_.ant-upload-drag]:!bg-surface-50"
+      >
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
         </p>
@@ -125,6 +128,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           Uploaded references are linked to the current project and will be used during generation.
         </Text>
       </div>
-    </Card>
+    </div>
   );
 };

@@ -13,8 +13,8 @@ assert.equal(
 
 assert.equal(
   chatSource.includes('rounded-[2rem] border border-border/70 bg-surface-100/80 px-6 py-5.5'),
-  true,
-  'Prompt ingredients card should reduce bottom whitespace with slightly tighter vertical padding'
+  false,
+  'Generate page should no longer render the old prompt ingredients card'
 );
 
 assert.equal(
@@ -25,14 +25,14 @@ assert.equal(
 
 assert.equal(
   chatSource.includes('grid items-start gap-5 lg:grid-cols-[1.2fr_0.8fr]'),
-  true,
-  'Generate hero grid should retain the compact two-column layout'
+  false,
+  'Generate page should no longer keep the two-column intro grid above the composer'
 );
 
 assert.equal(
   chatSource.includes('<div className="mt-2.5">{renderComposerCard()}</div>'),
-  true,
-  'Generate hero should add a small gap between the intro cards and the composer'
+  false,
+  'Generate page should no longer wrap the composer below the removed intro cards'
 );
 
 assert.equal(

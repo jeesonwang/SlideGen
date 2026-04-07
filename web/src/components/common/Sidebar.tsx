@@ -3,6 +3,7 @@ import {
   MessageOutlined,
   AppstoreOutlined,
   FileOutlined,
+  BookOutlined,
   SettingOutlined,
   LogoutOutlined,
   PlusOutlined,
@@ -75,7 +76,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
   const menuItems = [
     { key: 'dashboard', icon: <AppstoreOutlined />, label: 'Home', path: '/dashboard' },
     { key: 'projects', icon: <FileOutlined />, label: 'Projects', path: '/sessions' },
-    { key: 'knowledge-base', icon: <FileOutlined />, label: 'Reference Library', path: '/knowledge-base' },
+    { key: 'knowledge-base', icon: <BookOutlined />, label: 'Reference Library', path: '/knowledge-base' },
   ];
 
   const handleNewChat = async () => {
@@ -162,7 +163,18 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
   const userPanelData = getSidebarUserPanelData(user);
 
   return (
-    <div className="flex flex-col h-full bg-surface-50 border-r border-border/70 text-text-main">
+    <div
+      className={cn(
+        'flex h-full bg-transparent text-text-main',
+        sidebarCollapsed ? 'px-2 py-3' : 'p-3'
+      )}
+    >
+      <div
+        className={cn(
+          'workbench-sidebar-shell flex w-full flex-col overflow-hidden',
+          sidebarCollapsed ? 'rounded-[1.5rem]' : 'rounded-[2rem]'
+        )}
+      >
       {/* Logo Area */}
       <div
         className={cn(
@@ -187,7 +199,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
             onClick={toggleSidebar}
             aria-label="Toggle sidebar"
             className={cn(
-              'flex items-center justify-center rounded-lg border border-border/70 bg-surface-50/70 text-text-secondary hover:bg-surface-100 hover:text-text-main transition-colors',
+              'flex items-center justify-center rounded-xl border border-border/70 bg-surface-50/72 text-text-secondary hover:bg-surface-100 hover:text-text-main transition-colors',
               sidebarCollapsed ? 'w-10 h-10' : 'w-10 h-10 flex-shrink-0'
             )}
           >
@@ -197,7 +209,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       </div>
 
       {/* Primary creation button */}
-      <div className={cn(sidebarCollapsed ? 'px-2 mb-4' : 'px-3 mb-4')}>
+      <div className={cn(sidebarCollapsed ? 'px-2 mb-4' : 'px-4 mb-4')}>
         <Tooltip title={sidebarCollapsed ? 'New Presentation' : undefined} placement="right">
           <button
             onClick={handleNewChat}
@@ -205,7 +217,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
             aria-label="New Presentation"
             className={cn(
               'brand-solid-button flex items-center justify-center rounded-lg text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50',
-              sidebarCollapsed ? 'w-14 h-11 mx-auto' : 'w-full gap-2 px-4 py-2.5'
+              sidebarCollapsed ? 'w-12 h-12 mx-auto rounded-[1.1rem]' : 'w-full gap-2 px-4 py-3'
             )}
           >
             {createSessionMutation.isPending ? <LoadingOutlined /> : <PlusOutlined />}
@@ -215,7 +227,13 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       </div>
 
       {/* Navigation */}
-      <nav className={cn(sidebarCollapsed ? 'px-2 space-y-2' : 'px-3 space-y-1')}>
+      {!sidebarCollapsed ? (
+        <div className="px-7 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-muted">
+          Workspace
+        </div>
+      ) : null}
+
+      <nav className={cn(sidebarCollapsed ? 'px-2 space-y-2' : 'px-4 space-y-1.5')}>
         {menuItems.map((item) => (
           <Tooltip key={item.key} title={sidebarCollapsed ? item.label : undefined} placement="right">
             <button
@@ -228,10 +246,10 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                 'w-full flex rounded-lg text-sm font-medium transition-all duration-200',
                 sidebarCollapsed
                   ? 'h-11 items-center justify-center px-0'
-                  : 'items-center gap-3 px-3 py-2.5',
+                  : 'items-center gap-3 px-4 py-3',
                 location.pathname === item.path
-                  ? 'bg-brand-surface text-brand-strong border border-brand-border pointer-events-none'
-                  : 'text-text-secondary hover:bg-surface-100 hover:text-text-main border border-transparent'
+                  ? 'bg-brand-surface text-brand-strong border border-brand-border pointer-events-none shadow-sm'
+                  : 'text-text-secondary hover:bg-surface-100/90 hover:text-text-main border border-transparent'
               )}
             >
               {item.icon}
@@ -242,7 +260,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       </nav>
 
       {/* Recent Sessions */}
-      <div className="flex-1 px-3 mt-6 overflow-hidden flex flex-col">
+      <div className="flex-1 px-4 mt-6 overflow-hidden flex flex-col">
         {!sidebarCollapsed && (
           <>
             <h3 className="text-[11px] font-bold text-text-muted uppercase tracking-[0.18em] mb-3 px-3">
@@ -304,17 +322,17 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                     <div
                       key={session.id}
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all duration-200 group border border-transparent',
+                        'w-full flex items-center gap-2 px-3 py-2.5 rounded-[1.1rem] text-left transition-all duration-200 group border border-transparent',
                         currentSessionId === session.id
                           ? 'bg-surface-100 text-text-main border-border/70 shadow-sm'
-                          : 'text-text-secondary hover:bg-surface-100 hover:text-text-main'
+                          : 'text-text-secondary hover:bg-surface-100/90 hover:text-text-main'
                       )}
                     >
                       {isEditing ? (
                         <div className="flex flex-1 min-w-0 items-center gap-2">
                           <div
                             className={cn(
-                              'flex items-center justify-center w-6 h-6 rounded flex-shrink-0 transition-colors',
+                              'flex items-center justify-center w-6 h-6 rounded-lg flex-shrink-0 transition-colors',
                               currentSessionId === session.id
                                 ? 'text-brand-strong bg-brand-surface'
                                 : 'bg-surface-100 group-hover:bg-surface-200'
@@ -365,7 +383,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                         >
                           <div
                             className={cn(
-                              'flex items-center justify-center w-6 h-6 rounded flex-shrink-0 transition-colors',
+                              'flex items-center justify-center w-6 h-6 rounded-lg flex-shrink-0 transition-colors',
                               currentSessionId === session.id
                                 ? 'text-brand-strong bg-brand-surface'
                                 : 'bg-surface-100 group-hover:bg-surface-200'
@@ -433,7 +451,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
               'flex text-sm font-medium text-text-secondary hover:text-text-main hover:bg-surface-100 transition-colors',
               sidebarCollapsed
                 ? 'w-14 h-11 mx-auto items-center justify-center rounded-lg mb-2'
-                : 'w-full items-center gap-3 px-3 py-2 rounded-lg mb-2'
+                : 'w-full items-center gap-3 px-3 py-2.5 rounded-xl mb-2'
             )}
           >
             <SettingOutlined />
@@ -489,7 +507,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
               'w-full mt-2 rounded-lg hover:bg-surface-100 transition-colors cursor-pointer group border-0 bg-transparent text-left',
               sidebarCollapsed
                 ? 'h-11 flex items-center justify-center px-0'
-                : 'flex items-center gap-3 px-3 py-2'
+                : 'flex items-center gap-3 px-3 py-2.5'
             )}
           >
             <div className="brand-mark w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white">
@@ -505,6 +523,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
             )}
           </button>
         </Popover>
+      </div>
       </div>
     </div>
   );

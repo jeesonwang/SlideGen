@@ -25,8 +25,8 @@ assert.match(
 
 assert.match(
   appLayoutSource,
-  /collapsedWidth=\{80\}/,
-  'AppLayout should use a narrow collapsed width for the left Sider'
+  /collapsedWidth=\{96\}/,
+  'AppLayout should give the refreshed collapsed sidebar enough width to avoid a cramped vertical capsule'
 );
 
 assert.match(
@@ -51,6 +51,24 @@ assert.match(
   sidebarSource,
   /sidebarCollapsed\s*\?\s*'justify-center px-3 py-4'/,
   'Collapsed sidebar header should center the toggle button horizontally'
+);
+
+assert.doesNotMatch(
+  sidebarSource,
+  /className="flex h-full bg-transparent p-3 text-text-main"/,
+  'Sidebar should not keep the same outer padding in collapsed mode as the expanded layout'
+);
+
+assert.match(
+  sidebarSource,
+  /sidebarCollapsed\s*\?\s*'px-2 py-3'\s*:\s*'p-3'/,
+  'Sidebar outer padding should become tighter in collapsed mode so the rail keeps enough usable width'
+);
+
+assert.match(
+  sidebarSource,
+  /'workbench-sidebar-shell flex w-full flex-col overflow-hidden'[\s\S]*sidebarCollapsed\s*\?\s*'rounded-\[1\.5rem\]'\s*:\s*'rounded-\[2rem\]'/,
+  'Sidebar shell should use a dedicated collapsed shape instead of reusing the full expanded capsule'
 );
 
 assert.match(

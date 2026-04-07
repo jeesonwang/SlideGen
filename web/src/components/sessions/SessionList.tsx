@@ -61,7 +61,7 @@ export const SessionList: React.FC<SessionListProps> = ({
       ) : null}
 
       {sessions.length === 0 && !loading ? (
-        <div className="rounded-[2rem] border border-dashed border-border/70 bg-surface-50 px-6 py-12">
+        <div className="rounded-[2rem] border border-dashed border-border/70 bg-surface-50 px-6 py-12 workbench-muted-panel">
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={searchTerm ? 'No matching projects found' : 'No presentation projects yet'}
@@ -75,7 +75,7 @@ export const SessionList: React.FC<SessionListProps> = ({
             return (
               <article
                 key={session.id}
-                className="rounded-[1.75rem] border border-border/70 bg-background px-5 py-5 shadow-soft"
+                className="rounded-[1.75rem] border border-border/70 bg-background px-5 py-5 shadow-soft workbench-muted-panel"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 flex-1">

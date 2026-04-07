@@ -52,12 +52,12 @@ export const DashboardPage = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
+    <div className="workbench-page h-full overflow-y-auto custom-scrollbar">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-7 shadow-soft">
+          <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-7 shadow-soft workbench-panel">
             <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
-              Workbench Home
+              Project workspace
             </div>
             <Title level={2} className="!mb-3 !text-text-main">
               {greetingName}, pick up your presentation work from here
@@ -88,15 +88,15 @@ export const DashboardPage = () => {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-[1.75rem] border border-border/70 bg-surface-50 px-5 py-5">
+            <div className="rounded-[1.75rem] border border-border/70 bg-surface-50 px-5 py-5 workbench-panel">
               <div className="text-sm text-text-secondary">Projects</div>
               <div className="mt-2 text-3xl font-semibold text-text-main">{visibleSessions.length}</div>
             </div>
-            <div className="rounded-[1.75rem] border border-border/70 bg-surface-50 px-5 py-5">
+            <div className="rounded-[1.75rem] border border-border/70 bg-surface-50 px-5 py-5 workbench-panel">
               <div className="text-sm text-text-secondary">In progress</div>
               <div className="mt-2 text-3xl font-semibold text-text-main">{activeSessions.length}</div>
             </div>
-            <div className="rounded-[1.75rem] border border-border/70 bg-surface-50 px-5 py-5">
+            <div className="rounded-[1.75rem] border border-border/70 bg-surface-50 px-5 py-5 workbench-panel">
               <div className="text-sm text-text-secondary">References</div>
               <div className="mt-2 text-3xl font-semibold text-text-main">{totalFiles}</div>
             </div>
@@ -104,7 +104,7 @@ export const DashboardPage = () => {
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft">
+          <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft workbench-panel">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
@@ -163,7 +163,7 @@ export const DashboardPage = () => {
             )}
           </div>
 
-          <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft">
+          <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft workbench-panel">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
@@ -197,7 +197,7 @@ export const DashboardPage = () => {
 
                   return (
                     <List.Item className="!border-border/70 !px-0">
-                      <div className="flex w-full flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-border/70 bg-background px-4 py-4">
+                      <div className="flex w-full flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-border/70 bg-background px-4 py-4 workbench-muted-panel">
                         <div className="min-w-0 flex-1">
                           <div className="mb-2 flex flex-wrap items-center gap-2">
                             <Text strong className="!text-base !text-text-main">

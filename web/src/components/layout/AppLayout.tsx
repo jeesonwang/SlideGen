@@ -20,13 +20,13 @@ const RouteScopedLayout = ({
 
   return (
     <>
-      <Layout className="h-screen w-screen overflow-hidden bg-background flex flex-row">
+      <Layout className="workbench-app h-screen w-screen overflow-hidden bg-background flex flex-row">
         {!isMobile && (
           <Sider
             width={260}
             collapsed={sidebarCollapsed}
-            collapsedWidth={80}
-            className="!bg-surface-50 border-r border-border"
+            collapsedWidth={96}
+            className="!bg-transparent !border-r-0"
             trigger={null}
           >
             <Sidebar />
@@ -41,7 +41,7 @@ const RouteScopedLayout = ({
               icon={<MenuUnfoldOutlined />}
               aria-label="Open sidebar"
               onClick={() => setSidebarCollapsed(false)}
-              className="!absolute !left-4 !top-4 !z-30 !h-11 !w-11 !min-w-0 !border-border/70 !bg-surface-50/90 !text-text-main !shadow-soft lg:!hidden"
+              className="!absolute !left-4 !top-4 !z-30 !h-11 !w-11 !min-w-0 !border-border/70 !bg-surface-50/92 !text-text-main !shadow-soft lg:!hidden"
             />
           )}
           <Outlet />
@@ -55,9 +55,9 @@ const RouteScopedLayout = ({
           onClose={() => setSidebarCollapsed(true)}
           closable={false}
           width={280}
-          className="[&_.ant-drawer-content]:!bg-surface-50"
+          className="[&_.ant-drawer-content]:!bg-transparent"
           styles={{
-            body: { padding: 0 },
+            body: { padding: 0, background: 'transparent' },
           }}
         >
           <Sidebar onNavigate={() => setSidebarCollapsed(true)} />

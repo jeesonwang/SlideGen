@@ -37,13 +37,18 @@ assert.equal(
   'ChatInterface should not keep the composer attached to the top page shell'
 );
 
-const heroIndex = source.indexOf('Start with a clear topic and build a presentation structure fast');
 const composerIndex = source.lastIndexOf('{renderComposerCard()}');
 
 assert.equal(
-  heroIndex >= 0 && composerIndex >= 0 && heroIndex < composerIndex,
+  source.includes('Build a presentation brief that is clear enough to generate from'),
+  false,
+  'ChatInterface should remove the empty-state intro headline above the composer'
+);
+
+assert.equal(
+  composerIndex >= 0,
   true,
-  'ChatInterface should place the empty-state guidance modules above the composer card'
+  'ChatInterface should still render the composer card in the empty state'
 );
 
 console.log('composerAttachmentSource.test.ts passed');
