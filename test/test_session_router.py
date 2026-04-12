@@ -1,9 +1,14 @@
 import uuid
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
-from slidegen.api.routers.session import delete_session, list_sessions
-from slidegen.models.session import SessionStatus
+from slidegen.api.routers.session import (
+    delete_session,
+    list_sessions,
+    update_session,
+    validate_session_ownership,
+)
+from slidegen.models.session import SessionStatus, SessionUpdate
 
 
 class _ScalarResult:
@@ -20,6 +25,14 @@ class _RowsResult:
 
     def all(self) -> list[tuple[SimpleNamespace, int, int]]:
         return self.rows
+
+
+class _ScalarObjectResult:
+    def __init__(self, value: object | None) -> None:
+        self.value = value
+
+    def scalar_one_or_none(self) -> object | None:
+        return self.value
 
 
 async def test_delete_session_permanently_removes_session_by_default() -> None:
@@ -118,3 +131,70 @@ async def test_list_sessions_excludes_deleted_status_by_default() -> None:
         SessionStatus.DELETED in params.values()
         for _, params in statements
     )
+
+
+async def test_update_session_uses_sqlmodel_update_for_persistence() -> None:
+    session_id = uuid.uuid4()
+    current_user = SimpleNamespace(id=uuid.uuid4())
+    session = SimpleNamespace(
+        id=session_id,
+        user_id=current_user.id,
+        title="Untitled Presentation",
+        status=SessionStatus.ACTIVE,
+        topic=None,
+        extra_data=None,
+        create_time="2026-03-01T10:00:00Z",
+        update_time="2026-03-01T10:00:00Z",
+    )
+
+    def apply_update(data: dict[str, object]) -> None:
+        for key, value in data.items():
+            setattr(session, key, value)
+
+    session.sqlmodel_update = Mock(side_effect=apply_update)
+
+    db_session = SimpleNamespace(
+        add=Mock(),
+        commit=AsyncMock(),
+        refresh=AsyncMock(),
+        execute=AsyncMock(side_effect=[_ScalarResult(0), _ScalarResult(0)]),
+    )
+
+    with patch(
+        "slidegen.api.routers.session.validate_session_ownership",
+        new=AsyncMock(return_value=session),
+    ) as validate_mock:
+        result = await update_session(
+            db_session=db_session,
+            current_user=current_user,
+            session_id=session_id,
+            session_in=SessionUpdate(title="Board Review", topic="AI agents"),
+        )
+
+    validate_mock.assert_awaited_once_with(db_session, session_id, current_user.id)
+    session.sqlmodel_update.assert_called_once_with(
+        {"title": "Board Review", "topic": "AI agents"}
+    )
+    db_session.add.assert_called_once_with(session)
+    db_session.commit.assert_awaited_once()
+    db_session.refresh.assert_awaited_once_with(session)
+    assert result.title == "Board Review"
+    assert result.topic == "AI agents"
+
+
+async def test_validate_session_ownership_reads_fresh_session_state() -> None:
+    session_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    stale_session = SimpleNamespace(id=session_id, user_id=user_id, title="Untitled Presentation")
+    fresh_session = SimpleNamespace(id=session_id, user_id=user_id, title="Quarterly Plan")
+
+    db_session = SimpleNamespace(
+        get=AsyncMock(return_value=stale_session),
+        execute=AsyncMock(return_value=_ScalarObjectResult(fresh_session)),
+    )
+
+    result = await validate_session_ownership(db_session, session_id, user_id)
+
+    db_session.execute.assert_awaited_once()
+    db_session.get.assert_not_awaited()
+    assert result is fresh_session
