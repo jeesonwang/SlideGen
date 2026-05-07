@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 const appSource = readFileSync(resolve('src/App.tsx'), 'utf8');
 const chatSource = readFileSync(resolve('src/components/chat/ChatInterface.tsx'), 'utf8');
+const composerSource = readFileSync(resolve('src/components/chat/ComposerCard.tsx'), 'utf8');
 const configSource = readFileSync(resolve('src/components/config/ConfigurationPanel.tsx'), 'utf8');
 const sidebarSource = readFileSync(resolve('src/components/common/Sidebar.tsx'), 'utf8');
 const outlineSource = readFileSync(resolve('src/components/generation/OutlineEditor.tsx'), 'utf8');
@@ -36,7 +37,7 @@ assert.equal(
 );
 
 assert.equal(
-  chatSource.includes('aria-label="Presentation prompt"'),
+  composerSource.includes('aria-label="Presentation prompt"'),
   true,
   'ChatInterface should expose an accessible name for the main prompt input'
 );
@@ -88,13 +89,11 @@ assert.doesNotMatch(
   'Sidebar title renaming should compare against the raw persisted title instead of the derived display title'
 );
 
-for (const [name, source] of [['ChatInterface', chatSource]]) {
-  assert.equal(
-    source.includes('h-10 w-10'),
-    false,
-    `${name} should avoid 40px square icon buttons for primary interaction targets`
-  );
-}
+assert.equal(
+  [chatSource, composerSource].some((checkedSource) => checkedSource.includes('h-10 w-10')),
+  false,
+  'ChatInterface should avoid 40px square icon buttons for primary interaction targets'
+);
 
 assert.equal(
   outlineSource.includes('sm:h-9 sm:w-9'),

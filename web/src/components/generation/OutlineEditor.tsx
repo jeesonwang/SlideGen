@@ -166,11 +166,32 @@ const toDownloadFilename = (title: string) => {
   return `${normalized || 'outline'}.md`;
 };
 
-const iconButtonClassName =
-  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-[13px] text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong disabled:cursor-not-allowed disabled:opacity-40';
+interface ActionIconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  danger?: boolean;
+  variant?: 'toolbar' | 'compact';
+}
 
-const compactIconButtonClassName =
-  'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-[12px] text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong disabled:cursor-not-allowed disabled:opacity-40';
+const ActionIconButton = ({
+  children,
+  className,
+  danger = false,
+  type = 'button',
+  variant = 'toolbar',
+  ...buttonProps
+}: ActionIconButtonProps) => (
+  <button
+    type={type}
+    className={cn(
+      'inline-flex shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong disabled:cursor-not-allowed disabled:opacity-40',
+      variant === 'toolbar' ? 'h-11 w-11 text-[13px]' : 'h-8 w-8 text-[12px]',
+      danger && 'hover:text-red-500',
+      className
+    )}
+    {...buttonProps}
+  >
+    {children}
+  </button>
+);
 
 export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   value,
@@ -679,34 +700,31 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {toolbarActions}
           <Tooltip title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}>
-            <button
-              type="button"
+            <ActionIconButton
               onClick={() => void handleFullscreenToggle()}
-              className={cn(iconButtonClassName, '!w-auto gap-2 whitespace-nowrap px-3')}
+              className="!w-auto gap-2 whitespace-nowrap px-3"
               disabled={!allowFullscreen}
               aria-label="Full Screen"
             >
               {isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
               <span>Full Screen</span>
-            </button>
+            </ActionIconButton>
           </Tooltip>
-          <button
-            type="button"
+          <ActionIconButton
             onClick={handleDownload}
-            className={cn(iconButtonClassName, '!w-auto gap-2 whitespace-nowrap px-3')}
+            className="!w-auto gap-2 whitespace-nowrap px-3"
           >
             <DownloadOutlined />
             <span>Download</span>
-          </button>
-          <button
-            type="button"
+          </ActionIconButton>
+          <ActionIconButton
             onClick={() => void onRefresh?.()}
-            className={cn(iconButtonClassName, '!w-auto gap-2 whitespace-nowrap px-3')}
+            className="!w-auto gap-2 whitespace-nowrap px-3"
             disabled={!canRefresh || refreshing}
           >
             <ReloadOutlined className={refreshing ? 'animate-spin' : ''} />
             <span>Refresh</span>
-          </button>
+          </ActionIconButton>
         </div>
       </div>
 
@@ -872,30 +890,29 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
 
                         <div className="flex flex-wrap items-center gap-1.5">
                           <Tooltip title="Add section below">
-                            <button
-                              type="button"
+                            <ActionIconButton
+                              variant="compact"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 handleAddSection(index);
                               }}
-                              className={compactIconButtonClassName}
                               aria-label={`Add section below ${section.title}`}
                             >
                               <PlusOutlined />
-                            </button>
+                            </ActionIconButton>
                           </Tooltip>
                           <Tooltip title="Delete section">
-                            <button
-                              type="button"
+                            <ActionIconButton
+                              danger
+                              variant="compact"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 handleDeleteSection(section.id);
                               }}
-                              className={cn(compactIconButtonClassName, 'hover:text-red-500')}
                               aria-label={`Delete ${section.title}`}
                             >
                               <DeleteOutlined />
-                            </button>
+                            </ActionIconButton>
                           </Tooltip>
                         </div>
                       </div>
@@ -922,17 +939,17 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                 />
                                 <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/body:opacity-100">
                                   <Tooltip title="Delete body">
-                                    <button
-                                      type="button"
+                                    <ActionIconButton
+                                      danger
+                                      variant="compact"
                                       onClick={(event) => {
                                         event.stopPropagation();
                                         handleDeleteItem(section.id, item.id);
                                       }}
-                                      className={cn(compactIconButtonClassName, 'hover:text-red-500')}
                                       aria-label={`Delete ${item.text || 'body point'}`}
                                     >
                                       <DeleteOutlined />
-                                    </button>
+                                    </ActionIconButton>
                                   </Tooltip>
                                 </div>
                               </div>
@@ -1040,30 +1057,29 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                   />
                                   <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/topic:opacity-100">
                                     <Tooltip title="Add topic">
-                                      <button
-                                        type="button"
+                                      <ActionIconButton
+                                        variant="compact"
                                         onClick={(event) => {
                                           event.stopPropagation();
                                           handleInsertTopicAfter(section.id, topicGroup.id);
                                         }}
-                                        className={compactIconButtonClassName}
                                         aria-label={`Add topic below ${topicGroup.topic.text || 'topic'}`}
                                       >
                                         <PlusOutlined />
-                                      </button>
+                                      </ActionIconButton>
                                     </Tooltip>
                                     <Tooltip title="Delete topic">
-                                      <button
-                                        type="button"
+                                      <ActionIconButton
+                                        danger
+                                        variant="compact"
                                         onClick={(event) => {
                                           event.stopPropagation();
                                           handleDeleteTopicGroup(section.id, topicGroup.id);
                                         }}
-                                        className={cn(compactIconButtonClassName, 'hover:text-red-500')}
                                         aria-label={`Delete ${topicGroup.topic.text || 'topic'}`}
                                       >
                                         <DeleteOutlined />
-                                      </button>
+                                      </ActionIconButton>
                                     </Tooltip>
                                   </div>
                                 </div>
@@ -1094,33 +1110,29 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                           />
                                           <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/body:opacity-100">
                                             <Tooltip title="Add body below">
-                                              <button
-                                                type="button"
+                                              <ActionIconButton
+                                                variant="compact"
                                                 onClick={(event) => {
                                                   event.stopPropagation();
                                                   handleInsertBlankItem(section.id, item.id);
                                                 }}
-                                                className={compactIconButtonClassName}
                                                 aria-label={`Add body after ${item.text || 'current body'}`}
                                               >
                                                 <PlusOutlined />
-                                              </button>
+                                              </ActionIconButton>
                                             </Tooltip>
                                             <Tooltip title="Delete body">
-                                              <button
-                                                type="button"
+                                              <ActionIconButton
+                                                danger
+                                                variant="compact"
                                                 onClick={(event) => {
                                                   event.stopPropagation();
                                                   handleDeleteItem(section.id, item.id);
                                                 }}
-                                                className={cn(
-                                                  compactIconButtonClassName,
-                                                  'hover:text-red-500'
-                                                )}
                                                 aria-label={`Delete ${item.text || 'body point'}`}
                                               >
                                                 <DeleteOutlined />
-                                              </button>
+                                              </ActionIconButton>
                                             </Tooltip>
                                           </div>
                                         </div>

@@ -3,10 +3,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const chatSource = readFileSync(resolve('src/components/chat/ChatInterface.tsx'), 'utf8');
+const composerSource = readFileSync(resolve('src/components/chat/ComposerCard.tsx'), 'utf8');
 const configSource = readFileSync(resolve('src/components/config/ConfigurationPanel.tsx'), 'utf8');
 
 assert.equal(
-  chatSource.includes('border-t border-border/70 pt-3.5'),
+  composerSource.includes('border-t border-border/70 pt-3.5'),
   true,
   'Composer settings strip should sit slightly closer to the action row'
 );

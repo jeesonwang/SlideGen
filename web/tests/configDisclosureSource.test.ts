@@ -3,15 +3,16 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const chatSource = readFileSync(resolve('src/components/chat/ChatInterface.tsx'), 'utf8');
+const composerSource = readFileSync(resolve('src/components/chat/ComposerCard.tsx'), 'utf8');
 const configSource = readFileSync(resolve('src/components/config/ConfigurationPanel.tsx'), 'utf8');
 
 assert.equal(
-  chatSource.includes('ConfigurationPanel'),
+  composerSource.includes('ConfigurationPanel'),
   true,
   'ChatInterface should render the inline configuration row near the composer'
 );
 assert.equal(
-  chatSource.includes('border-t border-border/70 pt-4'),
+  composerSource.includes('border-t border-border/70 pt-4'),
   true,
   'ChatInterface should visually separate fixed inline settings beneath the composer actions'
 );

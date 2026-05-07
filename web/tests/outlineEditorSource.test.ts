@@ -62,6 +62,18 @@ assert.match(
   'OutlineEditor should build a Blob for markdown download'
 );
 
+assert.doesNotMatch(
+  source,
+  /const (?:iconButtonClassName|compactIconButtonClassName)\s*=/,
+  'OutlineEditor should not rely on duplicated bare className constants for action icon buttons'
+);
+
+assert.match(
+  source,
+  /const ActionIconButton =/,
+  'OutlineEditor should centralize action icon button styling in a local component'
+);
+
 assert.match(
   source,
   /title="Add body below"/,
@@ -250,7 +262,7 @@ assert.match(
 
 assert.match(
   source,
-  /max-h-\[78vh\] overflow-y-auto/,
+  /max-h-\[(?:78|100)vh\] overflow-y-auto/,
   'OutlineEditor should give the outline assistant bubble a taller scroll area'
 );
 

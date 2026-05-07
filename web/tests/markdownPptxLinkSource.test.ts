@@ -6,6 +6,7 @@ const typesSource = readFileSync(resolve('src/api/types/slidegen.types.ts'), 'ut
 const slidegenSource = readFileSync(resolve('src/api/endpoints/slidegen.ts'), 'utf8');
 const constantsSource = readFileSync(resolve('src/utils/constants.ts'), 'utf8');
 const chatInterfaceSource = readFileSync(resolve('src/components/chat/ChatInterface.tsx'), 'utf8');
+const chatMessageSource = readFileSync(resolve('src/components/chat/ChatMessageItem.tsx'), 'utf8');
 const actionBubblePath = resolve('src/components/generation/ActionBubble.tsx');
 
 assert.equal(typesSource.includes('export interface ThemePreset'), true);
@@ -30,12 +31,16 @@ assert.equal(actionBubbleSource.includes('Download PPTX'), true);
 assert.equal(actionBubbleSource.includes('-mt-1'), false);
 assert.equal(actionBubbleSource.includes('rounded-[1.75rem] border border-border/70'), true);
 
-assert.equal(chatInterfaceSource.includes("import { ActionBubble } from '../generation/ActionBubble';"), true);
-assert.match(chatInterfaceSource, /<OutlineEditor[\s\S]*<ActionBubble/);
-assert.equal(chatInterfaceSource.includes("Ready to export"), true);
+assert.equal(chatMessageSource.includes("import { ActionBubble } from '../generation/ActionBubble';"), true);
+assert.match(chatMessageSource, /<OutlineEditor[\s\S]*<ActionBubble/);
+assert.equal(chatMessageSource.includes("Ready to export"), true);
 assert.equal(chatInterfaceSource.includes("flex flex-col gap-0"), false);
+assert.equal(chatMessageSource.includes("flex flex-col gap-0"), false);
 assert.equal(chatInterfaceSource.includes('toolbarActions='), false);
+assert.equal(chatMessageSource.includes('toolbarActions='), false);
 assert.equal(chatInterfaceSource.includes('Select theme'), false);
+assert.equal(chatMessageSource.includes('Select theme'), false);
 assert.equal(chatInterfaceSource.includes('BgColorsOutlined'), false);
+assert.equal(chatMessageSource.includes('BgColorsOutlined'), false);
 
 console.log('markdownPptxLinkSource.test.ts passed');

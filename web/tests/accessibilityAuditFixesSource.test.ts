@@ -10,6 +10,8 @@ const chatInterfaceSource = readFileSync(
   resolve('src/components/chat/ChatInterface.tsx'),
   'utf8'
 );
+const composerSource = readFileSync(resolve('src/components/chat/ComposerCard.tsx'), 'utf8');
+const chatMessageSource = readFileSync(resolve('src/components/chat/ChatMessageItem.tsx'), 'utf8');
 
 assert.match(
   outlineEditorSource,
@@ -24,14 +26,16 @@ for (const label of [
   'Send prompt',
 ]) {
   assert.equal(
-    chatInterfaceSource.includes(`aria-label="${label}"`),
+    [chatInterfaceSource, composerSource, chatMessageSource].some((source) =>
+      source.includes(`aria-label="${label}"`)
+    ),
     true,
     `ChatInterface should expose an accessible label for "${label}"`
   );
 }
 
 assert.match(
-  chatInterfaceSource,
+  composerSource,
   /aria-label=\{`Remove reference \$\{file\.filename\}`\}/,
   'ChatInterface should expose an accessible label for removing uploaded files'
 );

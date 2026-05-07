@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 
 const sidebarSource = readFileSync(resolve('src/components/common/Sidebar.tsx'), 'utf8');
 const chatSource = readFileSync(resolve('src/components/chat/ChatInterface.tsx'), 'utf8');
+const composerSource = readFileSync(resolve('src/components/chat/ComposerCard.tsx'), 'utf8');
+const chatMessageSource = readFileSync(resolve('src/components/chat/ChatMessageItem.tsx'), 'utf8');
 const dashboardSource = readFileSync(resolve('src/pages/dashboard/DashboardPage.tsx'), 'utf8');
 const sessionsSource = readFileSync(resolve('src/pages/sessions/SessionsPage.tsx'), 'utf8');
 const filesSource = readFileSync(resolve('src/pages/files/FilesPage.tsx'), 'utf8');
@@ -40,7 +42,7 @@ assert.equal(
   'Generation empty state should frame the task as presentation creation work'
 );
 assert.equal(
-  chatSource.includes('Upload references'),
+  composerSource.includes('Upload references'),
   true,
   'Generation workspace should describe uploaded files as reference materials'
 );
@@ -76,6 +78,8 @@ assert.equal(
 for (const [name, source] of [
   ['Sidebar', sidebarSource],
   ['ChatInterface', chatSource],
+  ['ComposerCard', composerSource],
+  ['ChatMessageItem', chatMessageSource],
   ['DashboardPage', dashboardSource],
   ['SessionsPage', sessionsSource],
   ['FilesPage', filesSource],

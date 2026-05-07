@@ -7,6 +7,7 @@ import {
   PlusOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
 import { useSessions } from '../../hooks/useSessions';
 import { useFiles } from '../../hooks/useFiles';
 import { useAuth } from '../../hooks/useAuth';
@@ -34,16 +35,28 @@ export const DashboardPage = () => {
   const { data: sessionsData } = useSessions({ limit: 10 });
   const { data: filesData } = useFiles();
 
-  const visibleSessions =
-    sessionsData?.data.filter(
-      (session) =>
-        session.status !== SessionStatus.DELETED &&
-        session.status !== SessionStatus.ARCHIVED
-    ) || [];
+  const visibleSessions = useMemo(
+    () =>
+      sessionsData?.data.filter(
+        (session) =>
+          session.status !== SessionStatus.DELETED &&
+          session.status !== SessionStatus.ARCHIVED
+      ) || [],
+    [sessionsData?.data]
+  );
 
-  const recentSessions = visibleSessions.slice(0, 5);
-  const activeSessions = visibleSessions.filter((session) => session.status === SessionStatus.ACTIVE);
-  const latestSession = activeSessions[0] || visibleSessions[0];
+  const recentSessions = useMemo(
+    () => visibleSessions.slice(0, 5),
+    [visibleSessions]
+  );
+  const activeSessions = useMemo(
+    () => visibleSessions.filter((session) => session.status === SessionStatus.ACTIVE),
+    [visibleSessions]
+  );
+  const latestSession = useMemo(
+    () => activeSessions[0] || visibleSessions[0],
+    [activeSessions, visibleSessions]
+  );
   const totalFiles = filesData?.count || 0;
   const openProject = (sessionId: string) => {
     setCurrentSession(sessionId);

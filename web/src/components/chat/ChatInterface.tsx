@@ -1,41 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import {
-  CopyOutlined,
-  EditOutlined,
-  FileAddOutlined,
-  FileTextOutlined,
-  LoadingOutlined,
-  RobotOutlined,
-  SendOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
-import { Button, Input, Spin, Tooltip, message } from 'antd';
+import { RobotOutlined } from '@ant-design/icons';
+import { Input, Spin, message } from 'antd';
 import type { InputRef } from 'antd';
 import { cn } from '../../utils/classnames';
 import { useChatStore } from '../../store/chatStore';
 import { useGenerationStore } from '../../store/generationStore';
 import { useAuthStore } from '../../store/authStore';
-import { useSSE } from '../../hooks/useSSE';
 import { slidegenApi } from '../../api/endpoints/slidegen';
-import { sessionsApi } from '../../api/endpoints/sessions';
-import { chatMessagesApi } from '../../api/endpoints/chatMessages';
 import { useDeleteFile, useFiles, useUploadFile } from '../../hooks/useFiles';
-import { useSession, useUpdateSession } from '../../hooks/useSessions';
-import type { SSEEvent } from '../../api/types/slidegen.types';
-import { getAssistantMessageContent, shouldCreateSessionForSend } from './chatLogic';
+import { useCreateSession, useSession, useUpdateSession } from '../../hooks/useSessions';
+import { SessionStatus } from '../../api/types/session.types';
+import { shouldCreateSessionForSend } from './chatLogic';
 import { getCurrentFileIds } from './chatFiles';
 import {
   getChatHeaderTitle,
   getUpdatedSessionTitle,
   shouldSubmitTitleChange,
 } from './chatSessionTitle';
-import { OutlineEditor } from '../generation/OutlineEditor';
-import { ActionBubble } from '../generation/ActionBubble';
-import { ConfigurationPanel } from '../config/ConfigurationPanel';
+import { ComposerCard } from './ComposerCard';
+import { ChatMessageItem } from './ChatMessageItem';
+import { usePresentationStream } from './usePresentationStream';
 import { DEFAULT_PRESENTATION_TITLE } from '../../utils/constants';
-
-const { TextArea } = Input;
 
 export const ChatInterface = () => {
   const [input, setInput] = useState('');
@@ -75,6 +61,7 @@ export const ChatInterface = () => {
   const { user } = useAuthStore();
   const { data: filesData } = useFiles(currentSessionId ? { session_id: currentSessionId } : undefined);
   const { data: currentSession } = useSession(currentSessionId || '');
+  const createSessionMutation = useCreateSession();
   const updateSessionMutation = useUpdateSession();
   const uploadFileMutation = useUploadFile();
   const deleteFileMutation = useDeleteFile();
@@ -88,50 +75,23 @@ export const ChatInterface = () => {
     optimisticSessionTitle && optimisticSessionTitle.trim() !== currentSessionTitle.trim()
       ? optimisticSessionTitle
       : currentSessionTitle;
-  const primaryUserMessage = messages.find((message) => message.role === 'user')?.content;
+  const primaryUserMessage = messages.find((messageItem) => messageItem.role === 'user')?.content;
   const chatHeaderTitle = getChatHeaderTitle(
     resolvedSessionTitle,
     currentSession?.topic,
     primaryUserMessage
   );
-  const { connect: connectSSE } = useSSE({
-    onMessage: (event: SSEEvent) => {
-      if (event.event === 'content_generated' && 'content' in event) {
-        appendStreamChunk(event.content);
-      }
-      if (event.event === 'step_completed' && 'content' in event && event.content) {
-        appendStreamChunk(event.content);
-      }
-      if (event.event === 'loop_iteration_completed' && 'content' in event && event.content) {
-        appendStreamChunk(`\n\n${event.content}`);
-      }
-    },
-    onComplete: async (finalContent: string) => {
-      const assistantContent = getAssistantMessageContent({
-        finalContent,
-        streamingContent,
-      });
-
-      finalizeStreamingMessage(assistantContent);
-      setMarkdownContent(assistantContent);
-      setStep('editing');
-
-      if (currentSessionId && assistantContent) {
-        try {
-          await chatMessagesApi.addMessage(currentSessionId, {
-            session_id: currentSessionId,
-            role: 'assistant',
-            content: assistantContent,
-          });
-        } catch (saveError) {
-          console.error('Failed to save assistant message:', saveError);
-        }
-      }
-    },
-    onError: (streamError) => {
+  const hasMessages = messages.length > 0;
+  const { startPresentationStream } = usePresentationStream({
+    currentSessionId,
+    streamingContent,
+    appendStreamChunk,
+    finalizeStreamingMessage,
+    setStreaming,
+    setMarkdownContent,
+    setStep,
+    onStreamError: () => {
       shouldAutoScrollToGenerationRef.current = false;
-      setStreaming(false);
-      message.error(streamError.message || 'Generation failed. Please try again.');
     },
   });
 
@@ -165,6 +125,16 @@ export const ChatInterface = () => {
     }
   }, [error, clearError]);
 
+  const beginPresentationStream = (prompt: string, sessionId: string) => {
+    if (!user) return;
+
+    shouldAutoScrollToGenerationRef.current = true;
+    setStreaming(true);
+    const request = getGenerationRequest(prompt, user.id, sessionId, currentFileIds);
+    const streamRequest = slidegenApi.getMarkdownStreamRequest(request);
+    startPresentationStream(streamRequest);
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isStreaming || isLoading) return;
 
@@ -180,46 +150,30 @@ export const ChatInterface = () => {
       })
     ) {
       try {
-        const newSession = await sessionsApi.create({
+        const newSession = await createSessionMutation.mutateAsync({
           title: DEFAULT_PRESENTATION_TITLE,
-          status: 'active',
+          status: SessionStatus.ACTIVE,
         });
         sessionId = newSession.id;
         setCurrentSession(sessionId);
       } catch {
-        message.error('Failed to create presentation project');
         return;
       }
     }
 
     const savedMessage = await sendMessage(userContent);
-    if (!savedMessage) return;
+    if (!savedMessage || !user || !sessionId) return;
 
-    if (user && sessionId) {
-      shouldAutoScrollToGenerationRef.current = true;
-      setStreaming(true);
-      const request = getGenerationRequest(userContent, user.id, sessionId, currentFileIds);
-      const streamRequest = slidegenApi.getMarkdownStreamRequest(request);
-      connectSSE(streamRequest);
-    }
+    beginPresentationStream(userContent, sessionId);
   };
 
   const handleGenerate = () => {
-    if (currentSessionId && user) {
-      setStep('generating');
-      const lastUserMessage = messages.filter((msg) => msg.role === 'user').pop();
-      if (lastUserMessage) {
-        shouldAutoScrollToGenerationRef.current = true;
-        setStreaming(true);
-        const request = getGenerationRequest(
-          lastUserMessage.content,
-          user.id,
-          currentSessionId,
-          currentFileIds
-        );
-        const streamRequest = slidegenApi.getMarkdownStreamRequest(request);
-        connectSSE(streamRequest);
-      }
+    if (!currentSessionId || !user) return;
+
+    setStep('generating');
+    const lastUserMessage = messages.filter((messageItem) => messageItem.role === 'user').pop();
+    if (lastUserMessage) {
+      beginPresentationStream(lastUserMessage.content, currentSessionId);
     }
   };
 
@@ -293,7 +247,7 @@ export const ChatInterface = () => {
     setEditingContent(content);
   };
 
-  const handleEditMessageSubmit = async () => {
+  const handleEditMessageSubmit = () => {
     if (!editingContent.trim() || !editingMessageId) return;
     setInput(editingContent.trim());
     setEditingMessageId(null);
@@ -327,6 +281,11 @@ export const ChatInterface = () => {
     await deleteFileMutation.mutateAsync(fileId);
   };
 
+  const handleOutlineChange = (messageId: string, nextContent: string) => {
+    updateLocalMessage(messageId, nextContent);
+    setMarkdownContent(nextContent);
+  };
+
   const formatTime = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -335,116 +294,20 @@ export const ChatInterface = () => {
     }
   };
 
-  const isOutlineMarkdown = (content: string) => /^#\s+/m.test(content) && /^##\s+/m.test(content);
-  const hasMessages = messages.length > 0;
-
   const renderComposerCard = () => (
-    <div className="mx-auto max-w-5xl">
-      <div className="workbench-tip-panel mb-5 flex items-start gap-3 rounded-[1.6rem] px-4 py-4 sm:px-5">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-surface text-brand-strong">
-          <RobotOutlined className="text-lg" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[0.95rem] font-semibold text-text-main">
-            Tip: shape the structure first, then refine the slides
-          </div>
-          <p className="mt-1 text-sm leading-6 text-text-secondary">
-            Describe the topic, the audience, and the outcome you want. Upload references when you want the outline grounded in source material.
-          </p>
-        </div>
-      </div>
-
-      <div className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-background px-4 py-4 shadow-soft sm:px-5 workbench-stage-panel">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,.doc,.docx,.txt,.md"
-          multiple
-          hidden
-          onChange={handleInlineUpload}
-        />
-
-        <div className="flex flex-wrap gap-2">
-          {selectedReferenceFiles.length > 0 ? (
-            selectedReferenceFiles.map((file) => (
-              <div
-                key={file.id}
-                className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-surface-100 px-3 py-2 text-xs text-text-main"
-              >
-                <FileTextOutlined className="text-text-secondary" />
-                <span className="max-w-40 truncate">{file.filename}</span>
-                <button
-                  type="button"
-                  onClick={() => void handleRemoveReferenceFile(file.id)}
-                  className="border-0 bg-transparent p-0 text-text-secondary transition-colors hover:text-red-500"
-                  aria-label={`Remove reference ${file.filename}`}
-                >
-                  ×
-                </button>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-full border border-dashed border-border/70 px-3 py-2 text-xs text-text-secondary">
-              Linked references appear here and are automatically used during generation.
-            </div>
-          )}
-        </div>
-
-        <TextArea
-          aria-label="Presentation prompt"
-          placeholder="Describe the topic, audience, key message, or structure requirements. Example: Create a 10-slide university admissions deck that highlights academic strengths, career outcomes, and campus life."
-          autoSize={{ minRows: 2, maxRows: 7 }}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onPressEnter={(event) => {
-            if (!event.shiftKey) {
-              event.preventDefault();
-              void handleSend();
-            }
-          }}
-          disabled={isStreaming}
-          className="!border-none !bg-transparent !px-2 !py-3 !text-base !leading-8 !text-text-main !shadow-none placeholder:!text-text-muted"
-        />
-
-        <div className="flex flex-col gap-3 border-t border-border/70 pt-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="text"
-              icon={<FileAddOutlined />}
-              onClick={handleOpenFilePicker}
-              aria-label="Upload reference files"
-              className="!h-11 !rounded-xl !px-4 !text-text-secondary hover:!bg-surface-100 hover:!text-text-main"
-            >
-              Upload references
-            </Button>
-
-            <Button
-              type="link"
-              onClick={handleGenerate}
-              disabled={isStreaming || !hasMessages}
-              className="!h-11 !px-2 !text-xs !font-semibold !text-primary-600 disabled:!text-text-muted"
-            >
-              Regenerate outline
-            </Button>
-          </div>
-
-            <Button
-              type="primary"
-              icon={isStreaming ? <LoadingOutlined /> : <SendOutlined />}
-            onClick={() => void handleSend()}
-            disabled={!input.trim() || isStreaming}
-            aria-label="Send prompt"
-              className="!h-12 !rounded-2xl !px-6 !font-semibold"
-            >
-              Generate Outline
-            </Button>
-        </div>
-
-        <div className="border-t border-border/70 pt-3.5">
-          <ConfigurationPanel />
-        </div>
-      </div>
-    </div>
+    <ComposerCard
+      input={input}
+      isStreaming={isStreaming}
+      hasMessages={hasMessages}
+      selectedReferenceFiles={selectedReferenceFiles}
+      fileInputRef={fileInputRef}
+      onInputChange={setInput}
+      onSend={() => void handleSend()}
+      onGenerate={handleGenerate}
+      onOpenFilePicker={handleOpenFilePicker}
+      onInlineUpload={(event) => void handleInlineUpload(event)}
+      onRemoveReferenceFile={(fileId) => void handleRemoveReferenceFile(fileId)}
+    />
   );
 
   return (
@@ -492,7 +355,6 @@ export const ChatInterface = () => {
               </button>
             )}
           </div>
-
         </div>
       </div>
 
@@ -516,138 +378,24 @@ export const ChatInterface = () => {
             <>
               {renderComposerCard()}
               <div className="mx-auto flex max-w-6xl flex-col gap-8">
-                {messages.map((msg) => {
-                  const isOutlineMessage = msg.role === 'assistant' && isOutlineMarkdown(msg.content);
-
-                  return (
-                    <div
-                      key={msg.id}
-                      className={cn(
-                        'flex flex-col gap-4',
-                        msg.role === 'user' ? 'items-end' : 'items-start'
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'flex gap-4',
-                          isOutlineMessage ? 'w-full max-w-[min(100%,78rem)]' : 'max-w-4xl',
-                          msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            'mt-1 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border',
-                            msg.role === 'assistant'
-                              ? 'border-brand-border bg-brand-surface text-brand-strong'
-                              : 'border-border/70 bg-surface-100 text-text-secondary'
-                          )}
-                        >
-                          {msg.role === 'assistant' ? <RobotOutlined /> : <UserOutlined />}
-                        </div>
-
-                        <div
-                          className={cn(
-                            'min-w-0',
-                            isOutlineMessage
-                              ? 'w-full max-w-[min(100%,72rem)] flex-1'
-                              : 'max-w-[min(100%,42rem)]'
-                          )}
-                        >
-                      <div className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
-                        <span>{msg.role === 'assistant' ? 'Presentation Assistant' : 'Your Prompt'}</span>
-                        <span>·</span>
-                        <span>{formatTime(msg.create_time)}</span>
-                      </div>
-
-                      {editingMessageId === msg.id ? (
-                        <div className="space-y-3 rounded-[1.5rem] border border-brand-border bg-surface-50 p-4">
-                          <TextArea
-                            autoSize={{ minRows: 2, maxRows: 8 }}
-                            value={editingContent}
-                            onChange={(event) => setEditingContent(event.target.value)}
-                            className="!rounded-2xl !border-border/70 !bg-surface-100 !text-text-main"
-                            autoFocus
-                          />
-                          <div className="flex justify-end gap-2">
-                            <Button size="small" onClick={() => setEditingMessageId(null)}>
-                              Cancel
-                            </Button>
-                            <Button size="small" type="primary" onClick={() => void handleEditMessageSubmit()}>
-                              Refill and regenerate
-                            </Button>
-                          </div>
-                        </div>
-                      ) : isOutlineMessage ? (
-                          <OutlineEditor
-                            value={msg.content}
-                            onChange={(nextContent) => {
-                              updateLocalMessage(msg.id, nextContent);
-                              setMarkdownContent(nextContent);
-                            }}
-                            onRefresh={() => void handleGenerate()}
-                            refreshDisabled={isStreaming || !hasMessages}
-                            refreshing={isStreaming}
-                          />
-                      ) : (
-                        <div className={cn('flex flex-col', msg.role === 'user' ? 'items-end group/user' : '')}>
-                          <div
-                            className={cn(
-                              'rounded-[1.75rem] border px-5 py-4 text-sm leading-7 shadow-sm',
-                              msg.role === 'assistant'
-                                ? 'border-border/70 bg-surface-50 text-text-main'
-                                : 'border-brand-border bg-brand-surface/60 text-text-main'
-                            )}
-                          >
-                            <div className="whitespace-pre-wrap">{msg.content}</div>
-                          </div>
-                          {msg.role === 'user' ? (
-                            <div className="mt-2 flex items-center justify-end gap-1.5 pr-1 text-text-secondary opacity-0 pointer-events-none transition-opacity duration-150 group-hover/user:opacity-100 group-hover/user:pointer-events-auto">
-                              <Tooltip title="Copy">
-                                <button
-                                  type="button"
-                                  onClick={() => void handleCopyMessage(msg.content)}
-                                  aria-label="Copy message"
-                                  className="flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-text-secondary transition-colors hover:bg-surface-100/80 hover:text-text-main"
-                                >
-                                  <CopyOutlined className="text-[0.9rem]" />
-                                </button>
-                              </Tooltip>
-                              <Tooltip title="Edit">
-                                <button
-                                  type="button"
-                                  onClick={() => handleEditMessageStart(msg.id, msg.content)}
-                                  disabled={isStreaming}
-                                  aria-label="Edit message"
-                                  className="flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-text-secondary transition-colors hover:bg-surface-100/80 hover:text-text-main disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  <EditOutlined className="text-[0.9rem]" />
-                                </button>
-                              </Tooltip>
-                            </div>
-                          ) : null}
-                        </div>
-                      )}
-                        </div>
-                      </div>
-
-                      {isOutlineMessage ? (
-                        <div className="mr-auto flex w-full max-w-[min(100%,78rem)] gap-4">
-                          <div className="mt-1 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-brand-border bg-brand-surface text-brand-strong">
-                            <RobotOutlined />
-                          </div>
-                          <div className="min-w-0 w-full max-w-[min(100%,72rem)] flex-1">
-                            <div className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
-                              <span>Presentation Assistant</span>
-                              <span>·</span>
-                              <span>Ready to export</span>
-                            </div>
-                            <ActionBubble markdownContent={msg.content} />
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
+                {messages.map((messageItem) => (
+                  <ChatMessageItem
+                    key={messageItem.id}
+                    message={messageItem}
+                    isStreaming={isStreaming}
+                    hasMessages={hasMessages}
+                    editingMessageId={editingMessageId}
+                    editingContent={editingContent}
+                    onEditingContentChange={setEditingContent}
+                    onCopyMessage={(content) => void handleCopyMessage(content)}
+                    onEditMessageStart={handleEditMessageStart}
+                    onEditMessageCancel={() => setEditingMessageId(null)}
+                    onEditMessageSubmit={handleEditMessageSubmit}
+                    onOutlineChange={handleOutlineChange}
+                    onRefreshOutline={handleGenerate}
+                    formatTime={formatTime}
+                  />
+                ))}
 
                 {isStreaming ? (
                   <div ref={activeGenerationRef} className="mr-auto flex max-w-4xl gap-4">

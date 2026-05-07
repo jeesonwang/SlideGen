@@ -23,9 +23,29 @@ assert.equal(
   'Dashboard should no longer render a total sessions card'
 );
 assert.equal(
-  source.includes('const recentSessions = visibleSessions.slice(0, 5);'),
+  source.includes("import { useMemo } from 'react';"),
   true,
-  'Dashboard recent sessions should come from visible sessions only'
+  'Dashboard should import useMemo for render-derived session data'
+);
+assert.match(
+  source,
+  /const visibleSessions = useMemo\(\s*\(\) =>[\s\S]*sessionsData\?\.data\.filter[\s\S]*,\s*\[sessionsData\?\.data\]\s*\);/,
+  'Dashboard should memoize visible sessions from API data'
+);
+assert.match(
+  source,
+  /const recentSessions = useMemo\(\s*\(\) => visibleSessions\.slice\(0,\s*5\),\s*\[visibleSessions\]\s*\);/,
+  'Dashboard recent sessions should be memoized from visible sessions only'
+);
+assert.match(
+  source,
+  /const activeSessions = useMemo\(\s*\(\) =>[\s\S]*visibleSessions\.filter[\s\S]*session\.status === SessionStatus\.ACTIVE[\s\S]*,\s*\[visibleSessions\]\s*\);/,
+  'Dashboard should memoize active sessions from visible sessions'
+);
+assert.match(
+  source,
+  /const latestSession = useMemo\(\s*\(\) => activeSessions\[0\] \|\| visibleSessions\[0\],\s*\[activeSessions,\s*visibleSessions\]\s*\);/,
+  'Dashboard should memoize the latest session selection'
 );
 assert.equal(
   source.includes('const totalSessions = visibleSessions.length;'),

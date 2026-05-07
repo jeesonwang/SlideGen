@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const sidebarSource = readFileSync(resolve('src/components/common/Sidebar.tsx'), 'utf8');
-const chatSource = readFileSync(resolve('src/components/chat/ChatInterface.tsx'), 'utf8');
+const composerSource = readFileSync(resolve('src/components/chat/ComposerCard.tsx'), 'utf8');
 const dashboardSource = readFileSync(resolve('src/pages/dashboard/DashboardPage.tsx'), 'utf8');
 const sessionsSource = readFileSync(resolve('src/pages/sessions/SessionsPage.tsx'), 'utf8');
 const filesSource = readFileSync(resolve('src/pages/files/FilesPage.tsx'), 'utf8');
@@ -15,13 +15,13 @@ assert.equal(
 );
 
 assert.equal(
-  chatSource.includes('workbench-stage-panel'),
+  composerSource.includes('workbench-stage-panel'),
   true,
   'Generation page should use the shared stage panel styling for the main composer card'
 );
 
 assert.equal(
-  chatSource.includes('workbench-tip-panel'),
+  composerSource.includes('workbench-tip-panel'),
   true,
   'Generation page should render the refreshed tip surface above the composer stage'
 );
