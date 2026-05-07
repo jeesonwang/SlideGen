@@ -82,4 +82,58 @@ assert.deepEqual(
   ['bullet', 'heading', 'bullet']
 );
 
+const reorderBaseMarkdown = `# Drag Test
+
+## First Section
+### First Topic
+- First body
+
+## Second Section
+### Second Topic
+- Second body`;
+
+const reorderBaseOutline = parseMarkdownToOutline(reorderBaseMarkdown);
+const reorderedOutline = parseMarkdownToOutline(
+  `# Drag Test
+
+## Second Section
+### Second Topic
+- Second body
+
+## First Section
+### First Topic
+- First body`,
+  reorderBaseOutline
+);
+
+assert.equal(reorderedOutline.sections[0]?.id, reorderBaseOutline.sections[1]?.id);
+assert.equal(reorderedOutline.sections[1]?.id, reorderBaseOutline.sections[0]?.id);
+assert.equal(
+  reorderedOutline.sections[1]?.items[0]?.id,
+  reorderBaseOutline.sections[0]?.items[0]?.id
+);
+
+const editedOutline = parseMarkdownToOutline(
+  `# Drag Test
+
+## First Section Updated
+### First Topic Updated
+- First body changed
+
+## Second Section
+### Second Topic
+- Second body`,
+  reorderBaseOutline
+);
+
+assert.equal(editedOutline.sections[0]?.id, reorderBaseOutline.sections[0]?.id);
+assert.equal(
+  editedOutline.sections[0]?.items[0]?.id,
+  reorderBaseOutline.sections[0]?.items[0]?.id
+);
+assert.equal(
+  editedOutline.sections[0]?.items[1]?.id,
+  reorderBaseOutline.sections[0]?.items[1]?.id
+);
+
 console.log('outlineModel.test.ts passed');

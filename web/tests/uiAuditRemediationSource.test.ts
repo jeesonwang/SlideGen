@@ -47,7 +47,7 @@ assert.equal(
 );
 assert.match(
   chatSource,
-  /text-\[clamp\(1rem,0\.95rem\+0\.2vw,1\.2rem\)\]/,
+  /text-\[15px\][\s\S]*sm:text-\[16px\]/,
   'ChatInterface should further reduce the project title size so short titles do not dominate the header'
 );
 assert.match(

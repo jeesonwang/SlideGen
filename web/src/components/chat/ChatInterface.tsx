@@ -94,8 +94,7 @@ export const ChatInterface = () => {
     currentSession?.topic,
     primaryUserMessage
   );
-  const currentProjectStatus = currentSessionId ? 'Project ready' : 'Start with a topic';
-  const { connect: connectSSE, isConnected } = useSSE({
+  const { connect: connectSSE } = useSSE({
     onMessage: (event: SSEEvent) => {
       if (event.event === 'content_generated' && 'content' in event) {
         appendStreamChunk(event.content);
@@ -450,19 +449,9 @@ export const ChatInterface = () => {
 
   return (
     <div className="workbench-page relative flex h-full flex-col bg-transparent">
-      <div className="border-b border-border/70 bg-surface-50/88 px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-start justify-between gap-4">
+      <div className="border-b border-border/70 bg-surface-50/88 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-5xl items-center">
           <div className="min-w-0 flex-1">
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
-              <span
-                className={cn(
-                  'inline-flex h-2.5 w-2.5 rounded-full',
-                  isConnected || isStreaming ? 'bg-primary-500' : 'bg-emerald-500'
-                )}
-              />
-              {isStreaming ? 'Generating outline' : currentProjectStatus}
-            </div>
-
             {isEditingTitle ? (
               <Input
                 ref={titleInputRef}
@@ -486,7 +475,7 @@ export const ChatInterface = () => {
                 }}
                 disabled={updateSessionMutation.isPending}
                 maxLength={120}
-                className="w-full max-w-full sm:w-[min(32rem,60vw)]"
+                className="!h-8 w-full max-w-full !text-[15px] sm:w-[min(32rem,60vw)]"
               />
             ) : (
               <button
@@ -494,7 +483,7 @@ export const ChatInterface = () => {
                 onClick={handleTitleEditStart}
                 disabled={!currentSessionId || updateSessionMutation.isPending}
                 className={cn(
-                  'm-0 max-w-full truncate border-0 bg-transparent p-0 text-left text-[clamp(1rem,0.95rem+0.2vw,1.2rem)] font-semibold tracking-tight text-text-main transition-colors sm:max-w-[min(34rem,62vw)]',
+                  'm-0 max-w-full truncate border-0 bg-transparent p-0 text-left text-[15px] font-semibold tracking-tight text-text-main transition-colors sm:max-w-[min(34rem,62vw)] sm:text-[16px]',
                   currentSessionId ? 'cursor-text hover:text-brand-strong' : 'cursor-default'
                 )}
                 title={currentSessionId ? 'Click to rename this project' : chatHeaderTitle}

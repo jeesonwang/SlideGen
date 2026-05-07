@@ -64,8 +64,62 @@ assert.match(
 
 assert.match(
   source,
-  /title="Add row"/,
-  'OutlineEditor row action should add a blank row instead of duplicating content'
+  /title="Add body below"/,
+  'OutlineEditor body action should add a blank body row instead of duplicating content'
+);
+
+assert.match(
+  source,
+  /title="Add topic"[\s\S]*handleInsertTopicAfter/,
+  'OutlineEditor topic row plus action should add a topic below the current topic'
+);
+
+assert.doesNotMatch(
+  source,
+  /title="Add body"[\s\S]*handleAddBodyToTopic/,
+  'OutlineEditor topic row should not expose a direct Add body action'
+);
+
+assert.doesNotMatch(
+  source,
+  /Add topic after/,
+  'OutlineEditor should not keep the redundant Add topic after button'
+);
+
+assert.doesNotMatch(
+  source,
+  /Add topic to \$\{section\.title\}/,
+  'OutlineEditor section header should not expose the low-value Add topic button'
+);
+
+assert.doesNotMatch(
+  source,
+  /Duplicate section|Duplicate \$\{section\.title\}|CopyOutlined/,
+  'OutlineEditor section header should not expose duplicate controls'
+);
+
+assert.doesNotMatch(
+  source,
+  />\s*Add Section Below\s*</,
+  'OutlineEditor should not render a separate Add Section Below row between sections'
+);
+
+assert.doesNotMatch(
+  source,
+  />\s*Add Topic\s*<[\s\S]*>\s*Add Body\s*</,
+  'OutlineEditor should not render low-value section footer Add Topic/Add Body controls'
+);
+
+assert.doesNotMatch(
+  source,
+  /handleAddItem|smallActionClassName/,
+  'OutlineEditor should remove the unused section footer append-item handler and styles'
+);
+
+assert.match(
+  source,
+  /title="Add section below"[\s\S]*handleAddSection\(index\)/,
+  'OutlineEditor should keep section insertion next to the section delete control'
 );
 
 assert.doesNotMatch(
@@ -82,6 +136,108 @@ assert.match(
 
 assert.match(
   source,
+  /const groupSectionItems =/,
+  'OutlineEditor should group topic headings with their body rows for compact outline editing'
+);
+
+assert.match(
+  source,
+  /const \[expandedTopicIds, setExpandedTopicIds\]/,
+  'OutlineEditor should hide body rows until a topic is expanded'
+);
+
+assert.match(
+  source,
+  /aria-expanded=\{isTopicExpanded\}/,
+  'OutlineEditor topic disclosure should expose its expanded state'
+);
+
+assert.match(
+  source,
+  /draggable[\s\S]*handleTopicDragStart/,
+  'OutlineEditor should allow topic groups to be reordered by dragging'
+);
+
+assert.match(
+  source,
+  /const moveTopicGroup =/,
+  'OutlineEditor should reorder a topic together with its body rows'
+);
+
+assert.match(
+  source,
+  /const moveSection =/,
+  'OutlineEditor should allow sections to be reordered by dragging'
+);
+
+assert.match(
+  source,
+  /handleSectionDragStart/,
+  'OutlineEditor should expose a dedicated section drag handle'
+);
+
+assert.match(
+  source,
+  /const setOutlineDragImage =[\s\S]*event\.dataTransfer\.setDragImage/,
+  'OutlineEditor should use an explicit drag image helper for full outline blocks'
+);
+
+assert.match(
+  source,
+  /handleSectionDragStart[\s\S]*setOutlineDragImage\([^)]*outline-section-drag-preview/,
+  'OutlineEditor section drag should preview the whole section block instead of only the drag handle'
+);
+
+assert.match(
+  source,
+  /handleTopicDragStart[\s\S]*setOutlineDragImage\([^)]*outline-topic-drag-preview/,
+  'OutlineEditor topic drag should preview the whole topic block instead of only the drag handle'
+);
+
+assert.match(
+  source,
+  /OUTLINE_SECTION_DRAG_TYPE[\s\S]*event\.dataTransfer\.setData\(OUTLINE_SECTION_DRAG_TYPE/,
+  'OutlineEditor section drag should store its source id in the native drag payload'
+);
+
+assert.match(
+  source,
+  /event\.dataTransfer\.getData\(OUTLINE_SECTION_DRAG_TYPE\)\s*\|\|\s*draggingSectionId/,
+  'OutlineEditor section drop should not rely only on React drag state'
+);
+
+assert.doesNotMatch(
+  source,
+  /dragOverSection\?\.position\s*\?\?\s*'before'/,
+  'OutlineEditor section drop should compute the drop position from the current drop event instead of stale drag-over state'
+);
+
+assert.match(
+  source,
+  /OUTLINE_TOPIC_DRAG_TYPE[\s\S]*readTopicDragPayload/,
+  'OutlineEditor topic drag should use a typed native payload'
+);
+
+assert.match(
+  source,
+  /hasDragType\(event, OUTLINE_TOPIC_DRAG_TYPE\)[\s\S]*return;[\s\S]*event\.stopPropagation\(\)/,
+  'OutlineEditor topic drop should only stop propagation for topic drags'
+);
+
+assert.doesNotMatch(
+  source,
+  /handleItemKindToggle/,
+  'OutlineEditor should not let a Topic label click convert the topic into a body row'
+);
+
+assert.match(
+  source,
+  /<span className="w-14 shrink-0 text-left text-\[12px\] font-medium text-text-secondary">\s*Topic\s*<\/span>/,
+  'OutlineEditor should render Topic as a non-clickable label'
+);
+
+assert.match(
+  source,
   /activeView === 'markdown'/,
   'OutlineEditor should still render a markdown view when the Markdown tab is active'
 );
@@ -90,6 +246,12 @@ assert.match(
   source,
   /activeView === 'outline' &&/,
   'OutlineEditor should only show outline-specific title controls in outline view'
+);
+
+assert.match(
+  source,
+  /max-h-\[78vh\] overflow-y-auto/,
+  'OutlineEditor should give the outline assistant bubble a taller scroll area'
 );
 
 assert.doesNotMatch(

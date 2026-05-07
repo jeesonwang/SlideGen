@@ -29,6 +29,123 @@ const createIdFactory = () => {
 };
 
 const normalizeLine = (line: string) => line.replace(/\r/g, '').trim();
+const normalizeIdentityText = (text: string) => text.trim().replace(/\s+/g, ' ').toLowerCase();
+
+const getSectionSignature = (section: OutlineSection) =>
+  [
+    normalizeIdentityText(section.title),
+    ...section.items.map(
+      (item) => `${item.kind}:${normalizeIdentityText(item.text)}`
+    ),
+  ].join('|');
+
+const getItemSignature = (item: OutlineItem) =>
+  `${item.kind}:${normalizeIdentityText(item.text)}`;
+
+const findReusableIndex = <T>(
+  candidates: T[],
+  usedIndexes: Set<number>,
+  predicate: (candidate: T, index: number) => boolean
+) =>
+  candidates.findIndex(
+    (candidate, index) => !usedIndexes.has(index) && predicate(candidate, index)
+  );
+
+const reconcileItemIds = (
+  parsedItems: OutlineItem[],
+  previousItems: OutlineItem[] = []
+): OutlineItem[] => {
+  const usedPreviousIndexes = new Set<number>();
+
+  return parsedItems.map((item, index) => {
+    const exactMatchIndex = findReusableIndex(
+      previousItems,
+      usedPreviousIndexes,
+      (previousItem) => getItemSignature(previousItem) === getItemSignature(item)
+    );
+    const positionalKindMatchIndex =
+      exactMatchIndex >= 0
+        ? exactMatchIndex
+        : findReusableIndex(
+            previousItems,
+            usedPreviousIndexes,
+            (previousItem, previousIndex) =>
+              previousIndex === index && previousItem.kind === item.kind
+          );
+    const positionalMatchIndex =
+      positionalKindMatchIndex >= 0
+        ? positionalKindMatchIndex
+        : findReusableIndex(
+            previousItems,
+            usedPreviousIndexes,
+            (_previousItem, previousIndex) => previousIndex === index
+          );
+
+    if (positionalMatchIndex < 0) {
+      return item;
+    }
+
+    usedPreviousIndexes.add(positionalMatchIndex);
+    return {
+      ...item,
+      id: previousItems[positionalMatchIndex].id,
+    };
+  });
+};
+
+const reconcileOutlineIds = (
+  parsedOutline: OutlineDocument,
+  previousOutline?: OutlineDocument | null
+): OutlineDocument => {
+  if (!previousOutline) {
+    return parsedOutline;
+  }
+
+  const usedPreviousSectionIndexes = new Set<number>();
+
+  return {
+    ...parsedOutline,
+    sections: parsedOutline.sections.map((section, index) => {
+      const exactMatchIndex = findReusableIndex(
+        previousOutline.sections,
+        usedPreviousSectionIndexes,
+        (previousSection) =>
+          getSectionSignature(previousSection) === getSectionSignature(section)
+      );
+      const titleMatchIndex =
+        exactMatchIndex >= 0
+          ? exactMatchIndex
+          : findReusableIndex(
+              previousOutline.sections,
+              usedPreviousSectionIndexes,
+              (previousSection) =>
+                normalizeIdentityText(previousSection.title) ===
+                normalizeIdentityText(section.title)
+            );
+      const positionalMatchIndex =
+        titleMatchIndex >= 0
+          ? titleMatchIndex
+          : findReusableIndex(
+              previousOutline.sections,
+              usedPreviousSectionIndexes,
+              (_previousSection, previousIndex) => previousIndex === index
+            );
+
+      if (positionalMatchIndex < 0) {
+        return section;
+      }
+
+      const previousSection = previousOutline.sections[positionalMatchIndex];
+      usedPreviousSectionIndexes.add(positionalMatchIndex);
+
+      return {
+        ...section,
+        id: previousSection.id,
+        items: reconcileItemIds(section.items, previousSection.items),
+      };
+    }),
+  };
+};
 
 const pushLooseTextAsBullet = (
   section: OutlineSection | null,
@@ -47,7 +164,10 @@ const pushLooseTextAsBullet = (
   });
 };
 
-export const parseMarkdownToOutline = (markdown: string): OutlineDocument => {
+export const parseMarkdownToOutline = (
+  markdown: string,
+  previousOutline?: OutlineDocument | null
+): OutlineDocument => {
   const lines = markdown.split('\n');
   const ids = createIdFactory();
   const sections: OutlineSection[] = [];
@@ -110,10 +230,10 @@ export const parseMarkdownToOutline = (markdown: string): OutlineDocument => {
 
   commitSection();
 
-  return {
+  return reconcileOutlineIds({
     presentationTitle,
     sections,
-  };
+  }, previousOutline);
 };
 
 export const serializeOutlineToMarkdown = (outline: OutlineDocument): string => {

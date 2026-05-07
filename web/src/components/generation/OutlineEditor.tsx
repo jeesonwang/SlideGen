@@ -3,7 +3,6 @@ import { Input, Tooltip } from 'antd';
 import {
   CaretDownOutlined,
   CaretRightOutlined,
-  CopyOutlined,
   DeleteOutlined,
   DownloadOutlined,
   FullscreenExitOutlined,
@@ -20,7 +19,13 @@ import type {
   OutlineItemKind,
   OutlineSection,
 } from './outlineModel';
+import { resolveSectionDropPosition } from './outlineDrag';
 import { parseMarkdownToOutline, serializeOutlineToMarkdown } from './outlineModel';
+
+const { TextArea } = Input;
+
+const OUTLINE_SECTION_DRAG_TYPE = 'application/x-slidegen-outline-section';
+const OUTLINE_TOPIC_DRAG_TYPE = 'application/x-slidegen-outline-topic';
 
 interface OutlineEditorProps {
   value: string;
@@ -37,33 +42,118 @@ const EMPTY_OUTLINE: OutlineDocument = {
   sections: [],
 };
 
-const createSection = (index: number): OutlineSection => ({
-  id: `section-local-${Date.now()}-${index}`,
+interface OutlineTopicGroup {
+  id: string;
+  topic: OutlineItem;
+  bodyItems: OutlineItem[];
+}
+
+interface GroupedSectionItems {
+  looseBodyItems: OutlineItem[];
+  topics: OutlineTopicGroup[];
+}
+
+const groupSectionItems = (items: OutlineItem[]): GroupedSectionItems => {
+  const looseBodyItems: OutlineItem[] = [];
+  const topics: OutlineTopicGroup[] = [];
+  let currentTopic: OutlineTopicGroup | null = null;
+
+  items.forEach((item) => {
+    if (item.kind === 'heading') {
+      currentTopic = {
+        id: item.id,
+        topic: item,
+        bodyItems: [],
+      };
+      topics.push(currentTopic);
+      return;
+    }
+
+    if (currentTopic) {
+      currentTopic.bodyItems.push(item);
+      return;
+    }
+
+    looseBodyItems.push(item);
+  });
+
+  return { looseBodyItems, topics };
+};
+
+const flattenGroupedSectionItems = (
+  looseBodyItems: OutlineItem[],
+  topics: OutlineTopicGroup[]
+): OutlineItem[] => [
+  ...looseBodyItems,
+  ...topics.flatMap((topicGroup) => [topicGroup.topic, ...topicGroup.bodyItems]),
+];
+
+const hasDragType = (event: React.DragEvent<HTMLElement>, dragType: string) =>
+  Array.from(event.dataTransfer.types).includes(dragType);
+
+const setOutlineDragImage = (
+  event: React.DragEvent<HTMLElement>,
+  previewSelector: string
+) => {
+  const previewElement = event.currentTarget.closest<HTMLElement>(previewSelector);
+  if (!previewElement) {
+    return;
+  }
+
+  const previewBounds = previewElement.getBoundingClientRect();
+  const offsetX = Math.max(0, Math.min(event.clientX - previewBounds.left, previewBounds.width));
+  const offsetY = Math.max(0, Math.min(event.clientY - previewBounds.top, previewBounds.height));
+
+  event.dataTransfer.setDragImage(previewElement, offsetX, offsetY);
+};
+
+const readTopicDragPayload = (event: React.DragEvent<HTMLElement>) => {
+  const payload = event.dataTransfer.getData(OUTLINE_TOPIC_DRAG_TYPE);
+  if (!payload) {
+    return null;
+  }
+
+  try {
+    const parsedPayload = JSON.parse(payload) as Partial<{
+      sectionId: string;
+      topicId: string;
+    }>;
+
+    if (!parsedPayload.sectionId || !parsedPayload.topicId) {
+      return null;
+    }
+
+    return {
+      sectionId: parsedPayload.sectionId,
+      topicId: parsedPayload.topicId,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const createSection = (index: number, localIdToken: string): OutlineSection => ({
+  id: `section-local-${localIdToken}-${index}`,
   kind: 'section',
   title: `Section ${index + 1}`,
   items: [
     {
-      id: `item-local-${Date.now()}-${index}-0`,
+      id: `item-local-${localIdToken}-${index}-0`,
       kind: 'heading',
       text: 'New topic',
     },
   ],
 });
 
-const createItem = (sectionId: string, index: number, kind: OutlineItemKind): OutlineItem => ({
-  id: `${sectionId}-${kind}-${Date.now()}-${index}`,
+const createItem = (
+  sectionId: string,
+  index: number,
+  kind: OutlineItemKind,
+  localIdToken: string
+): OutlineItem => ({
+  id: `${sectionId}-${kind}-${localIdToken}-${index}`,
   kind,
   text: kind === 'heading' ? 'New topic' : 'New body point',
-});
-
-const cloneSection = (section: OutlineSection, index: number): OutlineSection => ({
-  id: `section-clone-${Date.now()}-${index}`,
-  kind: 'section',
-  title: `${section.title} Copy`,
-  items: section.items.map((item, itemIndex) => ({
-    ...item,
-    id: `item-clone-${Date.now()}-${index}-${itemIndex}`,
-  })),
 });
 
 const toDownloadFilename = (title: string) => {
@@ -79,8 +169,8 @@ const toDownloadFilename = (title: string) => {
 const iconButtonClassName =
   'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-[13px] text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong disabled:cursor-not-allowed disabled:opacity-40';
 
-const smallActionClassName =
-  'inline-flex min-h-11 items-center gap-1 rounded-lg border border-border/60 bg-surface-50 px-3 text-[12px] font-medium text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong';
+const compactIconButtonClassName =
+  'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-50 text-[12px] text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong disabled:cursor-not-allowed disabled:opacity-40';
 
 export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   value,
@@ -93,12 +183,30 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
 }) => {
   const [activeView, setActiveView] = useState<'outline' | 'markdown'>('outline');
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
-  const [collapsedSectionIds, setCollapsedSectionIds] = useState<string[]>([]);
+  const [expandedTopicIds, setExpandedTopicIds] = useState<string[]>([]);
+  const [draggingTopic, setDraggingTopic] = useState<{
+    sectionId: string;
+    topicId: string;
+  } | null>(null);
+  const [dragOverTopicId, setDragOverTopicId] = useState<string | null>(null);
+  const [draggingSectionId, setDraggingSectionId] = useState<string | null>(null);
+  const [dragOverSection, setDragOverSection] = useState<{
+    sectionId: string;
+    position: 'before' | 'after';
+  } | null>(null);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const previousOutlineRef = useRef<OutlineDocument | null>(null);
+  const localIdCounterRef = useRef(0);
   const outline = useMemo<OutlineDocument>(
-    () => (value.trim() ? parseMarkdownToOutline(value) : EMPTY_OUTLINE),
+    () => {
+      // The editor serializes to Markdown on every change, so the parser needs the
+      // previous outline as reconciliation context to preserve drag/drop identities.
+      // eslint-disable-next-line react-hooks/refs
+      const previousOutline = previousOutlineRef.current;
+      return value.trim() ? parseMarkdownToOutline(value, previousOutline) : EMPTY_OUTLINE;
+    },
     [value]
   );
   const resolvedActiveSectionId =
@@ -108,6 +216,10 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   const currentMarkdown = serializeOutlineToMarkdown(outline);
   const canRefresh = !!onRefresh && !refreshDisabled;
   const isFullscreen = isBrowserFullscreen || isPseudoFullscreen;
+
+  useEffect(() => {
+    previousOutlineRef.current = outline;
+  }, [outline]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -126,7 +238,36 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   }, []);
 
   const syncMarkdown = (nextOutline: OutlineDocument) => {
+    previousOutlineRef.current = nextOutline;
     onChange(serializeOutlineToMarkdown(nextOutline));
+  };
+
+  const nextLocalIdToken = () => {
+    localIdCounterRef.current += 1;
+    return `${localIdCounterRef.current}`;
+  };
+
+  const getSectionDropPosition = (
+    event: React.DragEvent<HTMLElement>,
+    targetSectionId: string
+  ) => {
+    const sourceSectionId =
+      event.dataTransfer.getData(OUTLINE_SECTION_DRAG_TYPE) || draggingSectionId;
+    const sourceIndex = outline.sections.findIndex(
+      (outlineSection) => outlineSection.id === sourceSectionId
+    );
+    const targetIndex = outline.sections.findIndex(
+      (outlineSection) => outlineSection.id === targetSectionId
+    );
+    const sectionBounds = event.currentTarget.getBoundingClientRect();
+
+    return resolveSectionDropPosition({
+      sourceIndex,
+      targetIndex,
+      pointerY: event.clientY,
+      targetTop: sectionBounds.top,
+      targetHeight: sectionBounds.height,
+    });
   };
 
   const handleDownload = () => {
@@ -198,27 +339,6 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
     });
   };
 
-  const handleItemKindToggle = (sectionId: string, itemId: string) => {
-    syncMarkdown({
-      ...outline,
-      sections: outline.sections.map((section) =>
-        section.id === sectionId
-          ? {
-              ...section,
-              items: section.items.map((item) =>
-                item.id === itemId
-                  ? {
-                      ...item,
-                      kind: item.kind === 'heading' ? 'bullet' : 'heading',
-                    }
-                  : item
-              ),
-            }
-          : section
-      ),
-    });
-  };
-
   const handleDeleteSection = (sectionId: string) => {
     syncMarkdown({
       ...outline,
@@ -240,20 +360,6 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
     });
   };
 
-  const handleDuplicateSection = (sectionId: string) => {
-    const sectionIndex = outline.sections.findIndex((section) => section.id === sectionId);
-    if (sectionIndex < 0) {
-      return;
-    }
-
-    const nextSections = [...outline.sections];
-    nextSections.splice(sectionIndex + 1, 0, cloneSection(nextSections[sectionIndex], sectionIndex));
-    syncMarkdown({
-      ...outline,
-      sections: nextSections,
-    });
-  };
-
   const handleInsertBlankItem = (sectionId: string, itemId: string) => {
     syncMarkdown({
       ...outline,
@@ -269,7 +375,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
 
         const nextItems = [...section.items];
         nextItems.splice(itemIndex + 1, 0, {
-          id: `${sectionId}-new-${Date.now()}-${itemIndex}`,
+          id: `${sectionId}-new-${nextLocalIdToken()}-${itemIndex}`,
           kind: nextItems[itemIndex].kind,
           text: '',
         });
@@ -282,7 +388,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
   };
 
   const handleAddSection = (insertAfterIndex?: number) => {
-    const nextSection = createSection(outline.sections.length);
+    const nextSection = createSection(outline.sections.length, nextLocalIdToken());
     const nextSections = [...outline.sections];
 
     if (typeof insertAfterIndex === 'number') {
@@ -298,26 +404,246 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
     });
   };
 
-  const handleAddItem = (sectionId: string, kind: OutlineItemKind) => {
+  const moveSection = (
+    sourceSectionId: string,
+    targetSectionId: string,
+    position: 'before' | 'after'
+  ) => {
+    if (sourceSectionId === targetSectionId) {
+      return;
+    }
+
+    const sourceIndex = outline.sections.findIndex((section) => section.id === sourceSectionId);
+    if (
+      sourceIndex < 0 ||
+      !outline.sections.some((section) => section.id === targetSectionId)
+    ) {
+      return;
+    }
+
+    const movingSection = outline.sections[sourceIndex];
+    const nextSections = outline.sections.filter((section) => section.id !== sourceSectionId);
+    const resolvedTargetIndex = nextSections.findIndex((section) => section.id === targetSectionId);
+
+    if (resolvedTargetIndex < 0 || !movingSection) {
+      return;
+    }
+
+    const insertIndex =
+      position === 'after' ? resolvedTargetIndex + 1 : resolvedTargetIndex;
+    nextSections.splice(
+      Math.max(0, Math.min(insertIndex, nextSections.length)),
+      0,
+      movingSection
+    );
+    setActiveSectionId(movingSection.id);
     syncMarkdown({
       ...outline,
-      sections: outline.sections.map((section) =>
-        section.id === sectionId
-          ? {
-              ...section,
-              items: [...section.items, createItem(sectionId, section.items.length, kind)],
-            }
-          : section
-      ),
+      sections: nextSections,
     });
   };
 
-  const handleToggleSection = (sectionId: string) => {
-    setCollapsedSectionIds((current) =>
-      current.includes(sectionId)
-        ? current.filter((id) => id !== sectionId)
-        : [...current, sectionId]
+  const handleInsertTopicAfter = (sectionId: string, topicId: string) => {
+    const nextTopic = createItem(sectionId, outline.sections.length, 'heading', nextLocalIdToken());
+
+    syncMarkdown({
+      ...outline,
+      sections: outline.sections.map((section) => {
+        if (section.id !== sectionId) {
+          return section;
+        }
+
+        const topicIndex = section.items.findIndex((item) => item.id === topicId);
+        if (topicIndex < 0) {
+          return section;
+        }
+
+        const nextItems = [...section.items];
+        let insertIndex = topicIndex + 1;
+        while (insertIndex < nextItems.length && nextItems[insertIndex].kind !== 'heading') {
+          insertIndex += 1;
+        }
+        nextItems.splice(insertIndex, 0, nextTopic);
+
+        return {
+          ...section,
+          items: nextItems,
+        };
+      }),
+    });
+
+    setExpandedTopicIds((current) => current.filter((id) => id !== nextTopic.id));
+  };
+
+  const handleDeleteTopicGroup = (sectionId: string, topicId: string) => {
+    syncMarkdown({
+      ...outline,
+      sections: outline.sections.map((section) => {
+        if (section.id !== sectionId) {
+          return section;
+        }
+
+        const groupedItems = groupSectionItems(section.items);
+        return {
+          ...section,
+          items: flattenGroupedSectionItems(
+            groupedItems.looseBodyItems,
+            groupedItems.topics.filter((topicGroup) => topicGroup.id !== topicId)
+          ),
+        };
+      }),
+    });
+
+    setExpandedTopicIds((current) => current.filter((id) => id !== topicId));
+  };
+
+  const handleToggleTopic = (topicId: string) => {
+    setExpandedTopicIds((current) =>
+      current.includes(topicId)
+        ? current.filter((id) => id !== topicId)
+        : [...current, topicId]
     );
+  };
+
+  const moveTopicGroup = (sourceSectionId: string, sourceTopicId: string, targetTopicId: string) => {
+    if (sourceTopicId === targetTopicId) {
+      return;
+    }
+
+    const sourceSection = outline.sections.find((section) => section.id === sourceSectionId);
+    const targetSection = outline.sections.find((section) =>
+      groupSectionItems(section.items).topics.some((topicGroup) => topicGroup.id === targetTopicId)
+    );
+
+    if (!sourceSection || !targetSection) {
+      return;
+    }
+
+    const sourceGroupedItems = groupSectionItems(sourceSection.items);
+    const movingTopic = sourceGroupedItems.topics.find(
+      (topicGroup) => topicGroup.id === sourceTopicId
+    );
+
+    if (!movingTopic) {
+      return;
+    }
+
+    syncMarkdown({
+      ...outline,
+      sections: outline.sections.map((section) => {
+        const groupedItems = groupSectionItems(section.items);
+
+        if (section.id === sourceSection.id && section.id === targetSection.id) {
+          const reorderedTopics = groupedItems.topics.filter(
+            (topicGroup) => topicGroup.id !== sourceTopicId
+          );
+          const targetIndex = reorderedTopics.findIndex(
+            (topicGroup) => topicGroup.id === targetTopicId
+          );
+
+          if (targetIndex < 0) {
+            return section;
+          }
+
+          reorderedTopics.splice(targetIndex, 0, movingTopic);
+          return {
+            ...section,
+            items: flattenGroupedSectionItems(groupedItems.looseBodyItems, reorderedTopics),
+          };
+        }
+
+        if (section.id === sourceSection.id) {
+          return {
+            ...section,
+            items: flattenGroupedSectionItems(
+              groupedItems.looseBodyItems,
+              groupedItems.topics.filter((topicGroup) => topicGroup.id !== sourceTopicId)
+            ),
+          };
+        }
+
+        if (section.id === targetSection.id) {
+          const targetIndex = groupedItems.topics.findIndex(
+            (topicGroup) => topicGroup.id === targetTopicId
+          );
+
+          if (targetIndex < 0) {
+            return section;
+          }
+
+          const nextTopics = [...groupedItems.topics];
+          nextTopics.splice(targetIndex, 0, movingTopic);
+          return {
+            ...section,
+            items: flattenGroupedSectionItems(groupedItems.looseBodyItems, nextTopics),
+          };
+        }
+
+        return section;
+      }),
+    });
+  };
+
+  const handleTopicDragStart = (
+    event: React.DragEvent<HTMLElement>,
+    sectionId: string,
+    topicId: string
+  ) => {
+    setDraggingTopic({ sectionId, topicId });
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData(
+      OUTLINE_TOPIC_DRAG_TYPE,
+      JSON.stringify({ sectionId, topicId })
+    );
+    event.dataTransfer.setData('text/plain', topicId);
+    setOutlineDragImage(event, '[data-outline-topic-drag-preview]');
+  };
+
+  const handleTopicDrop = (
+    event: React.DragEvent<HTMLElement>,
+    targetTopicId: string
+  ) => {
+    const dragPayload = readTopicDragPayload(event) ?? draggingTopic;
+
+    if (!dragPayload) {
+      return;
+    }
+
+    moveTopicGroup(dragPayload.sectionId, dragPayload.topicId, targetTopicId);
+    setDraggingTopic(null);
+    setDragOverTopicId(null);
+  };
+
+  const handleSectionDragStart = (
+    event: React.DragEvent<HTMLElement>,
+    sectionId: string
+  ) => {
+    setDraggingSectionId(sectionId);
+    setDraggingTopic(null);
+    setDragOverTopicId(null);
+    setDragOverSection(null);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData(OUTLINE_SECTION_DRAG_TYPE, sectionId);
+    event.dataTransfer.setData('text/plain', sectionId);
+    setOutlineDragImage(event, '[data-outline-section-drag-preview]');
+  };
+
+  const handleSectionDrop = (
+    event: React.DragEvent<HTMLElement>,
+    targetSectionId: string,
+    position: 'before' | 'after'
+  ) => {
+    const sourceSectionId =
+      event.dataTransfer.getData(OUTLINE_SECTION_DRAG_TYPE) || draggingSectionId;
+
+    if (!sourceSectionId) {
+      return false;
+    }
+
+    moveSection(sourceSectionId, targetSectionId, position);
+    setDraggingSectionId(null);
+    setDragOverSection(null);
+    return true;
   };
 
   const renderToolbar = () => (
@@ -422,7 +748,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
         <div
           className={cn(
             'px-4 py-4 sm:px-5',
-            isFullscreen ? 'min-h-0 flex-1 overflow-y-auto' : 'max-h-[70vh] overflow-y-auto'
+            isFullscreen ? 'min-h-0 flex-1 overflow-y-auto' : 'max-h-[100vh] overflow-y-auto'
           )}
         >
           {activeView === 'markdown' ? (
@@ -440,19 +766,31 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {outline.sections.map((section, index) => {
                 const isActive = resolvedActiveSectionId === section.id;
-                const isCollapsed = collapsedSectionIds.includes(section.id);
+                const groupedItems = groupSectionItems(section.items);
+                const isDraggingSection = draggingSectionId === section.id;
+                const isSectionDragTarget =
+                  dragOverSection?.sectionId === section.id && draggingSectionId !== section.id;
 
                 return (
-                  <div key={section.id} className="space-y-2">
+                  <div key={section.id}>
                     <div
+                      data-outline-section-drag-preview={section.id}
                       className={cn(
-                        'group overflow-hidden rounded-[24px] border bg-surface-50 shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition-all duration-200',
+                        'group overflow-hidden rounded-xl border bg-surface-50 transition-all duration-200',
                         isActive
-                          ? 'border-brand-border shadow-[0_0_0_1px_rgba(49,95,143,0.16)]'
-                          : 'border-border/70 hover:border-brand-border'
+                          ? 'border-brand-border shadow-[0_0_0_1px_rgba(49,95,143,0.14)]'
+                          : 'border-border/70 hover:border-brand-border',
+                        isSectionDragTarget && 'border-brand-border bg-brand-surface/35',
+                        isSectionDragTarget &&
+                          dragOverSection?.position === 'before' &&
+                          'shadow-[inset_0_2px_0_rgba(49,95,143,0.65)]',
+                        isSectionDragTarget &&
+                          dragOverSection?.position === 'after' &&
+                          'shadow-[inset_0_-2px_0_rgba(49,95,143,0.65)]',
+                        isDraggingSection && 'opacity-60'
                       )}
                       onClick={() => setActiveSectionId(section.id)}
                       onKeyDown={(event) => {
@@ -464,16 +802,60 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                       role="button"
                       tabIndex={0}
                       aria-pressed={isActive}
+                      onDragOver={(event) => {
+                        const isSectionDrag =
+                          hasDragType(event, OUTLINE_SECTION_DRAG_TYPE) ||
+                          !!draggingSectionId;
+
+                        if (!isSectionDrag) {
+                          return;
+                        }
+
+                        const position = getSectionDropPosition(event, section.id);
+
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = 'move';
+                        setDragOverSection({ sectionId: section.id, position });
+                      }}
+                      onDragLeave={() => setDragOverSection(null)}
+                      onDrop={(event) => {
+                        if (
+                          !hasDragType(event, OUTLINE_SECTION_DRAG_TYPE) &&
+                          !draggingSectionId
+                        ) {
+                          return;
+                        }
+
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleSectionDrop(
+                          event,
+                          section.id,
+                          getSectionDropPosition(event, section.id)
+                        );
+                      }}
                     >
-                      <div className="flex flex-col gap-3 border-b border-border/60 bg-surface-100/55 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-50 text-text-secondary">
+                      <div className="flex flex-col gap-2 border-b border-border/50 bg-surface-100/55 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                          <button
+                            type="button"
+                            draggable
+                            onDragStart={(event) => handleSectionDragStart(event, section.id)}
+                            onDragEnd={() => {
+                              setDraggingSectionId(null);
+                              setDragOverSection(null);
+                            }}
+                            onClick={(event) => event.stopPropagation()}
+                            className="flex h-8 w-7 shrink-0 cursor-grab items-center justify-center text-text-secondary transition-colors active:cursor-grabbing hover:text-text-main"
+                            aria-label={`Drag ${section.title || 'section'}`}
+                          >
                             <HolderOutlined />
-                          </span>
-                          <span className="text-[20px] font-semibold text-brand-strong">
+                          </button>
+                          <span className="w-7 shrink-0 text-center text-[17px] font-semibold text-brand-strong">
                             {index + 1}
                           </span>
-                          <span className="rounded-full border border-brand-border bg-brand-surface px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-strong">
+                          <span className="h-8 w-px bg-border/70" />
+                          <span className="text-[14px] font-semibold text-text-main">
                             Section
                           </span>
                           <div className="min-w-0 flex-1">
@@ -483,53 +865,23 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                 handleSectionTitleChange(section.id, event.target.value)
                               }
                               placeholder="Section title"
-                              className="!h-9 w-full !rounded-xl !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
+                              className="!h-8 w-full !rounded-lg !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
                             />
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Tooltip title="Add topic">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Tooltip title="Add section below">
                             <button
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                handleAddItem(section.id, 'heading');
+                                handleAddSection(index);
                               }}
-                              className={iconButtonClassName}
-                              aria-label={`Add topic to ${section.title}`}
+                              className={compactIconButtonClassName}
+                              aria-label={`Add section below ${section.title}`}
                             >
                               <PlusOutlined />
-                            </button>
-                          </Tooltip>
-                          <Tooltip title="Duplicate section">
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleDuplicateSection(section.id);
-                              }}
-                              className={iconButtonClassName}
-                              aria-label={`Duplicate ${section.title}`}
-                            >
-                              <CopyOutlined />
-                            </button>
-                          </Tooltip>
-                          <Tooltip title={isCollapsed ? 'Expand section' : 'Collapse section'}>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleToggleSection(section.id);
-                              }}
-                              className={iconButtonClassName}
-                              aria-label={
-                                isCollapsed
-                                  ? `Expand ${section.title}`
-                                  : `Collapse ${section.title}`
-                              }
-                            >
-                              {isCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
                             </button>
                           </Tooltip>
                           <Tooltip title="Delete section">
@@ -539,7 +891,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                 event.stopPropagation();
                                 handleDeleteSection(section.id);
                               }}
-                              className={cn(iconButtonClassName, 'hover:text-red-500')}
+                              className={cn(compactIconButtonClassName, 'hover:text-red-500')}
                               aria-label={`Delete ${section.title}`}
                             >
                               <DeleteOutlined />
@@ -548,92 +900,243 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                         </div>
                       </div>
 
-                      {!isCollapsed && (
-                        <div className="space-y-2 px-3 py-3 sm:px-4">
-                          {section.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className="group/item flex flex-col gap-2 rounded-2xl border border-border/55 bg-surface-50/90 px-3 py-2.5 sm:flex-row sm:items-center"
-                            >
-                              <div className="flex items-center gap-2 sm:w-[128px]">
-                                <span className="ml-1 h-2 w-2 rounded-full bg-primary-500/45" />
-                                <button
-                                  type="button"
-                                  onClick={() => handleItemKindToggle(section.id, item.id)}
+                      <div className="px-2 py-2 sm:px-3">
+                        {groupedItems.looseBodyItems.length > 0 ? (
+                          <div className="mb-1 space-y-0.5">
+                            {groupedItems.looseBodyItems.map((item) => (
+                              <div
+                                key={item.id}
+                                className="group/body flex min-h-9 items-center gap-3 rounded-lg px-2 py-1 text-text-secondary transition-colors hover:bg-surface-100/70 sm:pl-[6.25rem]"
+                              >
+                                <span className="w-14 shrink-0 text-[12px] font-medium text-text-secondary">
+                                  Body
+                                </span>
+                                <TextArea
+                                  value={item.text}
+                                  onChange={(event) =>
+                                    handleItemTextChange(section.id, item.id, event.target.value)
+                                  }
+                                  autoSize={{ minRows: 1 }}
+                                  placeholder="Body point"
+                                  className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent !px-0 !py-1 !text-[13px] !leading-5 !text-text-secondary !shadow-none"
+                                />
+                                <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/body:opacity-100">
+                                  <Tooltip title="Delete body">
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        handleDeleteItem(section.id, item.id);
+                                      }}
+                                      className={cn(compactIconButtonClassName, 'hover:text-red-500')}
+                                      aria-label={`Delete ${item.text || 'body point'}`}
+                                    >
+                                      <DeleteOutlined />
+                                    </button>
+                                  </Tooltip>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        <div className="space-y-0.5">
+                          {groupedItems.topics.map((topicGroup) => {
+                            const isTopicExpanded = expandedTopicIds.includes(topicGroup.id);
+                            const isDragging = draggingTopic?.topicId === topicGroup.id;
+                            const isDragTarget =
+                              dragOverTopicId === topicGroup.id &&
+                              draggingTopic?.topicId !== topicGroup.id;
+
+                            return (
+                              <div
+                                data-outline-topic-drag-preview={topicGroup.id}
+                                key={topicGroup.id}
+                                className={cn(
+                                  'rounded-xl transition-colors',
+                                  isDragTarget && 'bg-brand-surface/70',
+                                  isDragging && 'opacity-50'
+                                )}
+                                onDragOver={(event) => {
+                                  const isTopicDrag =
+                                    hasDragType(event, OUTLINE_TOPIC_DRAG_TYPE) ||
+                                    !!draggingTopic;
+
+                                  if (!isTopicDrag) {
+                                    return;
+                                  }
+
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  event.dataTransfer.dropEffect = 'move';
+                                  setDragOverTopicId(topicGroup.id);
+                                }}
+                                onDragLeave={() => setDragOverTopicId(null)}
+                                onDrop={(event) => {
+                                  if (
+                                    !hasDragType(event, OUTLINE_TOPIC_DRAG_TYPE) &&
+                                    !draggingTopic
+                                  ) {
+                                    return;
+                                  }
+
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  handleTopicDrop(event, topicGroup.id);
+                                }}
+                              >
+                                <div
                                   className={cn(
-                                    'min-h-11 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors',
-                                    item.kind === 'heading'
-                                      ? 'bg-brand-surface text-brand-strong'
-                                      : 'bg-surface-100 text-text-secondary'
+                                    'group/topic flex min-h-10 items-center gap-2.5 rounded-lg px-2 py-1 transition-colors',
+                                    isTopicExpanded ? 'bg-surface-100/80' : 'hover:bg-surface-100/65'
                                   )}
                                 >
-                                  {item.kind === 'heading' ? 'Topic' : 'Body'}
-                                </button>
-                              </div>
-                              <Input
-                                value={item.text}
-                                onChange={(event) =>
-                                  handleItemTextChange(section.id, item.id, event.target.value)
-                                }
-                                placeholder="Outline content"
-                                className="!h-9 flex-1 !rounded-xl !border-0 !bg-transparent !px-0 !text-[13px] !text-text-main"
-                              />
-                              <div className="flex items-center gap-2 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/item:opacity-100">
-                                <Tooltip title="Add row">
                                   <button
                                     type="button"
-                                    onClick={() => handleInsertBlankItem(section.id, item.id)}
-                                    className={iconButtonClassName}
-                                    aria-label={`Add row after ${item.text || 'current item'}`}
+                                    draggable
+                                    onDragStart={(event) =>
+                                      handleTopicDragStart(event, section.id, topicGroup.id)
+                                    }
+                                    onDragEnd={() => {
+                                      setDraggingTopic(null);
+                                      setDragOverTopicId(null);
+                                    }}
+                                    onClick={(event) => event.stopPropagation()}
+                                    className="flex h-8 w-7 shrink-0 cursor-grab items-center justify-center text-text-secondary transition-colors active:cursor-grabbing hover:text-text-main"
+                                    aria-label={`Drag ${topicGroup.topic.text || 'topic'}`}
                                   >
-                                    <PlusOutlined />
+                                    <HolderOutlined />
                                   </button>
-                                </Tooltip>
-                                <Tooltip title="Delete row">
                                   <button
                                     type="button"
-                                    onClick={() => handleDeleteItem(section.id, item.id)}
-                                    className={cn(iconButtonClassName, 'hover:text-red-500')}
-                                    aria-label={`Delete ${item.text || 'current item'}`}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      handleToggleTopic(topicGroup.id);
+                                    }}
+                                    className="flex h-8 w-7 shrink-0 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface-50 hover:text-text-main"
+                                    aria-expanded={isTopicExpanded}
+                                    aria-label={
+                                      isTopicExpanded
+                                        ? `Collapse ${topicGroup.topic.text || 'topic'}`
+                                        : `Expand ${topicGroup.topic.text || 'topic'}`
+                                    }
                                   >
-                                    <DeleteOutlined />
+                                    {isTopicExpanded ? <CaretDownOutlined /> : <CaretRightOutlined />}
                                   </button>
-                                </Tooltip>
-                              </div>
-                            </div>
-                          ))}
+                                  <span className="w-14 shrink-0 text-left text-[12px] font-medium text-text-secondary">
+                                    Topic
+                                  </span>
+                                  <Input
+                                    value={topicGroup.topic.text}
+                                    onChange={(event) =>
+                                      handleItemTextChange(
+                                        section.id,
+                                        topicGroup.topic.id,
+                                        event.target.value
+                                      )
+                                    }
+                                    placeholder="Topic"
+                                    className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-[14px] !font-semibold !text-text-main"
+                                  />
+                                  <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/topic:opacity-100">
+                                    <Tooltip title="Add topic">
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          handleInsertTopicAfter(section.id, topicGroup.id);
+                                        }}
+                                        className={compactIconButtonClassName}
+                                        aria-label={`Add topic below ${topicGroup.topic.text || 'topic'}`}
+                                      >
+                                        <PlusOutlined />
+                                      </button>
+                                    </Tooltip>
+                                    <Tooltip title="Delete topic">
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          handleDeleteTopicGroup(section.id, topicGroup.id);
+                                        }}
+                                        className={cn(compactIconButtonClassName, 'hover:text-red-500')}
+                                        aria-label={`Delete ${topicGroup.topic.text || 'topic'}`}
+                                      >
+                                        <DeleteOutlined />
+                                      </button>
+                                    </Tooltip>
+                                  </div>
+                                </div>
 
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => handleAddItem(section.id, 'heading')}
-                              className={smallActionClassName}
-                            >
-                              <PlusOutlined />
-                              <span>Add Topic</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleAddItem(section.id, 'bullet')}
-                              className={smallActionClassName}
-                            >
-                              <PlusOutlined />
-                              <span>Add Body</span>
-                            </button>
-                          </div>
+                                {isTopicExpanded ? (
+                                  <div className="space-y-0.5 pb-1 pl-[6.25rem] pr-2">
+                                    {topicGroup.bodyItems.length > 0 ? (
+                                      topicGroup.bodyItems.map((item) => (
+                                        <div
+                                          key={item.id}
+                                          className="group/body flex min-h-9 items-start gap-3 rounded-lg px-2 py-1 text-text-secondary transition-colors hover:bg-surface-100/55"
+                                        >
+                                          <span className="w-14 shrink-0 pt-1 text-[12px] font-medium text-text-secondary">
+                                            Body
+                                          </span>
+                                          <TextArea
+                                            value={item.text}
+                                            onChange={(event) =>
+                                              handleItemTextChange(
+                                                section.id,
+                                                item.id,
+                                                event.target.value
+                                              )
+                                            }
+                                            autoSize={{ minRows: 1 }}
+                                            placeholder="Body point"
+                                            className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent !px-0 !py-1 !text-[13px] !leading-5 !text-text-secondary !shadow-none"
+                                          />
+                                          <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/body:opacity-100">
+                                            <Tooltip title="Add body below">
+                                              <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                  event.stopPropagation();
+                                                  handleInsertBlankItem(section.id, item.id);
+                                                }}
+                                                className={compactIconButtonClassName}
+                                                aria-label={`Add body after ${item.text || 'current body'}`}
+                                              >
+                                                <PlusOutlined />
+                                              </button>
+                                            </Tooltip>
+                                            <Tooltip title="Delete body">
+                                              <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                  event.stopPropagation();
+                                                  handleDeleteItem(section.id, item.id);
+                                                }}
+                                                className={cn(
+                                                  compactIconButtonClassName,
+                                                  'hover:text-red-500'
+                                                )}
+                                                aria-label={`Delete ${item.text || 'body point'}`}
+                                              >
+                                                <DeleteOutlined />
+                                              </button>
+                                            </Tooltip>
+                                          </div>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="rounded-lg px-2 py-1.5 text-[12px] text-text-secondary/70">
+                                        No body points yet.
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
                         </div>
-                      )}
-                    </div>
-
-                    <div className="flex justify-center">
-                      <button
-                        type="button"
-                        onClick={() => handleAddSection(index)}
-                        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-dashed border-border/70 bg-surface-50 px-4 text-[12px] font-medium text-text-secondary transition-colors hover:border-brand-border hover:text-brand-strong"
-                      >
-                        <PlusOutlined />
-                        <span>Add Section Below</span>
-                      </button>
+                      </div>
                     </div>
                   </div>
                 );
