@@ -68,6 +68,7 @@ export interface MarkdownToPPTRequest {
   markdown_content: string;
   template: string;
   export_as: ExportFormat;
+  theme_preset?: string | null;
 }
 
 // SSE Stream Event Types
@@ -169,9 +170,14 @@ export type SSEEvent =
   | ProgressEvent;
 
 export interface GeneratePPTXResponse {
+  success: boolean;
+  result: {
+    output_path: string;
+    filename: string;
+    download_url: string;
+  } | null;
   message: string;
-  task_id: string;
-  download_url?: string;
+  error?: string | null;
 }
 
 export interface DownloadPPTXResponse {
@@ -183,4 +189,9 @@ export interface Template {
   id: string;
   name: string;
   thumbnail?: string;
+}
+
+export interface ThemePreset {
+  id: string;
+  name: string;
 }

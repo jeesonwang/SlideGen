@@ -44,6 +44,7 @@ import './apiEndpoints.test.ts';
 import './settingsApiEndpoints.test.ts';
 import './apiBaseUrl.test.ts';
 import './slidegenStreamRequest.test.ts';
+import './markdownPptxLinkSource.test.ts';
 import './loginRedirect.test.ts';
 import './apiClient401RedirectSource.test.ts';
 import './authReviewRegressionsSource.test.ts';

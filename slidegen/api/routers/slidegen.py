@@ -25,6 +25,7 @@ from slidegen.schemas.gen_request import (
     Verbosity,
 )
 from slidegen.schemas.template import Template
+from slidegen.schemas.theme import ThemePresets
 from slidegen.services import presentation_generator
 from slidegen.services.presentation.thumbnail import (
     LibreOfficeNotFoundError,
@@ -456,6 +457,7 @@ async def generate_pptx_from_markdown(request: MarkdownToPPTRequest, current_use
             template_name=request.template,
             output_path=output_path,
             export_as=request.export_as,
+            theme_preset=request.theme_preset,
         )
 
         logger.info(f"Presentation generated successfully: {result_path}")
@@ -538,6 +540,7 @@ async def generate_pptx_from_markdown_stream(
                 template_name=request.template,
                 output_path=output_path,
                 export_as=request.export_as,
+                theme_preset=request.theme_preset,
             ):
                 # Convert Pydantic model to dict and then to JSON
                 event_data = event.model_dump()
@@ -656,6 +659,15 @@ async def get_available_templates() -> list[Template]:
     except Exception as e:
         logger.exception(f"Failed to list templates: {e}")
         raise PPTTemplateError(message=f"failed to list templates: {str(e)}")
+
+
+@router.get("/theme-presets", description="get available theme presets")
+def get_theme_presets() -> dict[str, list[dict[str, str]]]:
+    presets = [
+        {"id": preset_id, "name": ThemePresets.get_preset(preset_id).name}
+        for preset_id in ThemePresets.list_presets()
+    ]
+    return {"presets": presets}
 
 
 @router.get("/download/{filename}", description="download generated presentation")

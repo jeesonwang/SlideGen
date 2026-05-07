@@ -64,8 +64,9 @@ export const API_ENDPOINTS = {
   SLIDEGEN: {
     GENERATE_MARKDOWN_STREAM: '/api/v1/slidegen/generate-markdown-stream',
     GENERATE_PPTX_FROM_MARKDOWN: '/api/v1/slidegen/generate-pptx-from-markdown',
-    DOWNLOAD: (taskId: string) => `/api/v1/slidegen/download/${taskId}`,
+    DOWNLOAD: (filename: string) => `/api/v1/slidegen/download/${filename}`,
     TEMPLATES: '/api/v1/slidegen/templates',
+    THEME_PRESETS: '/api/v1/slidegen/theme-presets',
   },
   // User
   USER: {

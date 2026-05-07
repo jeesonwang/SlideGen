@@ -12,6 +12,7 @@ import type {
   MarkdownToPPTRequest,
   GeneratePPTXResponse,
   Template,
+  ThemePreset,
 } from '../types/slidegen.types';
 
 export const slidegenApi = {
@@ -23,6 +24,16 @@ export const slidegenApi = {
       API_ENDPOINTS.SLIDEGEN.TEMPLATES
     );
     return response.data;
+  },
+
+  /**
+   * Get available theme presets
+   */
+  getThemePresets: async (): Promise<ThemePreset[]> => {
+    const response = await apiClient.get<{ presets: ThemePreset[] }>(
+      API_ENDPOINTS.SLIDEGEN.THEME_PRESETS
+    );
+    return response.data.presets;
   },
   /**
    * Generate markdown content with SSE streaming
@@ -75,9 +86,9 @@ export const slidegenApi = {
   /**
    * Download generated PPTX file
    */
-  downloadPPTX: async (taskId: string): Promise<Blob> => {
+  downloadPPTX: async (filename: string): Promise<Blob> => {
     const response = await apiClient.get<Blob>(
-      API_ENDPOINTS.SLIDEGEN.DOWNLOAD(taskId),
+      API_ENDPOINTS.SLIDEGEN.DOWNLOAD(filename),
       {
         responseType: 'blob',
       }

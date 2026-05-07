@@ -35,6 +35,7 @@ import {
   shouldSubmitTitleChange,
 } from './chatSessionTitle';
 import { OutlineEditor } from '../generation/OutlineEditor';
+import { ActionBubble } from '../generation/ActionBubble';
 import { ConfigurationPanel } from '../config/ConfigurationPanel';
 import { DEFAULT_PRESENTATION_TITLE } from '../../utils/constants';
 
@@ -604,40 +605,43 @@ export const ChatInterface = () => {
                           </div>
                         </div>
                       ) : msg.role === 'assistant' && isOutlineMarkdown(msg.content) ? (
-                        <OutlineEditor
-                          value={msg.content}
-                          onChange={(nextContent) => {
-                            updateLocalMessage(msg.id, nextContent);
-                            setMarkdownContent(nextContent);
-                          }}
-                          onRefresh={() => void handleGenerate()}
-                          refreshDisabled={isStreaming || !hasMessages}
-                          refreshing={isStreaming}
-                          toolbarActions={
-                            <Dropdown
-                              trigger={['click']}
-                              menu={{
-                                items: templateMenuItems,
-                                selectable: true,
-                                selectedKeys: [template],
-                                onClick: handleTemplateSelect,
-                              }}
-                            >
-                              <button
-                                type="button"
-                                aria-label="Select theme"
-                                className="inline-flex h-11 items-center gap-2 rounded-full border border-brand-border bg-brand-surface px-4 text-sm font-medium text-brand-strong transition-colors hover:border-brand-strong hover:text-text-main"
+                        <div className="flex flex-col gap-0">
+                          <OutlineEditor
+                            value={msg.content}
+                            onChange={(nextContent) => {
+                              updateLocalMessage(msg.id, nextContent);
+                              setMarkdownContent(nextContent);
+                            }}
+                            onRefresh={() => void handleGenerate()}
+                            refreshDisabled={isStreaming || !hasMessages}
+                            refreshing={isStreaming}
+                            toolbarActions={
+                              <Dropdown
+                                trigger={['click']}
+                                menu={{
+                                  items: templateMenuItems,
+                                  selectable: true,
+                                  selectedKeys: [template],
+                                  onClick: handleTemplateSelect,
+                                }}
                               >
-                                <BgColorsOutlined />
-                                <span>Select theme</span>
-                                <span className="max-w-28 truncate text-text-secondary">
-                                  {selectedTemplateLabel}
-                                </span>
-                                <DownOutlined className="text-xs" />
-                              </button>
-                            </Dropdown>
-                          }
-                        />
+                                <button
+                                  type="button"
+                                  aria-label="Select theme"
+                                  className="inline-flex h-11 items-center gap-2 rounded-full border border-brand-border bg-brand-surface px-4 text-sm font-medium text-brand-strong transition-colors hover:border-brand-strong hover:text-text-main"
+                                >
+                                  <BgColorsOutlined />
+                                  <span>Select theme</span>
+                                  <span className="max-w-28 truncate text-text-secondary">
+                                    {selectedTemplateLabel}
+                                  </span>
+                                  <DownOutlined className="text-xs" />
+                                </button>
+                              </Dropdown>
+                            }
+                          />
+                          <ActionBubble markdownContent={msg.content} />
+                        </div>
                       ) : (
                         <div className={cn('flex flex-col', msg.role === 'user' ? 'items-end group/user' : '')}>
                           <div

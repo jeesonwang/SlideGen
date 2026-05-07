@@ -199,6 +199,7 @@ class PresentationGenerator:
         output_path: str,
         export_as: Literal["pptx", "pdf"] = "pptx",
         theme: PresentationTheme | None = None,
+        theme_preset: str | None = None,
     ) -> str:
         """Generate a PowerPoint presentation directly from markdown content.
 
@@ -208,6 +209,7 @@ class PresentationGenerator:
             output_path: Path to save the generated PPT
             export_as: Export format ("pptx" supported, "pdf" not yet supported)
             theme: Optional theme to apply to the presentation
+            theme_preset: Optional theme preset name
 
         Returns:
             The output path of the generated presentation
@@ -226,6 +228,7 @@ class PresentationGenerator:
         template_prs = await loop.run_in_executor(None, Presentation, template)
 
         # Apply theme colors if provided
+        theme = self._resolve_theme(theme, theme_preset)
         if theme:
             logger.info(f"Applying theme: {theme.name}")
             self.apply_theme_colors(template_prs, theme)
@@ -248,6 +251,7 @@ class PresentationGenerator:
         output_path: str,
         export_as: Literal["pptx", "pdf"] = "pptx",
         theme: PresentationTheme | None = None,
+        theme_preset: str | None = None,
     ) -> AsyncGenerator[StreamEventT, None]:
         """Generate a PowerPoint presentation from markdown with streaming progress events.
 
@@ -257,6 +261,7 @@ class PresentationGenerator:
             output_path: Path to save the generated PPT
             export_as: Export format ("pptx" supported, "pdf" not yet supported)
             theme: Optional theme to apply to the presentation
+            theme_preset: Optional theme preset name
 
         Yields:
             Stream events containing conversion progress
@@ -288,6 +293,7 @@ class PresentationGenerator:
             template_prs = await loop.run_in_executor(None, Presentation, template)
 
             # Apply theme if provided
+            theme = self._resolve_theme(theme, theme_preset)
             if theme:
                 yield ProgressEvent(
                     stage="pptx_conversion",
