@@ -41,8 +41,8 @@ for (const label of ['Pages', 'Language', 'Template', 'Format', 'Tone', 'Text Vo
 
 assert.equal(
   chatSource.includes('Select theme'),
-  true,
-  'ChatInterface should expose a post-generation Select theme action near the assistant outline'
+  false,
+  'ChatInterface should not duplicate export theme controls inside the outline toolbar'
 );
 
 console.log('configDisclosureSource.test.ts passed');

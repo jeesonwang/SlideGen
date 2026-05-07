@@ -27,8 +27,15 @@ assert.equal(actionBubbleSource.includes('slidegenApi.generatePPTXFromMarkdown')
 assert.equal(actionBubbleSource.includes('slidegenApi.getThemePresets'), true);
 assert.equal(actionBubbleSource.includes('Generate PPTX'), true);
 assert.equal(actionBubbleSource.includes('Download PPTX'), true);
+assert.equal(actionBubbleSource.includes('-mt-1'), false);
+assert.equal(actionBubbleSource.includes('rounded-[1.75rem] border border-border/70'), true);
 
 assert.equal(chatInterfaceSource.includes("import { ActionBubble } from '../generation/ActionBubble';"), true);
 assert.match(chatInterfaceSource, /<OutlineEditor[\s\S]*<ActionBubble/);
+assert.equal(chatInterfaceSource.includes("Ready to export"), true);
+assert.equal(chatInterfaceSource.includes("flex flex-col gap-0"), false);
+assert.equal(chatInterfaceSource.includes('toolbarActions='), false);
+assert.equal(chatInterfaceSource.includes('Select theme'), false);
+assert.equal(chatInterfaceSource.includes('BgColorsOutlined'), false);
 
 console.log('markdownPptxLinkSource.test.ts passed');

@@ -104,7 +104,7 @@ export const ActionBubble = ({
   };
 
   return (
-    <div className="-mt-1 flex flex-col gap-3 rounded-b-[28px] border-x border-b border-border/70 bg-surface-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-[1.75rem] border border-border/70 bg-surface-50 px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,1fr)]">
         <Select
           aria-label="Select template"

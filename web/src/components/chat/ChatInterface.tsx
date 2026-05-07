@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
-  BgColorsOutlined,
   CopyOutlined,
-  DownOutlined,
   EditOutlined,
   FileAddOutlined,
   FileTextOutlined,
@@ -12,9 +10,8 @@ import {
   SendOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { Button, Dropdown, Input, Spin, Tooltip, message } from 'antd';
+import { Button, Input, Spin, Tooltip, message } from 'antd';
 import type { InputRef } from 'antd';
-import type { MenuProps } from 'antd';
 import { cn } from '../../utils/classnames';
 import { useChatStore } from '../../store/chatStore';
 import { useGenerationStore } from '../../store/generationStore';
@@ -25,7 +22,6 @@ import { sessionsApi } from '../../api/endpoints/sessions';
 import { chatMessagesApi } from '../../api/endpoints/chatMessages';
 import { useDeleteFile, useFiles, useUploadFile } from '../../hooks/useFiles';
 import { useSession, useUpdateSession } from '../../hooks/useSessions';
-import { useTemplates } from '../../hooks/useTemplates';
 import type { SSEEvent } from '../../api/types/slidegen.types';
 import { getAssistantMessageContent, shouldCreateSessionForSend } from './chatLogic';
 import { getCurrentFileIds } from './chatFiles';
@@ -75,12 +71,10 @@ export const ChatInterface = () => {
     clearError,
   } = useChatStore();
 
-  const { getGenerationRequest, setStep, setMarkdownContent, template, setTemplate } =
-    useGenerationStore();
+  const { getGenerationRequest, setStep, setMarkdownContent } = useGenerationStore();
   const { user } = useAuthStore();
   const { data: filesData } = useFiles(currentSessionId ? { session_id: currentSessionId } : undefined);
   const { data: currentSession } = useSession(currentSessionId || '');
-  const { data: templates } = useTemplates();
   const updateSessionMutation = useUpdateSession();
   const uploadFileMutation = useUploadFile();
   const deleteFileMutation = useDeleteFile();
@@ -101,19 +95,6 @@ export const ChatInterface = () => {
     primaryUserMessage
   );
   const currentProjectStatus = currentSessionId ? 'Project ready' : 'Start with a topic';
-  const selectedTemplateLabel =
-    templates?.find((item) => item.id === template)?.name || 'General';
-  const templateMenuItems: MenuProps['items'] =
-    templates?.map((item) => ({
-      key: item.id,
-      label: item.name,
-    })) || [
-      {
-        key: 'general',
-        label: 'General',
-      },
-    ];
-
   const { connect: connectSSE, isConnected } = useSSE({
     onMessage: (event: SSEEvent) => {
       if (event.event === 'content_generated' && 'content' in event) {
@@ -347,10 +328,6 @@ export const ChatInterface = () => {
     await deleteFileMutation.mutateAsync(fileId);
   };
 
-  const handleTemplateSelect: MenuProps['onClick'] = ({ key }) => {
-    setTemplate(String(key));
-  };
-
   const formatTime = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -550,36 +527,43 @@ export const ChatInterface = () => {
             <>
               {renderComposerCard()}
               <div className="mx-auto flex max-w-6xl flex-col gap-8">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={cn(
-                      'flex gap-4',
-                      msg.role === 'assistant' && isOutlineMarkdown(msg.content)
-                        ? 'w-full max-w-[min(100%,78rem)]'
-                        : 'max-w-4xl',
-                      msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        'mt-1 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border',
-                        msg.role === 'assistant'
-                          ? 'border-brand-border bg-brand-surface text-brand-strong'
-                          : 'border-border/70 bg-surface-100 text-text-secondary'
-                      )}
-                    >
-                      {msg.role === 'assistant' ? <RobotOutlined /> : <UserOutlined />}
-                    </div>
+                {messages.map((msg) => {
+                  const isOutlineMessage = msg.role === 'assistant' && isOutlineMarkdown(msg.content);
 
+                  return (
                     <div
+                      key={msg.id}
                       className={cn(
-                        'min-w-0',
-                        msg.role === 'assistant' && isOutlineMarkdown(msg.content)
-                          ? 'w-full max-w-[min(100%,72rem)] flex-1'
-                          : 'max-w-[min(100%,42rem)]'
+                        'flex flex-col gap-4',
+                        msg.role === 'user' ? 'items-end' : 'items-start'
                       )}
                     >
+                      <div
+                        className={cn(
+                          'flex gap-4',
+                          isOutlineMessage ? 'w-full max-w-[min(100%,78rem)]' : 'max-w-4xl',
+                          msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'mt-1 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border',
+                            msg.role === 'assistant'
+                              ? 'border-brand-border bg-brand-surface text-brand-strong'
+                              : 'border-border/70 bg-surface-100 text-text-secondary'
+                          )}
+                        >
+                          {msg.role === 'assistant' ? <RobotOutlined /> : <UserOutlined />}
+                        </div>
+
+                        <div
+                          className={cn(
+                            'min-w-0',
+                            isOutlineMessage
+                              ? 'w-full max-w-[min(100%,72rem)] flex-1'
+                              : 'max-w-[min(100%,42rem)]'
+                          )}
+                        >
                       <div className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
                         <span>{msg.role === 'assistant' ? 'Presentation Assistant' : 'Your Prompt'}</span>
                         <span>·</span>
@@ -604,8 +588,7 @@ export const ChatInterface = () => {
                             </Button>
                           </div>
                         </div>
-                      ) : msg.role === 'assistant' && isOutlineMarkdown(msg.content) ? (
-                        <div className="flex flex-col gap-0">
+                      ) : isOutlineMessage ? (
                           <OutlineEditor
                             value={msg.content}
                             onChange={(nextContent) => {
@@ -615,33 +598,7 @@ export const ChatInterface = () => {
                             onRefresh={() => void handleGenerate()}
                             refreshDisabled={isStreaming || !hasMessages}
                             refreshing={isStreaming}
-                            toolbarActions={
-                              <Dropdown
-                                trigger={['click']}
-                                menu={{
-                                  items: templateMenuItems,
-                                  selectable: true,
-                                  selectedKeys: [template],
-                                  onClick: handleTemplateSelect,
-                                }}
-                              >
-                                <button
-                                  type="button"
-                                  aria-label="Select theme"
-                                  className="inline-flex h-11 items-center gap-2 rounded-full border border-brand-border bg-brand-surface px-4 text-sm font-medium text-brand-strong transition-colors hover:border-brand-strong hover:text-text-main"
-                                >
-                                  <BgColorsOutlined />
-                                  <span>Select theme</span>
-                                  <span className="max-w-28 truncate text-text-secondary">
-                                    {selectedTemplateLabel}
-                                  </span>
-                                  <DownOutlined className="text-xs" />
-                                </button>
-                              </Dropdown>
-                            }
                           />
-                          <ActionBubble markdownContent={msg.content} />
-                        </div>
                       ) : (
                         <div className={cn('flex flex-col', msg.role === 'user' ? 'items-end group/user' : '')}>
                           <div
@@ -681,9 +638,27 @@ export const ChatInterface = () => {
                           ) : null}
                         </div>
                       )}
+                        </div>
+                      </div>
+
+                      {isOutlineMessage ? (
+                        <div className="mr-auto flex w-full max-w-[min(100%,78rem)] gap-4">
+                          <div className="mt-1 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-brand-border bg-brand-surface text-brand-strong">
+                            <RobotOutlined />
+                          </div>
+                          <div className="min-w-0 w-full max-w-[min(100%,72rem)] flex-1">
+                            <div className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
+                              <span>Presentation Assistant</span>
+                              <span>·</span>
+                              <span>Ready to export</span>
+                            </div>
+                            <ActionBubble markdownContent={msg.content} />
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {isStreaming ? (
                   <div ref={activeGenerationRef} className="mr-auto flex max-w-4xl gap-4">
