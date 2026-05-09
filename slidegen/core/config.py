@@ -1,3 +1,4 @@
+import json
 import secrets
 import warnings
 from datetime import tzinfo
@@ -14,16 +15,24 @@ from pydantic import (
     computed_field,
     model_validator,
 )
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 
-def parse_cors(v: Any) -> list[str] | str:
-    if isinstance(v, str) and not v.startswith("["):
-        return [i.strip() for i in v.split(",")]
-    elif isinstance(v, list | str):
-        return v
+def parse_cors(v: Any) -> list[str]:
+    if isinstance(v, str):
+        value = v.strip()
+        if not value:
+            return []
+        if value.startswith("["):
+            parsed = json.loads(value)
+            if not isinstance(parsed, list):
+                raise ValueError(v)
+            return [str(i).strip() for i in parsed if str(i).strip()]
+        return [i.strip() for i in value.split(",") if i.strip()]
+    elif isinstance(v, list):
+        return [str(i).strip() for i in v if str(i).strip()]
     raise ValueError(v)
 
 
@@ -47,7 +56,7 @@ class Settings(BaseSettings):
     )
 
     # [CORS]
-    BACKEND_CORS_ORIGINS: Annotated[list[str] | str, BeforeValidator(parse_cors)] = ["*"]
+    BACKEND_CORS_ORIGINS: Annotated[list[str], NoDecode, BeforeValidator(parse_cors)] = ["*"]
 
     # [BASE]
     API_V1_STR: str = "/api/v1"
