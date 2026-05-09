@@ -7,8 +7,8 @@ from rich import print
 from slidegen.core.config import PROJECT_ROOT, Settings
 
 
-def generate_env_sample(
-    settings_class: type[BaseSettings], output_file: str | Path = PROJECT_ROOT / ".env.sample"
+def generate_env_example(
+    settings_class: type[BaseSettings], output_file: str | Path = PROJECT_ROOT / ".env.example"
 ) -> None:
     fields: dict[str, Any] = settings_class.model_fields
     lines = ["PYTHONPATH=."]
@@ -27,4 +27,4 @@ def generate_env_sample(
     print(f"[green]{output_file} generated successfully.[/green]")
 
 
-generate_env_sample(Settings)
+generate_env_example(Settings)

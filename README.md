@@ -103,7 +103,7 @@ To get a local copy up and running, follow these simple steps.
 3.  Set up environment variables
     *   Copy the sample environment file:
         ```sh
-        cp .env.sample .env
+        cp .env.example .env
         ```
     *   Update `.env` with your database credentials, API keys, and other configuration settings.
 
