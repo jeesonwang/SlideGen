@@ -663,10 +663,13 @@ async def get_available_templates() -> list[Template]:
 
 @router.get("/theme-presets", description="get available theme presets")
 def get_theme_presets() -> dict[str, list[dict[str, str]]]:
-    presets = [
-        {"id": preset_id, "name": ThemePresets.get_preset(preset_id).name}
-        for preset_id in ThemePresets.list_presets()
-    ]
+    presets: list[dict[str, str]] = []
+    for preset_id in ThemePresets.list_presets():
+        preset = ThemePresets.get_preset(preset_id)
+        if preset is None:
+            logger.warning(f"Theme preset listed but not found: {preset_id}")
+            continue
+        presets.append({"id": preset_id, "name": preset.name})
     return {"presets": presets}
 
 
@@ -721,9 +724,7 @@ async def get_template_thumbnail(template_name: str) -> FileResponse:
         raise NotFoundError(message="template not found")
     except LibreOfficeNotFoundError as e:
         logger.warning(f"LibreOffice not installed: {e}")
-        raise InsideServerError(
-            message="LibreOffice is required for thumbnail generation but is not installed"
-        )
+        raise InsideServerError(message="LibreOffice is required for thumbnail generation but is not installed")
     except ThumbnailGenerationError as e:
         logger.error(f"Thumbnail generation failed for {template_name}: {e}")
         raise InsideServerError(message=f"failed to generate thumbnail: {str(e)}")
