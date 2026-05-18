@@ -1,7 +1,7 @@
 import { message } from 'antd';
-import { chatMessagesApi } from '../../api/endpoints/chatMessages';
 import type { MarkdownStreamRequestConfig, SSEEvent } from '../../api/types/slidegen.types';
 import { useSSE } from '../../hooks/useSSE';
+import { useAddChatMessage } from '../../hooks/useChatMessages';
 import { getAssistantMessageContent } from './chatLogic';
 
 interface UsePresentationStreamOptions {
@@ -25,6 +25,8 @@ export const usePresentationStream = ({
   setStep,
   onStreamError,
 }: UsePresentationStreamOptions) => {
+  const addMessageMutation = useAddChatMessage();
+
   const { connect } = useSSE({
     onMessage: (event: SSEEvent) => {
       if (event.event === 'content_generated' && 'content' in event) {
@@ -48,15 +50,16 @@ export const usePresentationStream = ({
       setStep('editing');
 
       if (currentSessionId && assistantContent) {
-        try {
-          await chatMessagesApi.addMessage(currentSessionId, {
+        addMessageMutation.mutateAsync({
+          sessionId: currentSessionId,
+          message: {
             session_id: currentSessionId,
             role: 'assistant',
             content: assistantContent,
-          });
-        } catch (saveError) {
+          },
+        }).catch((saveError: unknown) => {
           console.error('Failed to save assistant message:', saveError);
-        }
+        });
       }
     },
     onError: (streamError) => {
