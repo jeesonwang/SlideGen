@@ -615,7 +615,7 @@ class CatalogPage(Page):
             catalog_page_index += 1
             CatalogPage.move_slide(prs, new_catalog_slide, catalog_page_index)
             # Recursively generate the new catalog page
-            await CatalogPage.generate_slide(
+            return await CatalogPage.generate_slide(
                 prs,
                 content[fill_count:],
                 catalog_page_index=catalog_page_index,
