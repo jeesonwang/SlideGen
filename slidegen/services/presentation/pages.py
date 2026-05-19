@@ -271,6 +271,70 @@ class CatalogPage(Page):
         return 9999
 
     @staticmethod
+    def _calculate_max_per_page(
+        catalog_items: "CatalogList",
+        layout_direction: "CatalogLayout",
+        slide_height: int,
+        slide_width: int,
+    ) -> int:
+        """Calculate max catalog items per page based on spacing and margins.
+
+        Uses the average spacing between existing items and the distance from the
+        first item to the slide edge to determine how many items fit on one page.
+        Falls back to len(catalog_items) if spacing can't be determined (< 2 items
+        or undefined layout).
+        """
+        if len(catalog_items) < 2 or layout_direction == CatalogLayout.UNDEFINED:
+            return len(catalog_items)
+
+        if layout_direction == CatalogLayout.VERTICAL:
+            positions = [item.number_shape["top"] for item in catalog_items]
+            steps = [abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1)]
+            step = sum(steps) / len(steps)
+            usable = slide_height - catalog_items[0].number_shape["top"]
+        else:  # HORIZONTAL
+            positions = [item.number_shape["left"] for item in catalog_items]
+            steps = [abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1)]
+            step = sum(steps) / len(steps)
+            usable = slide_width - catalog_items[0].number_shape["left"]
+
+        if step <= 0:
+            return len(catalog_items)
+
+        return max(len(catalog_items), int(usable / step))
+
+    @staticmethod
+    def _clone_shape_to_slide(
+        sp_tree: Any,
+        slide: Slide,
+        src_shape: Any,
+        dx: int,
+        dy: int,
+    ) -> Any:
+        """Clone a shape element, reposition it, and insert into the slide.
+
+        Returns the new Shape object wrapper.
+        """
+        new_el = copy.deepcopy(src_shape.element)
+        # Remove custDataLst to avoid conflicts
+        for cd in new_el.xpath(".//p:custDataLst"):
+            cd.getparent().remove(cd)
+        # Adjust position
+        off_el = new_el.xpath(".//a:off")[0]
+        new_left = int(off_el.get("x", "0")) + dx
+        new_top = int(off_el.get("y", "0")) + dy
+        off_el.set("x", str(new_left))
+        off_el.set("y", str(new_top))
+
+        sp_tree.insert_element_before(new_el, "p:extLst")
+
+        # Find the newly created Shape wrapper by matching the element
+        for s in slide.shapes:
+            if s._element is new_el:
+                return s
+        raise PPTGenError("Failed to find cloned shape after insertion")
+
+    @staticmethod
     def _layout_direction(number_shapes: list[dict[str, Any]]) -> CatalogLayout:
         """Judge the layout direction of the catalog page"""
         if len(number_shapes) < 2:
