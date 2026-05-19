@@ -221,15 +221,49 @@ class CatalogPage(Page):
 
     # Roman numerals 1-20
     _ROMAN_NUMERALS: set[str] = {
-        "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
-        "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
+        "I",
+        "II",
+        "III",
+        "IV",
+        "V",
+        "VI",
+        "VII",
+        "VIII",
+        "IX",
+        "X",
+        "XI",
+        "XII",
+        "XIII",
+        "XIV",
+        "XV",
+        "XVI",
+        "XVII",
+        "XVIII",
+        "XIX",
+        "XX",
     }
 
     _ROMAN_TO_INT: dict[str, int] = {
-        "I": 1, "II": 2, "III": 3, "IV": 4, "V": 5,
-        "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10,
-        "XI": 11, "XII": 12, "XIII": 13, "XIV": 14, "XV": 15,
-        "XVI": 16, "XVII": 17, "XVIII": 18, "XIX": 19, "XX": 20,
+        "I": 1,
+        "II": 2,
+        "III": 3,
+        "IV": 4,
+        "V": 5,
+        "VI": 6,
+        "VII": 7,
+        "VIII": 8,
+        "IX": 9,
+        "X": 10,
+        "XI": 11,
+        "XII": 12,
+        "XIII": 13,
+        "XIV": 14,
+        "XV": 15,
+        "XVI": 16,
+        "XVII": 17,
+        "XVIII": 18,
+        "XIX": 19,
+        "XX": 20,
     }
 
     @staticmethod
@@ -319,6 +353,10 @@ class CatalogPage(Page):
         # Remove custDataLst to avoid conflicts
         for cd in new_el.xpath(".//p:custDataLst"):
             cd.getparent().remove(cd)
+        # Assign fresh non-visual ids so cloned shapes remain valid in the same slide.
+        next_shape_id = slide.shapes._next_shape_id
+        for offset, c_nv_pr in enumerate(new_el.xpath(".//p:cNvPr")):
+            c_nv_pr.set("id", str(next_shape_id + offset))
         # Adjust position
         off_el = new_el.xpath(".//a:off")[0]
         new_left = int(off_el.get("x", "0")) + dx
@@ -511,8 +549,10 @@ class CatalogPage(Page):
         elif len(catalog_items) < catalog_num:
             # Template has fewer catalog slots than content — clone shapes to fill the page
             max_per_page = CatalogPage._calculate_max_per_page(
-                catalog_items, layout_direction,
-                prs.slide_height, prs.slide_width,
+                catalog_items,
+                layout_direction,
+                prs.slide_height,
+                prs.slide_width,
             )
             sp_tree = catalog_slide.shapes._spTree
             source_item = catalog_items[-1]
@@ -521,16 +561,24 @@ class CatalogPage(Page):
             # Calculate position step from existing items
             if layout_direction == CatalogLayout.VERTICAL:
                 positions = [item.number_shape["top"] for item in catalog_items]
-                step = int(
-                    sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
-                    / (len(positions) - 1)
-                ) if len(positions) >= 2 else 0
+                step = (
+                    int(
+                        sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
+                        / (len(positions) - 1)
+                    )
+                    if len(positions) >= 2
+                    else 0
+                )
             elif layout_direction == CatalogLayout.HORIZONTAL:
                 positions = [item.number_shape["left"] for item in catalog_items]
-                step = int(
-                    sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
-                    / (len(positions) - 1)
-                ) if len(positions) >= 2 else 0
+                step = (
+                    int(
+                        sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
+                        / (len(positions) - 1)
+                    )
+                    if len(positions) >= 2
+                    else 0
+                )
             else:
                 step = 0
 
@@ -543,9 +591,34 @@ class CatalogPage(Page):
                 else:
                     dx, dy = 0, 0
 
+                # Clone background shape first so it stays below the number and text.
+                new_bg_info = None
+                if source_item.background_shape:
+                    new_bg_wrapper = CatalogPage._clone_shape_to_slide(
+                        sp_tree,
+                        catalog_slide,
+                        source_item.background_shape["shape"],
+                        dx,
+                        dy,
+                    )
+                    new_bg_info = {
+                        "text": None,
+                        "left": source_item.background_shape["left"] + dx,
+                        "top": source_item.background_shape["top"] + dy,
+                        "width": source_item.background_shape["width"],
+                        "height": source_item.background_shape["height"],
+                        "shape_type": source_item.background_shape["shape_type"],
+                        "shape_id": new_bg_wrapper.shape_id,
+                        "shape": new_bg_wrapper,
+                    }
+
                 # Clone number shape
                 new_number_shape_wrapper = CatalogPage._clone_shape_to_slide(
-                    sp_tree, catalog_slide, source_item.number_shape["shape"], dx, dy,
+                    sp_tree,
+                    catalog_slide,
+                    source_item.number_shape["shape"],
+                    dx,
+                    dy,
                 )
                 new_number_info = {
                     "text": "",
@@ -560,7 +633,11 @@ class CatalogPage(Page):
 
                 # Clone text shape
                 new_text_shape_wrapper = CatalogPage._clone_shape_to_slide(
-                    sp_tree, catalog_slide, source_item.text_shape["shape"], dx, dy,
+                    sp_tree,
+                    catalog_slide,
+                    source_item.text_shape["shape"],
+                    dx,
+                    dy,
                 )
                 new_text_info = {
                     "text": "",
@@ -572,23 +649,6 @@ class CatalogPage(Page):
                     "shape_id": new_text_shape_wrapper.shape_id,
                     "shape": new_text_shape_wrapper,
                 }
-
-                # Clone background shape (if present)
-                new_bg_info = None
-                if source_item.background_shape:
-                    new_bg_wrapper = CatalogPage._clone_shape_to_slide(
-                        sp_tree, catalog_slide, source_item.background_shape["shape"], dx, dy,
-                    )
-                    new_bg_info = {
-                        "text": None,
-                        "left": source_item.background_shape["left"] + dx,
-                        "top": source_item.background_shape["top"] + dy,
-                        "width": source_item.background_shape["width"],
-                        "height": source_item.background_shape["height"],
-                        "shape_type": source_item.background_shape["shape_type"],
-                        "shape_id": new_bg_wrapper.shape_id,
-                        "shape": new_bg_wrapper,
-                    }
 
                 new_item = CatalogItem(new_number_info, new_text_info, new_bg_info)
                 catalog_items.append(new_item)
@@ -610,7 +670,7 @@ class CatalogPage(Page):
             begin_number += 1
 
         # If content still remains, create a new catalog page
-        if begin_number - 1 < catalog_num:
+        if fill_count < catalog_num:
             new_catalog_slide = CatalogPage.duplicate_slide(prs, catalog_page_index)
             catalog_page_index += 1
             CatalogPage.move_slide(prs, new_catalog_slide, catalog_page_index)
