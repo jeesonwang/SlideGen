@@ -219,6 +219,31 @@ class CatalogPage(Page):
         """Calculate the distance between two shapes"""
         return ((shape1["left"] - shape2["left"]) ** 2 + (shape1["top"] - shape2["top"]) ** 2) ** 0.5
 
+    # Roman numerals 1-20
+    _ROMAN_NUMERALS: set[str] = {
+        "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+        "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
+    }
+
+    @staticmethod
+    def _is_chapter_number(text: str) -> bool:
+        """Check if the given text represents a chapter number.
+
+        Supports three formats:
+        - Pure digits (including leading zeros): "1", "01", "99"
+        - "N." format: "1.", "01."
+        - Roman numerals 1-20: "I", "IV", "VIII", "XX"
+        """
+        if not text or len(text) > 5:
+            return False
+        if text.isdigit():
+            return True
+        if text.endswith(".") and text[:-1].isdigit():
+            return True
+        if text.isalpha() and text.isupper():
+            return text in CatalogPage._ROMAN_NUMERALS
+        return False
+
     @staticmethod
     def _layout_direction(number_shapes: list[dict[str, Any]]) -> CatalogLayout:
         """Judge the layout direction of the catalog page"""
@@ -265,12 +290,7 @@ class CatalogPage(Page):
         for shape_info in text_shapes:
             # check if the text is a chapter number
             text = shape_info["text"].strip()
-            if len(text) > 3:
-                continue
-            if text.isdigit() or (text.endswith(".") and text[:-1].isdigit()):
-                # TODO: Optimize judgment conditions
-                if int(text.replace(".", "")) > 49:
-                    continue
+            if CatalogPage._is_chapter_number(text):
                 number_shapes.append(shape_info)
         try:
             number_shapes.sort(key=lambda shape: int(shape["text"]))
