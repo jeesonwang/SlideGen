@@ -22,6 +22,7 @@ from slidegen.schemas.stream_event import (
 from slidegen.schemas.theme import PresentationTheme, ThemePresets
 from slidegen.services.document.markdown import MarkdownDocument
 from slidegen.services.presentation.converter import MarkdownToPresentation
+from slidegen.services.presentation.pdf_exporter import pdf_exporter
 from slidegen.services.slidegen.workflow import run_slidegen_workflow, run_slidegen_workflow_stream
 
 
@@ -186,8 +187,18 @@ class PresentationGenerator:
         logger.info("Converting Markdown to PowerPoint...")
         presentation = await self.converter.generate(template_prs, markdown_doc)
 
-        logger.info(f"Saving presentation to: {output_path}")
-        await loop.run_in_executor(None, partial(presentation.save, output_path))
+        # Save PPTX to temp, then conditionally convert
+        pptx_tmp = output_path + ".pptx"
+        logger.info(f"Saving temporary presentation to: {pptx_tmp}")
+        await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
+
+        if request.export_as == "pdf":
+            logger.info(f"Converting PPTX to PDF: {output_path}")
+            await loop.run_in_executor(None, partial(pdf_exporter.convert, pptx_tmp, output_path))
+            Path(pptx_tmp).unlink(missing_ok=True)
+        else:
+            logger.info(f"Moving presentation to: {output_path}")
+            Path(pptx_tmp).rename(output_path)
 
         logger.info(f"Successfully generated presentation: {output_path}")
         return output_path
@@ -201,22 +212,19 @@ class PresentationGenerator:
         theme: PresentationTheme | None = None,
         theme_preset: str | None = None,
     ) -> str:
-        """Generate a PowerPoint presentation directly from markdown content.
+        """Generate a presentation directly from markdown content.
 
         Args:
-            markdown_content: The markdown content to convert to PPT
+            markdown_content: The markdown content to convert to presentation
             template_name: Name of the template to use
-            output_path: Path to save the generated PPT
-            export_as: Export format ("pptx" supported, "pdf" not yet supported)
+            output_path: Path to save the generated presentation
+            export_as: Export format ("pptx" or "pdf")
             theme: Optional theme to apply to the presentation
             theme_preset: Optional theme preset name
 
         Returns:
             The output path of the generated presentation
         """
-        if export_as != "pptx":
-            raise ValueError(f"Unsupported export_as={export_as!r}; only 'pptx' is currently supported")
-
         template = self.get_template_path(template_name)
         logger.info(f"Starting presentation generation from markdown with template: {template}")
 
@@ -237,9 +245,18 @@ class PresentationGenerator:
         logger.info("Converting Markdown to PowerPoint...")
         presentation = await self.converter.generate(template_prs, markdown_doc)
 
-        # Save
-        logger.info(f"Saving presentation to: {output_path}")
-        await loop.run_in_executor(None, partial(presentation.save, output_path))
+        # Save PPTX to temp, then conditionally convert
+        pptx_tmp = output_path + ".pptx"
+        logger.info(f"Saving temporary presentation to: {pptx_tmp}")
+        await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
+
+        if export_as == "pdf":
+            logger.info(f"Converting PPTX to PDF: {output_path}")
+            await loop.run_in_executor(None, partial(pdf_exporter.convert, pptx_tmp, output_path))
+            Path(pptx_tmp).unlink(missing_ok=True)
+        else:
+            logger.info(f"Moving presentation to: {output_path}")
+            Path(pptx_tmp).rename(output_path)
 
         logger.info(f"Successfully generated presentation from markdown: {output_path}")
         return output_path
@@ -253,13 +270,13 @@ class PresentationGenerator:
         theme: PresentationTheme | None = None,
         theme_preset: str | None = None,
     ) -> AsyncGenerator[StreamEventT, None]:
-        """Generate a PowerPoint presentation from markdown with streaming progress events.
+        """Generate a presentation from markdown with streaming progress events.
 
         Args:
-            markdown_content: The markdown content to convert to PPT
+            markdown_content: The markdown content to convert to presentation
             template_name: Name of the template to use
-            output_path: Path to save the generated PPT
-            export_as: Export format ("pptx" supported, "pdf" not yet supported)
+            output_path: Path to save the generated presentation
+            export_as: Export format ("pptx" or "pdf")
             theme: Optional theme to apply to the presentation
             theme_preset: Optional theme preset name
 
@@ -267,23 +284,16 @@ class PresentationGenerator:
             Stream events containing conversion progress
         """
         try:
-            if export_as != "pptx":
-                yield WorkflowErrorEvent(
-                    error=f"Unsupported export_as={export_as!r}; only 'pptx' is currently supported",
-                    message="Unsupported export format",
-                )
-                return
-
             template = self.get_template_path(template_name)
             logger.info(f"Starting streaming presentation generation from markdown with template: {template}")
 
             yield StepStartedEvent(
-                step_name="PPTX Conversion",
-                message="Converting markdown to PowerPoint format...",
+                step_name="Presentation Export",
+                message="Converting markdown to presentation format...",
             )
 
             yield ProgressEvent(
-                stage="pptx_conversion",
+                stage="presentation_export",
                 progress=0.0,
                 message="Loading template...",
             )
@@ -296,14 +306,14 @@ class PresentationGenerator:
             theme = self._resolve_theme(theme, theme_preset)
             if theme:
                 yield ProgressEvent(
-                    stage="pptx_conversion",
+                    stage="presentation_export",
                     progress=10.0,
                     message=f"Applying theme: {theme.name}...",
                 )
                 self.apply_theme_colors(template_prs, theme)
 
             yield ProgressEvent(
-                stage="pptx_conversion",
+                stage="presentation_export",
                 progress=20.0,
                 message="Parsing markdown content...",
             )
@@ -312,7 +322,7 @@ class PresentationGenerator:
             markdown_doc = MarkdownDocument(markdown_content)
 
             yield ProgressEvent(
-                stage="pptx_conversion",
+                stage="presentation_export",
                 progress=40.0,
                 message="Converting markdown to slides...",
             )
@@ -321,24 +331,36 @@ class PresentationGenerator:
             presentation = await self.converter.generate(template_prs, markdown_doc)
 
             yield ProgressEvent(
-                stage="pptx_conversion",
+                stage="presentation_export",
                 progress=80.0,
                 message="Saving presentation file...",
             )
 
-            # Save
-            await loop.run_in_executor(None, partial(presentation.save, output_path))
+            # Save PPTX to temp, then conditionally convert
+            pptx_tmp = output_path + ".pptx"
+            await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
+
+            if export_as == "pdf":
+                yield ProgressEvent(
+                    stage="presentation_export",
+                    progress=90.0,
+                    message="Converting to PDF...",
+                )
+                await loop.run_in_executor(None, partial(pdf_exporter.convert, pptx_tmp, output_path))
+                Path(pptx_tmp).unlink(missing_ok=True)
+            else:
+                Path(pptx_tmp).rename(output_path)
 
             yield ProgressEvent(
-                stage="pptx_conversion",
+                stage="presentation_export",
                 progress=100.0,
                 message="Presentation saved successfully",
             )
 
             yield StepCompletedEvent(
-                step_name="PPTX Conversion",
+                step_name="Presentation Export",
                 content=output_path,
-                message="PowerPoint file generated successfully",
+                message="Presentation file generated successfully",
             )
 
             logger.info(f"Successfully generated presentation from markdown: {output_path}")
@@ -377,12 +399,12 @@ class PresentationGenerator:
             markdown_doc = MarkdownDocument(final_content)
 
             yield StepStartedEvent(
-                step_name="PPTX Conversion",
-                message="Converting content to PowerPoint format...",
+                step_name="Presentation Export",
+                message="Converting content to presentation format...",
             )
 
             yield ProgressEvent(
-                stage="pptx_conversion",
+                stage="presentation_export",
                 progress=0.0,
                 message="Loading template...",
             )
@@ -394,14 +416,14 @@ class PresentationGenerator:
             theme = self._resolve_theme(request.theme, request.theme_preset)
             if theme:
                 yield ProgressEvent(
-                    stage="pptx_conversion",
+                    stage="presentation_export",
                     progress=10.0,
                     message=f"Applying theme: {theme.name}...",
                 )
                 self.apply_theme_colors(template_prs, theme)
 
             yield ProgressEvent(
-                stage="pptx_conversion",
+                stage="presentation_export",
                 progress=30.0,
                 message="Converting markdown to slides...",
             )
@@ -409,23 +431,31 @@ class PresentationGenerator:
             presentation = await self.converter.generate(template_prs, markdown_doc)
 
             yield ProgressEvent(
-                stage="pptx_conversion",
+                stage="presentation_export",
                 progress=80.0,
                 message="Saving presentation file...",
             )
 
-            await loop.run_in_executor(None, partial(presentation.save, output_path))
+            # Save PPTX to temp, then conditionally convert
+            pptx_tmp = output_path + ".pptx"
+            await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
+
+            if request.export_as == "pdf":
+                await loop.run_in_executor(None, partial(pdf_exporter.convert, pptx_tmp, output_path))
+                Path(pptx_tmp).unlink(missing_ok=True)
+            else:
+                Path(pptx_tmp).rename(output_path)
 
             yield ProgressEvent(
-                stage="pptx_conversion",
+                stage="presentation_export",
                 progress=100.0,
                 message="Presentation saved successfully",
             )
 
             yield StepCompletedEvent(
-                step_name="PPTX Conversion",
+                step_name="Presentation Export",
                 content=output_path,
-                message="PowerPoint file generated successfully",
+                message="Presentation file generated successfully",
             )
 
             logger.info(f"Successfully generated presentation: {output_path}")
