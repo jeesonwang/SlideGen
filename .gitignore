@@ -118,6 +118,7 @@ chroma/
 
 # data
 test/data
+test/*.pptx
 uploads/
 
 # images
