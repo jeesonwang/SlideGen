@@ -392,7 +392,7 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
                 yield f"event: {event_type}\ndata: {json.dumps(event_data)}\n\n"
 
                 # Check if this is the final PPTX conversion completion
-                if event_type == "step_completed" and event_data.get("step_name") == "PPTX Conversion":
+                if event_type == "step_completed" and event_data.get("step_name") == "Presentation Export":
                     # Emit final completion event with download URL
                     final_event = {
                         "event": "generation_completed",
@@ -528,7 +528,7 @@ async def generate_pptx_from_markdown_stream(
                 yield f"event: {event_type}\ndata: {json.dumps(event_data)}\n\n"
 
                 # Check if this is the final PPTX conversion completion
-                if event_type == "step_completed" and event_data.get("step_name") == "PPTX Conversion":
+                if event_type == "step_completed" and event_data.get("step_name") == "Presentation Export":
                     # Emit final completion event with download URL
                     final_event = {
                         "event": "generation_completed",

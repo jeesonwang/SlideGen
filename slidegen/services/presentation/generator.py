@@ -441,6 +441,11 @@ class PresentationGenerator:
             await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
 
             if request.export_as == "pdf":
+                yield ProgressEvent(
+                    stage="presentation_export",
+                    progress=90.0,
+                    message="Converting to PDF...",
+                )
                 await loop.run_in_executor(None, partial(pdf_exporter.convert, pptx_tmp, output_path))
                 Path(pptx_tmp).unlink(missing_ok=True)
             else:

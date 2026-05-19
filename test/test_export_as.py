@@ -1,7 +1,5 @@
 """Tests for export_as format support in PresentationGenerator."""
 
-from unittest.mock import patch
-
 import pytest
 
 from slidegen.services.presentation.generator import PresentationGenerator
