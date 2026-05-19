@@ -63,7 +63,9 @@ def generate_presentation_task(self: Any, task_data: dict[str, Any]) -> dict[str
         # Generate unique output file name
         topic = task_data.get("topic", "presentation")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.pptx"
+        export_as = task_data.get("export_as", "pptx")
+        ext = export_as if export_as in ("pptx", "pdf") else "pptx"
+        filename = f"{topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
         output_path = str(OUTPUT_DIR / filename)
 
         # Convert enum types
