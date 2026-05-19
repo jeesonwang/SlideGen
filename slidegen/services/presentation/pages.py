@@ -486,12 +486,19 @@ class CatalogPage(Page):
         catalog_slide = prs.slides[catalog_page_index]
         catalog_items = CatalogPage._get_catalog_items(catalog_slide)
 
+        # Determine layout direction for position calculations
+        number_shape_dicts = [item.number_shape for item in catalog_items]
+        layout_direction = (
+            CatalogPage._layout_direction(number_shape_dicts)
+            if len(number_shape_dicts) >= 2
+            else CatalogLayout.UNDEFINED
+        )
+
         if len(catalog_items) > catalog_num:
             sp_tree = catalog_slide.shapes._spTree
             # delete the excess shape pairs from the slide
             excess_items = catalog_items[catalog_num:]
             for item in excess_items:
-                # delete the excess chapter number and chapter title shapes
                 Page.remove_shapes(
                     sp_tree,
                     [
@@ -500,10 +507,95 @@ class CatalogPage(Page):
                         *([item.background_shape["shape"]] if item.background_shape else []),
                     ],
                 )
-
             catalog_items = catalog_items[:catalog_num]  # type: ignore
-        # TODO: Add catalog items to the slide
-        for i in range(len(catalog_items)):
+        elif len(catalog_items) < catalog_num:
+            # Template has fewer catalog slots than content — clone shapes to fill the page
+            max_per_page = CatalogPage._calculate_max_per_page(
+                catalog_items, layout_direction,
+                prs.slide_height, prs.slide_width,
+            )
+            sp_tree = catalog_slide.shapes._spTree
+            source_item = catalog_items[-1]
+            target_count = min(max_per_page, catalog_num)
+
+            # Calculate position step from existing items
+            if layout_direction == CatalogLayout.VERTICAL:
+                positions = [item.number_shape["top"] for item in catalog_items]
+                step = int(
+                    sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
+                    / (len(positions) - 1)
+                ) if len(positions) >= 2 else 0
+            elif layout_direction == CatalogLayout.HORIZONTAL:
+                positions = [item.number_shape["left"] for item in catalog_items]
+                step = int(
+                    sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
+                    / (len(positions) - 1)
+                ) if len(positions) >= 2 else 0
+            else:
+                step = 0
+
+            n_existing = len(catalog_items)
+            for clone_idx in range(1, target_count - n_existing + 1):
+                if layout_direction == CatalogLayout.VERTICAL:
+                    dx, dy = 0, step * clone_idx
+                elif layout_direction == CatalogLayout.HORIZONTAL:
+                    dx, dy = step * clone_idx, 0
+                else:
+                    dx, dy = 0, 0
+
+                # Clone number shape
+                new_number_shape_wrapper = CatalogPage._clone_shape_to_slide(
+                    sp_tree, catalog_slide, source_item.number_shape["shape"], dx, dy,
+                )
+                new_number_info = {
+                    "text": "",
+                    "left": source_item.number_shape["left"] + dx,
+                    "top": source_item.number_shape["top"] + dy,
+                    "width": source_item.number_shape["width"],
+                    "height": source_item.number_shape["height"],
+                    "shape_type": source_item.number_shape["shape_type"],
+                    "shape_id": new_number_shape_wrapper.shape_id,
+                    "shape": new_number_shape_wrapper,
+                }
+
+                # Clone text shape
+                new_text_shape_wrapper = CatalogPage._clone_shape_to_slide(
+                    sp_tree, catalog_slide, source_item.text_shape["shape"], dx, dy,
+                )
+                new_text_info = {
+                    "text": "",
+                    "left": source_item.text_shape["left"] + dx,
+                    "top": source_item.text_shape["top"] + dy,
+                    "width": source_item.text_shape["width"],
+                    "height": source_item.text_shape["height"],
+                    "shape_type": source_item.text_shape["shape_type"],
+                    "shape_id": new_text_shape_wrapper.shape_id,
+                    "shape": new_text_shape_wrapper,
+                }
+
+                # Clone background shape (if present)
+                new_bg_info = None
+                if source_item.background_shape:
+                    new_bg_wrapper = CatalogPage._clone_shape_to_slide(
+                        sp_tree, catalog_slide, source_item.background_shape["shape"], dx, dy,
+                    )
+                    new_bg_info = {
+                        "text": None,
+                        "left": source_item.background_shape["left"] + dx,
+                        "top": source_item.background_shape["top"] + dy,
+                        "width": source_item.background_shape["width"],
+                        "height": source_item.background_shape["height"],
+                        "shape_type": source_item.background_shape["shape_type"],
+                        "shape_id": new_bg_wrapper.shape_id,
+                        "shape": new_bg_wrapper,
+                    }
+
+                new_item = CatalogItem(new_number_info, new_text_info, new_bg_info)
+                catalog_items.append(new_item)
+
+        # Fill catalog items with content
+        fill_count = min(len(catalog_items), catalog_num)
+        for i in range(fill_count):
             cur_content = content[i].element_text
             cur_number = begin_number
             text_shape = catalog_items[i].text_shape["shape"]
@@ -516,15 +608,16 @@ class CatalogPage(Page):
             catalog_items[i].number_shape["text"] = chapter_number
             CatalogPage._set_text(number_shape, chapter_number)
             begin_number += 1
-        # If the number of catalog_num is less than the number of catalog_items, generate a new catalog page
+
+        # If content still remains, create a new catalog page
         if begin_number - 1 < catalog_num:
             new_catalog_slide = CatalogPage.duplicate_slide(prs, catalog_page_index)
             catalog_page_index += 1
             CatalogPage.move_slide(prs, new_catalog_slide, catalog_page_index)
             # Recursively generate the new catalog page
-            await Page.generate_slide(
+            await CatalogPage.generate_slide(
                 prs,
-                content[len(catalog_items) :],
+                content[fill_count:],
                 catalog_page_index=catalog_page_index,
                 begin_number=begin_number,
             )
