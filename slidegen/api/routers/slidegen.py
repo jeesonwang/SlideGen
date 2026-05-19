@@ -75,7 +75,8 @@ async def generate_slides(task: SlideGenTask, current_user: CurrentUser) -> Any:
     try:
         # Generate unique output file name
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{task.topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.pptx"
+        ext = task.export_as if task.export_as in ("pptx", "pdf") else "pptx"
+        filename = f"{task.topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
         output_path = str(OUTPUT_DIR / filename)
 
         # Create unified presentation generation request
@@ -353,7 +354,8 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
 
     # Generate unique output file name
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{task.topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.pptx"
+    ext = task.export_as if task.export_as in ("pptx", "pdf") else "pptx"
+    filename = f"{task.topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
     output_path = str(OUTPUT_DIR / filename)
 
     # Convert task to GeneratePresentationRequest
@@ -439,13 +441,6 @@ async def generate_pptx_from_markdown(request: MarkdownToPPTRequest, current_use
         SlideGenResult with download URL for the generated presentation
     """
     try:
-        if request.export_as != "pptx":
-            return SlideGenResult(
-                success=False,
-                error=f"Unsupported export_as={request.export_as!r}; only 'pptx' is currently supported",
-                message="unsupported export format",
-            )
-
         # Generate unique output file name
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"presentation_{timestamp}_{uuid.uuid4().hex[:8]}.{request.export_as}"
@@ -510,26 +505,9 @@ async def generate_pptx_from_markdown_stream(
     ```
     """
 
-    # Validate export format
-    if request.export_as != "pptx":
-
-        async def error_generator() -> AsyncGenerator[str, None]:
-            error_event = {
-                "event": "workflow_error",
-                "error": f"Unsupported export_as={request.export_as!r}; only 'pptx' is currently supported",
-                "message": "unsupported export format",
-            }
-            yield f"event: workflow_error\ndata: {json.dumps(error_event)}\n\n"
-
-        return StreamingResponse(
-            error_generator(),
-            media_type="text/event-stream",
-            headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
-        )
-
     # Generate unique output file name
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"presentation_{timestamp}_{uuid.uuid4().hex[:8]}.pptx"
+    filename = f"presentation_{timestamp}_{uuid.uuid4().hex[:8]}.{request.export_as}"
     output_path = str(OUTPUT_DIR / filename)
 
     async def event_generator() -> AsyncGenerator[str, None]:
@@ -685,10 +663,15 @@ async def download_presentation(filename: str) -> FileResponse:
         if not str(file_path.resolve()).startswith(str(OUTPUT_DIR.resolve())):
             raise AccessDeniedError(message="access denied")
 
+        if filename.endswith(".pdf"):
+            media_type = "application/pdf"
+        else:
+            media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+
         return FileResponse(
             path=str(file_path),
             filename=filename,
-            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            media_type=media_type,
         )
 
     except (NotFoundError, AccessDeniedError):
