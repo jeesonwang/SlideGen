@@ -74,23 +74,21 @@ class TestThumbnailGenerator:
 
             assert deps["libreoffice"] is False
 
-    @patch("shutil.which")
-    def test_find_libreoffice_in_path(self, mock_which, generator):
+    @patch("slidegen.services.presentation.pdf_exporter.pdf_exporter._find_libreoffice")
+    def test_find_libreoffice_in_path(self, mock_find, generator):
         """Test finding LibreOffice in PATH"""
-        mock_which.return_value = "/usr/bin/soffice"
+        mock_find.return_value = "/usr/bin/soffice"
         path = generator._find_libreoffice()
         assert path == "/usr/bin/soffice"
-        assert generator._libreoffice_path == "/usr/bin/soffice"
 
-    @patch("pathlib.Path.exists")
-    @patch("shutil.which")
-    def test_find_libreoffice_not_found(self, mock_which, mock_exists, generator):
+    @patch("slidegen.services.presentation.pdf_exporter.pdf_exporter._find_libreoffice")
+    def test_find_libreoffice_not_found(self, mock_find, generator):
         """Test error when LibreOffice is not found"""
-        mock_which.return_value = None
-        mock_exists.return_value = False
+        from slidegen.services.presentation.pdf_exporter import LibreOfficeNotFoundError as PdfLibreOfficeNotFound
+        mock_find.side_effect = PdfLibreOfficeNotFound("Not found")
         with pytest.raises(LibreOfficeNotFoundError) as exc_info:
             generator._find_libreoffice()
-        assert "not installed" in str(exc_info.value).lower()
+        assert "not found" in str(exc_info.value).lower()
 
     def test_is_thumbnail_valid_missing_thumbnail(self, generator, mock_template):
         """Test thumbnail validation when thumbnail doesn't exist"""

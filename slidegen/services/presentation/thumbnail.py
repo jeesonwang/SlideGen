@@ -5,9 +5,7 @@ Supports single-page and multi-page grid thumbnails with optional placeholder hi
 """
 
 import importlib.util
-import platform
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
@@ -18,6 +16,11 @@ from pptx import Presentation
 from pptx.shapes.autoshape import Shape
 
 from slidegen.core.config import settings
+
+from slidegen.services.presentation.pdf_exporter import (
+    LibreOfficeNotFoundError as PdfLibreOfficeNotFound,
+)
+from slidegen.services.presentation.pdf_exporter import PdfExportError, pdf_exporter
 
 # Constants for thumbnail generation
 THUMBNAIL_WIDTH = 300  # Default thumbnail width in pixels for grids
@@ -87,9 +90,6 @@ class ThumbnailGenerator:
 
         # Ensure thumbnails directory exists
         self.thumbnails_dir.mkdir(parents=True, exist_ok=True)
-
-        # Cache the LibreOffice path
-        self._libreoffice_path: str | None = None
 
     def _get_template_path(self, template_name: str) -> Path:
         """Get the path to a template file, trying multiple naming conventions.
@@ -163,55 +163,15 @@ class ThumbnailGenerator:
         Raises:
             LibreOfficeNotFoundError: If LibreOffice is not found.
         """
-        if self._libreoffice_path:
-            return self._libreoffice_path
-
-        system = platform.system()
-
-        # Common paths for LibreOffice
-        if system == "Darwin":  # macOS
-            candidates = [
-                "/Applications/LibreOffice.app/Contents/MacOS/soffice",
-                "/opt/homebrew/bin/soffice",
-                "/usr/local/bin/soffice",
-            ]
-        elif system == "Linux":
-            candidates = [
-                "/usr/bin/libreoffice",
-                "/usr/bin/soffice",
-                "/usr/local/bin/libreoffice",
-                "/usr/local/bin/soffice",
-            ]
-        elif system == "Windows":
-            candidates = [
-                r"C:\Program Files\LibreOffice\program\soffice.exe",
-                r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
-            ]
-        else:
-            candidates = []
-
-        # Also check if soffice or libreoffice is in PATH
-        for cmd in ["soffice", "libreoffice"]:
-            path = shutil.which(cmd)
-            if path:
-                self._libreoffice_path = path
-                logger.debug(f"Found LibreOffice at: {path}")
-                return path
-
-        # Check predefined paths
-        for candidate in candidates:
-            if Path(candidate).exists():
-                self._libreoffice_path = candidate
-                logger.debug(f"Found LibreOffice at: {candidate}")
-                return candidate
-
-        raise LibreOfficeNotFoundError(
-            "LibreOffice is not installed or not found. "
-            "Please install LibreOffice: https://www.libreoffice.org/download/"
-        )
+        try:
+            return pdf_exporter._find_libreoffice()
+        except PdfLibreOfficeNotFound as e:
+            raise LibreOfficeNotFoundError(str(e))
 
     def _convert_pptx_to_pdf(self, pptx_path: Path, output_dir: Path) -> Path:
         """Convert PPTX file to PDF using LibreOffice.
+
+        Delegates to PdfExporter.
 
         Args:
             pptx_path: Path to the PPTX file.
@@ -223,55 +183,12 @@ class ThumbnailGenerator:
         Raises:
             ThumbnailGenerationError: If conversion fails.
         """
-        libreoffice = self._find_libreoffice()
-
-        logger.debug(f"Converting PPTX to PDF: {pptx_path.name}")
-
-        # LibreOffice command to convert to PDF
-        cmd = [
-            libreoffice,
-            "--headless",
-            "--convert-to",
-            "pdf",
-            "--outdir",
-            str(output_dir),
-            str(pptx_path),
-        ]
-
+        pdf_path = output_dir / f"{pptx_path.stem}.pdf"
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=60,  # 60 second timeout
-            )
-
-            if result.returncode != 0:
-                error_msg = f"LibreOffice conversion failed for {pptx_path.name}"
-                if result.stderr:
-                    error_msg += f": {result.stderr.strip()}"
-                logger.error(error_msg)
-                raise ThumbnailGenerationError(error_msg)
-
-            # The output PDF will have the same name as the input with .pdf extension
-            pdf_path = output_dir / f"{pptx_path.stem}.pdf"
-
-            if not pdf_path.exists():
-                error_msg = f"PDF file not created at expected path: {pdf_path}"
-                logger.error(error_msg)
-                raise ThumbnailGenerationError(error_msg)
-
-            logger.debug(f"PDF created successfully: {pdf_path.name}")
-            return pdf_path
-
-        except subprocess.TimeoutExpired:
-            error_msg = f"LibreOffice conversion timed out after 60 seconds for {pptx_path.name}"
-            logger.error(error_msg)
-            raise ThumbnailGenerationError(error_msg)
-        except FileNotFoundError:
-            error_msg = f"LibreOffice executable not found at: {libreoffice}"
-            logger.error(error_msg)
-            raise LibreOfficeNotFoundError(error_msg)
+            pdf_exporter.convert(str(pptx_path), str(pdf_path))
+        except PdfExportError as e:
+            raise ThumbnailGenerationError(str(e))
+        return pdf_path
 
     def _render_pdf_page(
         self,
