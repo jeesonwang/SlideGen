@@ -2,7 +2,6 @@ import asyncio
 from collections.abc import AsyncGenerator
 from functools import partial
 from pathlib import Path
-from typing import Literal
 
 from loguru import logger
 from lxml.etree import Element, fromstring, tostring
@@ -10,7 +9,7 @@ from pptx import Presentation
 from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 from pptx.presentation import Presentation as PresentationType
 
-from slidegen.schemas.gen_request import GeneratePresentationRequest
+from slidegen.schemas.gen_request import ExportFormat, GeneratePresentationRequest
 from slidegen.schemas.stream_event import (
     ProgressEvent,
     StepCompletedEvent,
@@ -192,7 +191,7 @@ class PresentationGenerator:
         logger.info(f"Saving temporary presentation to: {pptx_tmp}")
         await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
 
-        if request.export_as == "pdf":
+        if request.export_as == ExportFormat.PDF:
             logger.info(f"Converting PPTX to PDF: {output_path}")
             await loop.run_in_executor(None, partial(pdf_exporter.convert, pptx_tmp, output_path))
             Path(pptx_tmp).unlink(missing_ok=True)
@@ -208,7 +207,7 @@ class PresentationGenerator:
         markdown_content: str,
         template_name: str,
         output_path: str,
-        export_as: Literal["pptx", "pdf"] = "pptx",
+        export_as: ExportFormat = ExportFormat.PPTX,
         theme: PresentationTheme | None = None,
         theme_preset: str | None = None,
     ) -> str:
@@ -250,7 +249,7 @@ class PresentationGenerator:
         logger.info(f"Saving temporary presentation to: {pptx_tmp}")
         await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
 
-        if export_as == "pdf":
+        if export_as == ExportFormat.PDF:
             logger.info(f"Converting PPTX to PDF: {output_path}")
             await loop.run_in_executor(None, partial(pdf_exporter.convert, pptx_tmp, output_path))
             Path(pptx_tmp).unlink(missing_ok=True)
@@ -266,7 +265,7 @@ class PresentationGenerator:
         markdown_content: str,
         template_name: str,
         output_path: str,
-        export_as: Literal["pptx", "pdf"] = "pptx",
+        export_as: ExportFormat = ExportFormat.PPTX,
         theme: PresentationTheme | None = None,
         theme_preset: str | None = None,
     ) -> AsyncGenerator[StreamEventT, None]:
@@ -340,7 +339,7 @@ class PresentationGenerator:
             pptx_tmp = output_path + ".pptx"
             await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
 
-            if export_as == "pdf":
+            if export_as == ExportFormat.PDF:
                 yield ProgressEvent(
                     stage="presentation_export",
                     progress=90.0,
@@ -440,7 +439,7 @@ class PresentationGenerator:
             pptx_tmp = output_path + ".pptx"
             await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
 
-            if request.export_as == "pdf":
+            if request.export_as == ExportFormat.PDF:
                 yield ProgressEvent(
                     stage="presentation_export",
                     progress=90.0,

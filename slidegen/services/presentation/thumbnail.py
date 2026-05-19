@@ -16,7 +16,6 @@ from pptx import Presentation
 from pptx.shapes.autoshape import Shape
 
 from slidegen.core.config import settings
-
 from slidegen.services.presentation.pdf_exporter import (
     LibreOfficeNotFoundError as PdfLibreOfficeNotFound,
 )
@@ -186,6 +185,8 @@ class ThumbnailGenerator:
         pdf_path = output_dir / f"{pptx_path.stem}.pdf"
         try:
             pdf_exporter.convert(str(pptx_path), str(pdf_path))
+        except PdfLibreOfficeNotFound as e:
+            raise LibreOfficeNotFoundError(str(e))
         except PdfExportError as e:
             raise ThumbnailGenerationError(str(e))
         return pdf_path

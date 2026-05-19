@@ -2,14 +2,14 @@
 import asyncio
 import uuid
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 
 from celery import shared_task
 from loguru import logger
 
 from slidegen.core.celery_config import generate_presentation as task_name
 from slidegen.core.config import settings
-from slidegen.schemas.gen_request import GeneratePresentationRequest, Tone, Verbosity
+from slidegen.schemas.gen_request import ExportFormat, GeneratePresentationRequest, Tone, Verbosity
 from slidegen.services import presentation_generator
 
 OUTPUT_DIR = settings.OUTPUT_DIR
@@ -63,9 +63,8 @@ def generate_presentation_task(self: Any, task_data: dict[str, Any]) -> dict[str
         # Generate unique output file name
         topic = task_data.get("topic", "presentation")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        export_as = task_data.get("export_as", "pptx")
-        ext = export_as if export_as in ("pptx", "pdf") else "pptx"
-        filename = f"{topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
+        export_format = ExportFormat(task_data.get("export_as", ExportFormat.PPTX.value))
+        filename = f"{topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.{export_format.value}"
         output_path = str(OUTPUT_DIR / filename)
 
         # Convert enum types
@@ -73,7 +72,6 @@ def generate_presentation_task(self: Any, task_data: dict[str, Any]) -> dict[str
         verbosity_str = task_data.get("verbosity", "standard")
         tone = Tone(tone_str) if tone_str in [t.value for t in Tone] else Tone.DEFAULT
         verbosity = Verbosity(verbosity_str) if verbosity_str in [v.value for v in Verbosity] else Verbosity.STANDARD
-        export_format: Literal["pptx", "pdf"] = "pptx" if task_data.get("export_as") == "pptx" else "pdf"
 
         # Convert llm_config_id string back to UUID if present
         llm_config_id = None

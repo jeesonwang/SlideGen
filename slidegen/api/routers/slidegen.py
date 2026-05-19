@@ -2,7 +2,7 @@ import json
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 
 from celery.result import AsyncResult
 from fastapi import APIRouter, Depends
@@ -18,6 +18,7 @@ from slidegen.middleware.rate_limiter import sse_rate_limiter
 from slidegen.models.task_ownership import TaskOwnership
 from slidegen.schemas.async_task import AsyncTaskResponse
 from slidegen.schemas.gen_request import (
+    ExportFormat,
     GenerateMarkdownRequest,
     GeneratePresentationRequest,
     MarkdownToPPTRequest,
@@ -57,7 +58,7 @@ class SlideGenTask(BaseModel):
     include_table_of_contents: bool = Field(default=False, description="Include table of contents")
     include_title_slide: bool = Field(default=True, description="Include title slide")
     file_ids: list[str] | None = Field(default=None, description="File IDs uploaded by user")
-    export_as: str = Field(default="pptx", description="Export as")
+    export_as: ExportFormat = Field(default=ExportFormat.PPTX, description="Export as")
 
 
 class SlideGenResult(BaseModel):
@@ -75,15 +76,13 @@ async def generate_slides(task: SlideGenTask, current_user: CurrentUser) -> Any:
     try:
         # Generate unique output file name
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        ext = task.export_as if task.export_as in ("pptx", "pdf") else "pptx"
-        filename = f"{task.topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
+        filename = f"{task.topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.{task.export_as.value}"
         output_path = str(OUTPUT_DIR / filename)
 
         # Create unified presentation generation request
         # Convert enum types
         tone = Tone(task.tone) if task.tone in [t.value for t in Tone] else Tone.DEFAULT
         verbosity = Verbosity(task.verbosity) if task.verbosity in [v.value for v in Verbosity] else Verbosity.STANDARD
-        export_format: Literal["pptx", "pdf"] = "pptx" if task.export_as == "pptx" else "pdf"
 
         request = GeneratePresentationRequest(
             content=task.topic,
@@ -97,7 +96,7 @@ async def generate_slides(task: SlideGenTask, current_user: CurrentUser) -> Any:
             include_table_of_contents=task.include_table_of_contents,
             include_title_slide=task.include_title_slide,
             files=task.file_ids,
-            export_as=export_format,
+            export_as=task.export_as,
             user_id=current_user.id,
             llm_config_id=task.llm_config_id,
         )
@@ -148,7 +147,7 @@ async def generate_slides_async(
         "include_table_of_contents": task.include_table_of_contents,
         "include_title_slide": task.include_title_slide,
         "file_ids": task.file_ids,
-        "export_as": task.export_as,
+        "export_as": task.export_as.value,
     }
 
     logger.info(f"Submitting async presentation generation task for user {current_user.id}: {task.topic}")
@@ -202,7 +201,6 @@ async def generate_slides_stream(task: SlideGenTask, current_user: CurrentUser) 
     # Convert task to GeneratePresentationRequest
     tone = Tone(task.tone) if task.tone in [t.value for t in Tone] else Tone.DEFAULT
     verbosity = Verbosity(task.verbosity) if task.verbosity in [v.value for v in Verbosity] else Verbosity.STANDARD
-    export_format: Literal["pptx", "pdf"] = "pptx" if task.export_as == "pptx" else "pdf"
 
     request = GeneratePresentationRequest(
         content=task.topic,
@@ -216,7 +214,7 @@ async def generate_slides_stream(task: SlideGenTask, current_user: CurrentUser) 
         include_table_of_contents=task.include_table_of_contents,
         include_title_slide=task.include_title_slide,
         files=task.file_ids,
-        export_as=export_format,
+        export_as=task.export_as,
         user_id=current_user.id,
         llm_config_id=task.llm_config_id,
     )
@@ -354,14 +352,12 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
 
     # Generate unique output file name
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    ext = task.export_as if task.export_as in ("pptx", "pdf") else "pptx"
-    filename = f"{task.topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.{ext}"
+    filename = f"{task.topic[:30]}_{timestamp}_{uuid.uuid4().hex[:8]}.{task.export_as.value}"
     output_path = str(OUTPUT_DIR / filename)
 
     # Convert task to GeneratePresentationRequest
     tone = Tone(task.tone) if task.tone in [t.value for t in Tone] else Tone.DEFAULT
     verbosity = Verbosity(task.verbosity) if task.verbosity in [v.value for v in Verbosity] else Verbosity.STANDARD
-    export_format: Literal["pptx", "pdf"] = "pptx" if task.export_as == "pptx" else "pdf"
 
     request = GeneratePresentationRequest(
         content=task.topic,
@@ -375,7 +371,7 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
         include_table_of_contents=task.include_table_of_contents,
         include_title_slide=task.include_title_slide,
         files=task.file_ids,
-        export_as=export_format,
+        export_as=task.export_as,
         user_id=current_user.id,
         llm_config_id=task.llm_config_id,
     )
@@ -443,7 +439,7 @@ async def generate_pptx_from_markdown(request: MarkdownToPPTRequest, current_use
     try:
         # Generate unique output file name
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"presentation_{timestamp}_{uuid.uuid4().hex[:8]}.{request.export_as}"
+        filename = f"presentation_{timestamp}_{uuid.uuid4().hex[:8]}.{request.export_as.value}"
         output_path = str(OUTPUT_DIR / filename)
 
         logger.info(f"Generating PPT from markdown for user {current_user.id}")
@@ -507,7 +503,7 @@ async def generate_pptx_from_markdown_stream(
 
     # Generate unique output file name
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"presentation_{timestamp}_{uuid.uuid4().hex[:8]}.{request.export_as}"
+    filename = f"presentation_{timestamp}_{uuid.uuid4().hex[:8]}.{request.export_as.value}"
     output_path = str(OUTPUT_DIR / filename)
 
     async def event_generator() -> AsyncGenerator[str, None]:

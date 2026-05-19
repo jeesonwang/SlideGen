@@ -216,6 +216,18 @@ class TestThumbnailGenerator:
                 generator._convert_pptx_to_pdf(mock_template, Path(temp_dir))
             assert "timed out" in str(exc_info.value).lower()
 
+    @patch("slidegen.services.presentation.pdf_exporter.pdf_exporter._find_libreoffice")
+    def test_convert_pptx_to_pdf_libreoffice_not_found(self, mock_find, generator, mock_template):
+        """Test LibreOffice lookup failures stay mapped to thumbnail errors."""
+        from slidegen.services.presentation.pdf_exporter import LibreOfficeNotFoundError as PdfLibreOfficeNotFound
+
+        mock_find.side_effect = PdfLibreOfficeNotFound("Not found")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with pytest.raises(LibreOfficeNotFoundError) as exc_info:
+                generator._convert_pptx_to_pdf(mock_template, Path(temp_dir))
+            assert "not found" in str(exc_info.value).lower()
+
     def test_render_pdf_page_no_pages(self, generator):
         """Test rendering when PDF has no pages"""
         pdf_path = Path("/tmp/test.pdf")

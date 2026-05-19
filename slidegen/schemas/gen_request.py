@@ -1,6 +1,5 @@
 import uuid
 from enum import Enum
-from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +21,11 @@ class Verbosity(str, Enum):
     CONCISE = "concise"
     STANDARD = "standard"
     TEXT_HEAVY = "text-heavy"
+
+
+class ExportFormat(str, Enum):
+    PPTX = "pptx"
+    PDF = "pdf"
 
 
 class BaseGenerationRequest(BaseModel):
@@ -61,7 +65,7 @@ class GeneratePresentationRequest(BaseGenerationRequest):
     template: str = Field(default="general", description="Template to use for the presentation")
     include_table_of_contents: bool = Field(default=False, description="Whether to include a table of contents")
     include_title_slide: bool = Field(default=True, description="Whether to include a title slide")
-    export_as: Literal["pptx", "pdf"] = Field(default="pptx", description="Export format")
+    export_as: ExportFormat = Field(default=ExportFormat.PPTX, description="Export format")
 
     # Theme related fields
     theme: PresentationTheme | None = Field(default=None, description="Optional theme to apply to the presentation")
@@ -81,7 +85,7 @@ class MarkdownToPPTRequest(BaseModel):
 
     markdown_content: str = Field(..., description="The markdown content to convert to PPT")
     template: str = Field(default="general", description="Template to use for the presentation")
-    export_as: Literal["pptx", "pdf"] = Field(default="pptx", description="Export format")
+    export_as: ExportFormat = Field(default=ExportFormat.PPTX, description="Export format")
 
     # Theme related fields
     theme: PresentationTheme | None = Field(default=None, description="Optional theme to apply to the presentation")
