@@ -16,13 +16,18 @@ import { cn } from '../../utils/classnames';
 import { ActionIconButton } from '../common/ActionIconButton';
 import type {
   OutlineChapter,
+  OutlineCatalogItem,
   OutlineDocument,
   OutlineItem,
   OutlineItemKind,
   OutlineSection,
 } from './outlineModel';
 import { resolveSectionDropPosition } from './outlineDrag';
-import { parseMarkdownToOutline, serializeOutlineToMarkdown } from './outlineModel';
+import {
+  getOutlineCatalogItems,
+  parseMarkdownToOutline,
+  serializeOutlineToMarkdown,
+} from './outlineModel';
 
 const { TextArea } = Input;
 
@@ -232,6 +237,10 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
       ),
     [outline]
   );
+  const catalogItems = useMemo<OutlineCatalogItem[]>(
+    () => getOutlineCatalogItems(outline),
+    [outline]
+  );
   const resolvedActiveChapterId =
     activeChapterId && outline.chapters.some((chapter) => chapter.id === activeChapterId)
       ? activeChapterId
@@ -379,6 +388,10 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
         chapter.id === chapterId ? { ...chapter, title } : chapter
       ),
     });
+  };
+
+  const handleCatalogItemTitleChange = (catalogItem: OutlineCatalogItem, title: string) => {
+    handleChapterTitleChange(catalogItem.chapterId, title);
   };
 
   const handleDeleteChapter = (chapterId: string) => {
@@ -850,6 +863,59 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
+              {outline.chapters.length > 0 && (
+                <>
+                  <div className="overflow-hidden rounded-2xl border border-border/70 bg-surface-50">
+                    <div className="flex min-w-0 items-center gap-2.5 bg-surface-100/55 px-3 py-3">
+                      <span className="w-7 shrink-0 text-center text-[17px] font-semibold text-brand-strong">
+                        1
+                      </span>
+                      <span className="h-8 w-px bg-border/70" />
+                      <span className="w-20 shrink-0 text-[14px] font-semibold text-text-main">
+                        Cover
+                      </span>
+                      <Input
+                        value={outline.presentationTitle}
+                        onChange={(event) => handlePresentationTitleChange(event.target.value)}
+                        placeholder="Presentation title"
+                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="overflow-hidden rounded-2xl border border-border/70 bg-surface-50">
+                    <div className="flex min-w-0 items-center gap-2.5 bg-surface-100/55 px-3 py-3">
+                      <span className="w-7 shrink-0 text-center text-[17px] font-semibold text-brand-strong">
+                        2
+                      </span>
+                      <span className="h-8 w-px bg-border/70" />
+                      <span className="text-[14px] font-semibold text-text-main">Catalog</span>
+                    </div>
+                    <div className="space-y-2 px-4 py-4 sm:px-[8.125rem]">
+                      {catalogItems.map((catalogItem) => (
+                        <div
+                          key={catalogItem.id}
+                          className="group/catalog flex min-h-10 items-center gap-3 rounded-lg px-2 py-1 transition-colors hover:bg-surface-100/60"
+                        >
+                          <span className="w-20 shrink-0 text-[13px] font-semibold text-text-secondary">
+                            {catalogItem.label}
+                          </span>
+                          <Input
+                            value={catalogItem.title}
+                            onChange={(event) =>
+                              handleCatalogItemTitleChange(catalogItem, event.target.value)
+                            }
+                            placeholder={`Chapter ${catalogItem.chapterNumber} title`}
+                            className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
+                            aria-label={`Edit catalog item ${catalogItem.chapterNumber}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
               {outline.chapters.map((chapter, chapterIndex) => (
                 <div
                   key={chapter.id}
@@ -861,7 +927,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                   <div className="flex flex-col gap-2 border-b border-border/60 bg-surface-100/65 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 flex-1 items-center gap-2.5">
                       <span className="w-7 shrink-0 text-center text-[17px] font-semibold text-brand-strong">
-                        {chapterIndex + 1}
+                        {chapterIndex + 3}
                       </span>
                       <span className="h-8 w-px bg-border/70" />
                       <span className="text-[14px] font-semibold text-text-main">Chapter</span>

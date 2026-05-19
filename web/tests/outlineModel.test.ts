@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  getOutlineCatalogItems,
   parseMarkdownToOutline,
   serializeOutlineToMarkdown,
 } from '../src/components/generation/outlineModel.ts';
@@ -32,6 +33,15 @@ assert.equal(
   outline.chapters[0]?.sections[0]?.items[1]?.text,
   'Autonomous software that can reason and act.'
 );
+assert.deepEqual(getOutlineCatalogItems(outline), [
+  {
+    id: `catalog-${outline.chapters[0]?.id}`,
+    chapterId: outline.chapters[0]?.id,
+    chapterNumber: 1,
+    label: 'Chapter1',
+    title: 'Foundations',
+  },
+]);
 
 const serializedNested = serializeOutlineToMarkdown(outline);
 

@@ -27,6 +27,14 @@ export interface OutlineDocument {
   chapters: OutlineChapter[];
 }
 
+export interface OutlineCatalogItem {
+  id: string;
+  chapterId: string;
+  chapterNumber: number;
+  label: string;
+  title: string;
+}
+
 type ParsedOutlineSection = OutlineSection & {
   sourceLevel: 2 | 3;
 };
@@ -226,6 +234,15 @@ const createParsedChapter = (
   title,
   sections: [],
 });
+
+export const getOutlineCatalogItems = (outline: OutlineDocument): OutlineCatalogItem[] =>
+  outline.chapters.map((chapter, index) => ({
+    id: `catalog-${chapter.id}`,
+    chapterId: chapter.id,
+    chapterNumber: index + 1,
+    label: `Chapter${index + 1}`,
+    title: chapter.title,
+  }));
 
 const createParsedSection = (
   ids: ReturnType<typeof createIdFactory>,
