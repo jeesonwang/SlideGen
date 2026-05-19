@@ -554,7 +554,9 @@ class ChapterContentPage(Page):
             chapter_page_index: index of the template chapter content slide
             slide_index: index of the slide to be generated
         """
-        assert content.level == 2, f"{ChapterContentPage.__name__}: Chapter content page must have a level 2 heading"
+        assert content.level in (2, 3), (
+            f"{ChapterContentPage.__name__}: Chapter content page must have a level 2 or level 3 heading"
+        )
 
         slide_type = ChapterContentPage._get_slide_type(content)
         if slide_type > 4:

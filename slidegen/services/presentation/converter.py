@@ -9,6 +9,7 @@ from slidegen.services.presentation.pages import (
     CoverPage,
     EndPage,
 )
+from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
 
 
 class MarkdownToPresentation:
@@ -42,11 +43,8 @@ class MarkdownToPresentation:
             raise MarkdownDocumentError("Markdown document must have a main heading")
         await CoverPage.generate_slide(template_prs, main_heading, cover_page_index=cover_page_index)
 
-        # obtain all level 2 headings as chapters
-        chapters: list[Heading] = []
-        for h in main_heading.descendants:
-            if isinstance(h, Heading) and h.level == 2:
-                chapters.append(h)
+        chapter_slide_groups = list(iter_chapter_slide_groups(main_heading))
+        chapters: list[Heading] = [group.chapter for group in chapter_slide_groups]
 
         if not chapters:
             raise MarkdownDocumentError("Markdown document must have at least one level 2 heading")
@@ -60,23 +58,24 @@ class MarkdownToPresentation:
         end_page_index = chapter_content_page_index + 1
         current_slide_index = end_page_index + 1
 
-        for chapter_index, chapter in enumerate(chapters):
+        for chapter_index, group in enumerate(chapter_slide_groups):
             await ChapterHomePage.generate_slide(
                 template_prs,
-                chapter,
+                group.chapter,
                 chapter_home_page_index=chapter_home_page_index,
                 chapter_number=chapter_index + 1,
                 slide_index=current_slide_index,
             )
             current_slide_index += 1
 
-            await ChapterContentPage.generate_slide(
-                template_prs,
-                chapter,
-                chapter_page_index=chapter_content_page_index,
-                slide_index=current_slide_index,
-            )
-            current_slide_index += 1
+            for slide in group.slides:
+                await ChapterContentPage.generate_slide(
+                    template_prs,
+                    slide,
+                    chapter_page_index=chapter_content_page_index,
+                    slide_index=current_slide_index,
+                )
+                current_slide_index += 1
 
         await EndPage.generate_slide(template_prs, end_page_index=end_page_index, slide_index=current_slide_index)
 

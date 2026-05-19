@@ -45,6 +45,11 @@ assert.equal(
 );
 
 assert.equal(
+  isPresentationOutlineMarkdown('# Board Review\n\n## Market\n\n### Outlook\n\n#### Demand\nGrowth remains uneven.'),
+  true
+);
+
+assert.equal(
   isPresentationOutlineMarkdown('```md\n# Example\n## Nested\n```'),
   false,
   'Markdown heading markers inside code fences should not be treated as outlines'

@@ -21,7 +21,8 @@ def test_theme_presets_endpoint_returns_ids_and_display_names() -> None:
 
     assert '@router.get("/theme-presets"' in router_source
     assert "ThemePresets.list_presets()" in router_source
-    assert "ThemePresets.get_preset(preset_id).name" in router_source
+    assert "preset = ThemePresets.get_preset(preset_id)" in router_source
+    assert '"name": preset.name' in router_source
 
 
 def test_markdown_pptx_request_accepts_theme_preset() -> None:

@@ -31,6 +31,7 @@ from slidegen.schemas.stream_event import (
 from slidegen.services.document import FileProcessor, MarkdownDocument
 from slidegen.services.factories import EmbeddingFactory, LLMFactory
 from slidegen.services.knowledge import KnowledgeBaseManager
+from slidegen.services.slidegen.outline_structure import content_slides, iter_chapter_slide_groups
 
 
 async def get_llm_instance(request: BaseGenerationRequest | LLMConfigRequest) -> Model:
@@ -185,28 +186,31 @@ class SlideGenWorkflow:
                 "Generate a detailed outline based on the provided content.",
                 "If a 'Knowledge Base Summary' section is provided, use it as the primary source of information for the outline.",
                 "The knowledge base summary contains comprehensive information synthesized from reference documents.",
-                "IMPORTANT: Each second-level heading (##) represents exactly ONE slide in the presentation.",
-                f"You MUST create exactly {request.n_slides} second-level headings (##), as each one becomes a slide.",
-                "Each second-level heading should have 1-4 third-level headings (###) as key points.",
+                "Use second-level headings (##) for chapters.",
+                "Use third-level headings (###) for content slides/sections.",
+                "IMPORTANT: Each third-level heading (###) represents exactly ONE content slide.",
+                f"You MUST create exactly {request.n_slides} third-level headings (###).",
+                "Each third-level heading should have 1-4 fourth-level headings (####) as topics.",
                 "Ensure the outline covers all important topics mentioned in the knowledge base summary.",
                 f"Always respond in {request.language}",
             ],
             expected_output=(
-                "Output the content outline for this PowerPoint section in Markdown, using headings up to level 3 only. Do not use level-4 or deeper headings.\n"
+                "Output the content outline for this PowerPoint section in Markdown, using headings up to level 4 only. Do not use level-5 or deeper headings.\n"
                 "Must follow:\n"
                 "- Top-level (#): The presentation title, include it exactly once\n"
-                f"- Second-level (##): Each ## heading = ONE slide. You MUST have exactly {request.n_slides} second-level headings.\n"
-                "- Third-level (###): For each slide (##), provide 1-4 key points as ### headings\n"
+                "- Second-level (##): Chapters used for catalog and chapter divider slides\n"
+                f"- Third-level (###): Each ### heading = ONE content slide. You MUST have exactly {request.n_slides} third-level headings.\n"
+                "- Fourth-level (####): For each content slide (###), provide 1-4 topics as #### headings\n"
                 "- Output Markdown only; do not add explanations, prefixes, or unrelated text\n"
                 "Example structure (illustrative; do not copy the content):\n"
                 "# PowerPoint Title\n"
-                "## Subsection A\n"
-                "### Key point 1\n"
-                "### Key point 2\n"
-                "## Subsection B\n"
-                "### Key point 1\n"
-                "### Key point 2\n"
-                "### Key point 3\n"
+                "## Chapter A\n"
+                "### Section 1\n"
+                "#### Topic 1\n"
+                "#### Topic 2\n"
+                "### Section 2\n"
+                "#### Topic 1\n"
+                "#### Topic 2\n"
             ),
             model=llm,
         )
@@ -228,24 +232,24 @@ class SlideGenWorkflow:
                 *base_instructions,
             ],
             expected_output=(
-                "You must strictly maintain the original outline structure provided in the input:\n"
-                "- Keep all heading levels (##, ###) exactly as given\n"
+                "You must strictly maintain the original slide outline structure provided in the input:\n"
+                "- Keep all heading levels (###, ####) exactly as given\n"
                 "- Do NOT change, add, or remove any headings\n"
-                "- Do NOT add numbered lists or bullet points under level-3 headings (###)\n"
-                "- Write content directly as paragraph text under each heading\n"
+                "- Do NOT add numbered lists or bullet points under level-4 headings (####)\n"
+                "- Write content directly as paragraph text under each level-4 heading\n"
                 "- Output Markdown only; do not add explanations, prefixes, or unrelated text\n"
                 "\n"
                 "Example:\n"
                 "Input:\n"
-                "## Section A\n"
-                "### Key point 1\n"
-                "### Key point 2\n"
+                "### Section A\n"
+                "#### Topic 1\n"
+                "#### Topic 2\n"
                 "\n"
                 "Output:\n"
-                "## Section A\n"
-                "### Key point 1\n"
+                "### Section A\n"
+                "#### Topic 1\n"
                 "Write detailed paragraph content here without using numbered lists or bullet points.\n"
-                "### Key point 2\n"
+                "#### Topic 2\n"
                 "Write detailed paragraph content here without using numbered lists or bullet points.\n"
             ),
             model=llm,
@@ -360,9 +364,11 @@ class SlideGenWorkflow:
             doc = self.parse_outline(outline)
             if doc.main is None:
                 return StepOutput(content="No main section found", success=False)
-            sections = [section for section in doc.main.children]
+            # content_slides returns the correct slide-level headings for both formats:
+            # - nested (## chapter > ### slide > #### topic): returns all ### headings
+            # - legacy (## slide > ### key point): returns all ## headings
+            sections = content_slides(doc.main)
 
-            # If the number of sections does not match the expected number, adjust it
             if len(sections) != execution_input.n_slides:
                 logger.warning(f"Expected {execution_input.n_slides} sections, got {len(sections)}")
 
@@ -472,18 +478,33 @@ class SlideGenWorkflow:
             # Parse outline to get the title (H1)
             doc = self.parse_outline(outline_content)
             if doc.main and doc.main.element_text:
-                markdown_parts.append(f"{doc.main.element_text_source}\n")
+                markdown_parts.append(doc.main.element_text_source)
 
-            # Add each section's content
-            for step in completed_outputs:
-                if step.stop:
-                    break
-                # Add a blank line between sections for better readability
-                markdown_parts.append(str(step.content))
-                markdown_parts.append("\n")
+            section_contents = [str(step.content) for step in completed_outputs if not step.stop]
+            section_index = 0
+
+            if doc.main is not None:
+                for group in iter_chapter_slide_groups(doc.main):
+                    if group.is_nested:
+                        markdown_parts.append(group.chapter.element_text_source)
+                        for _slide in group.slides:
+                            if section_index >= len(section_contents):
+                                logger.warning("Missing generated content for nested section during merge")
+                                break
+                            markdown_parts.append(section_contents[section_index])
+                            section_index += 1
+                    else:
+                        if section_index >= len(section_contents):
+                            logger.warning("Missing generated content for legacy section during merge")
+                            break
+                        markdown_parts.append(section_contents[section_index])
+                        section_index += 1
+
+            for remaining_content in section_contents[section_index:]:
+                markdown_parts.append(remaining_content)
 
             # Join all parts into a complete Markdown document
-            complete_markdown = "\n".join(markdown_parts).strip()
+            complete_markdown = "\n\n".join(part.strip() for part in markdown_parts if part and part.strip()).strip()
 
             logger.info(f"Successfully merged {len(completed_outputs)} sections into complete Markdown document")
 

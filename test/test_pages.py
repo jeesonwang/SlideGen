@@ -97,3 +97,33 @@ class TestPages:
         temp_output = os.path.join(os.path.dirname(__file__), "test_ppt.pptx")
         template_prs.save(temp_output)
         assert os.path.exists(temp_output)
+
+    async def test_nested_ppt_generation(self):
+        """test MarkdownToPresentation with chapter/section/topic markdown"""
+        markdown_document = MarkdownDocument(
+            "# Product Strategy\n"
+            "## Market Context\n"
+            "### Customer Signals\n"
+            "#### Demand\n"
+            "Customers want faster onboarding.\n"
+            "### Competitive Position\n"
+            "#### Differentiation\n"
+            "Workflow depth matters most.\n"
+            "### Buying Motion\n"
+            "#### Procurement\n"
+            "Enterprise cycles are longer.\n"
+            "### Expansion Path\n"
+            "#### Accounts\n"
+            "Existing accounts need reporting.\n"
+            "### Risk Review\n"
+            "#### Delivery\n"
+            "Scope needs tight sequencing.\n"
+        )
+        ppt_gen = MarkdownToPresentation()
+        template_prs = Presentation(os.path.join(os.path.dirname(__file__), "data", "template_0.pptx"))
+
+        await ppt_gen.generate(template_prs, markdown_document)
+
+        temp_output = os.path.join(os.path.dirname(__file__), "test_nested_ppt.pptx")
+        template_prs.save(temp_output)
+        assert os.path.exists(temp_output)

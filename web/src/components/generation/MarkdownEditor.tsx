@@ -12,7 +12,7 @@ import type { ComponentPropsWithoutRef } from 'react';
 const { TextArea } = Input;
 const { Title } = Typography;
 
-type MarkdownHeadingProps<Tag extends 'h1' | 'h2' | 'h3' | 'ul' | 'ol'> =
+type MarkdownHeadingProps<Tag extends 'h1' | 'h2' | 'h3' | 'h4' | 'ul' | 'ol'> =
   ComponentPropsWithoutRef<Tag> & ExtraProps;
 type MarkdownCodeProps = ComponentPropsWithoutRef<'code'> & ExtraProps & {
   inline?: boolean;
@@ -47,6 +47,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       ),
       h3: (props: MarkdownHeadingProps<'h3'>) => (
         <h3 className="text-primary-400" {...props} />
+      ),
+      h4: (props: MarkdownHeadingProps<'h4'>) => (
+        <h4 className="font-semibold text-text-main" {...props} />
       ),
       ul: (props: MarkdownHeadingProps<'ul'>) => (
         <ul className="leading-relaxed" {...props} />
@@ -130,9 +133,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
         <div className="rounded border border-primary-500/20 bg-primary-500/10 p-3">
           <Typography.Text className="text-xs">
-            <strong>Tip:</strong> Each slide should start with a heading (## or ###).
-            Use bullet points for content. The AI has generated a structured
-            presentation - feel free to edit before exporting!
+            <strong>Tip:</strong> Use # for the deck title, ## for chapters, ### for slides, and #### for topics.
           </Typography.Text>
         </div>
       </Space>

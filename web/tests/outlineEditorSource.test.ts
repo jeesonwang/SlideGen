@@ -70,8 +70,20 @@ assert.doesNotMatch(
 
 assert.match(
   source,
-  /const ActionIconButton =/,
-  'OutlineEditor should centralize action icon button styling in a local component'
+  /import \{ ActionIconButton \} from '..\/common\/ActionIconButton'/,
+  'OutlineEditor should use the shared action icon button component'
+);
+
+assert.match(
+  source,
+  /outline\.chapters\.map/,
+  'OutlineEditor should render chapter-aware outlines'
+);
+
+assert.doesNotMatch(
+  source,
+  /outline\.sections/,
+  'OutlineEditor should not read the old flat outline.sections shape'
 );
 
 assert.match(
@@ -130,8 +142,8 @@ assert.doesNotMatch(
 
 assert.match(
   source,
-  /title="Add section below"[\s\S]*handleAddSection\(index\)/,
-  'OutlineEditor should keep section insertion next to the section delete control'
+  /title="Add section below"[\s\S]*handleAddSection\(chapter\.id, index\)/,
+  'OutlineEditor should keep section insertion scoped to the current chapter'
 );
 
 assert.doesNotMatch(

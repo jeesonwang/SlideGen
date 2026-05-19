@@ -7,6 +7,7 @@ from agno.knowledge.embedder.openai import OpenAIEmbedder
 from agno.models.google.gemini import Gemini
 from agno.models.message import Message
 from agno.models.response import ModelResponse
+from agno.workflow.types import StepInput, StepOutput
 from loguru import logger
 
 from slidegen.schemas.gen_request import GeneratePresentationRequest, Tone, Verbosity
@@ -15,6 +16,120 @@ from slidegen.services.slidegen.workflow import SlideGenWorkflow, run_slidegen_w
 
 # Fixed UUID for testing
 TEST_USER_ID = uuid.UUID("12345678-1234-5678-1234-567812345678")
+
+
+def test_nested_outline_groups_chapters_and_slides():
+    from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
+
+    doc = MarkdownDocument(
+        "# Deck\n"
+        "## Chapter A\n"
+        "### Section 1\n"
+        "#### Topic 1\n"
+        "Body 1\n"
+        "### Section 2\n"
+        "#### Topic 2\n"
+        "Body 2\n"
+    )
+
+    groups = list(iter_chapter_slide_groups(doc.main))
+
+    assert [group.chapter.element_text for group in groups] == ["Chapter A"]
+    assert [slide.element_text for slide in groups[0].slides] == ["Section 1", "Section 2"]
+
+
+def test_legacy_outline_keeps_h2_as_content_slide():
+    from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
+
+    doc = MarkdownDocument(
+        "# Deck\n"
+        "## Legacy Slide\n"
+        "### Topic 1\n"
+        "Body 1\n"
+    )
+
+    groups = list(iter_chapter_slide_groups(doc.main))
+
+    assert groups[0].chapter.element_text == "Legacy Slide"
+    assert [slide.element_text for slide in groups[0].slides] == ["Legacy Slide"]
+
+
+def test_nested_outline_content_slides_count_sections():
+    from slidegen.services.slidegen.outline_structure import content_slides
+
+    doc = MarkdownDocument(
+        "# Deck\n"
+        "## Chapter A\n"
+        "### Section 1\n"
+        "#### Topic 1\n"
+        "Body 1\n"
+        "### Section 2\n"
+        "#### Topic 2\n"
+        "Body 2\n"
+        "## Chapter B\n"
+        "### Section 3\n"
+        "#### Topic 3\n"
+        "Body 3\n"
+    )
+
+    sections = content_slides(doc.main)
+
+    assert [section.element_text for section in sections] == ["Section 1", "Section 2", "Section 3"]
+
+
+def test_mixed_nested_outline_keeps_sections_without_topics():
+    from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
+
+    doc = MarkdownDocument(
+        "# Deck\n"
+        "## Chapter A\n"
+        "### Section 1\n"
+        "#### Topic 1\n"
+        "Body 1\n"
+        "### Section 2\n"
+        "Body without explicit topic\n"
+    )
+
+    groups = list(iter_chapter_slide_groups(doc.main))
+
+    assert groups[0].is_nested
+    assert [slide.element_text for slide in groups[0].slides] == ["Section 1", "Section 2"]
+
+
+async def test_merge_sections_preserves_nested_chapters():
+    outline = (
+        "# Deck\n"
+        "## Chapter A\n"
+        "### Section 1\n"
+        "#### Topic 1\n"
+        "## Chapter B\n"
+        "### Section 2\n"
+        "#### Topic 2\n"
+    )
+    step_input = StepInput(
+        previous_step_outputs={
+            "Outline generation": StepOutput(content=outline),
+            "Loop writing sections": StepOutput(
+                steps=[
+                    StepOutput(content="### Section 1\n#### Topic 1\nBody 1"),
+                    StepOutput(content="### Section 2\n#### Topic 2\nBody 2"),
+                    StepOutput(content="All sections processed", stop=True),
+                ]
+            ),
+        }
+    )
+    workflow = SlideGenWorkflow(outline_agent=None, content_agent=None)
+
+    output = await workflow.merge_sections_processor(step_input)
+
+    assert output.success
+    assert output.content == (
+        "# Deck\n\n"
+        "## Chapter A\n\n"
+        "### Section 1\n#### Topic 1\nBody 1\n\n"
+        "## Chapter B\n\n"
+        "### Section 2\n#### Topic 2\nBody 2"
+    )
 
 
 class TestSlideGenWorkflow:
