@@ -225,6 +225,13 @@ class CatalogPage(Page):
         "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
     }
 
+    _ROMAN_TO_INT: dict[str, int] = {
+        "I": 1, "II": 2, "III": 3, "IV": 4, "V": 5,
+        "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10,
+        "XI": 11, "XII": 12, "XIII": 13, "XIV": 14, "XV": 15,
+        "XVI": 16, "XVII": 17, "XVIII": 18, "XIX": 19, "XX": 20,
+    }
+
     @staticmethod
     def _is_chapter_number(text: str) -> bool:
         """Check if the given text represents a chapter number.
@@ -243,6 +250,25 @@ class CatalogPage(Page):
         if text.isalpha() and text.isupper():
             return text in CatalogPage._ROMAN_NUMERALS
         return False
+
+    @staticmethod
+    def _chapter_number_sort_key(shape_info: dict[str, Any]) -> int:
+        """Return an integer sort key for a chapter number shape.
+
+        Handles three formats:
+        - "N." format: strips trailing dot, returns int
+        - Pure digits: returns int
+        - Roman numerals: returns mapped int value
+        """
+        text: str = shape_info["text"].strip()
+        if text.endswith("."):
+            text = text[:-1]
+        if text.isdigit():
+            return int(text)
+        if text in CatalogPage._ROMAN_TO_INT:
+            return CatalogPage._ROMAN_TO_INT[text]
+        # Fallback: should not happen if shape passed _is_chapter_number()
+        return 9999
 
     @staticmethod
     def _layout_direction(number_shapes: list[dict[str, Any]]) -> CatalogLayout:
@@ -293,7 +319,7 @@ class CatalogPage(Page):
             if CatalogPage._is_chapter_number(text):
                 number_shapes.append(shape_info)
         try:
-            number_shapes.sort(key=lambda shape: int(shape["text"]))
+            number_shapes.sort(key=CatalogPage._chapter_number_sort_key)
         except ValueError:
             raise PPTTemplateError("Chapter number must be a number")
 
