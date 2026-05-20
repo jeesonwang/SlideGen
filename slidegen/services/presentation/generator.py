@@ -1,8 +1,13 @@
 import asyncio
+import json
+import uuid
 from collections.abc import AsyncGenerator
 from functools import partial
 from pathlib import Path
+from typing import Any
 
+from agno.models.base import Model
+from agno.models.message import Message
 from loguru import logger
 from lxml.etree import Element, fromstring, tostring
 from pptx import Presentation
@@ -22,7 +27,14 @@ from slidegen.schemas.theme import PresentationTheme, ThemePresets
 from slidegen.services.document.markdown import MarkdownDocument
 from slidegen.services.presentation.converter import MarkdownToPresentation
 from slidegen.services.presentation.pdf_exporter import pdf_exporter
-from slidegen.services.slidegen.workflow import run_slidegen_workflow, run_slidegen_workflow_stream
+from slidegen.services.slidegen.workflow import get_llm_instance, run_slidegen_workflow, run_slidegen_workflow_stream
+
+AUTO_THEME_PRESETS = {"auto", "auto_theme", "__auto_theme__"}
+AUTO_THEME_FALLBACK = "modern_minimalist"
+
+
+def is_auto_theme_preset(theme_preset: str | None) -> bool:
+    return bool(theme_preset and theme_preset.casefold() in AUTO_THEME_PRESETS)
 
 
 class PresentationGenerator:
@@ -48,15 +60,90 @@ class PresentationGenerator:
         """List all available template names."""
         return sorted(file.stem.replace("template_", "") for file in self.templates_dir.glob("template_*.pptx"))
 
-    def _resolve_theme(
-        self, theme: PresentationTheme | None = None, theme_preset: str | None = None
+    def _request_theme_context(self, request: GeneratePresentationRequest, generated_content: str | None = None) -> str:
+        chunks = [
+            request.content,
+            request.instructions or "",
+            "\n".join(request.slides_markdown or []),
+            generated_content or "",
+        ]
+        return "\n".join(chunk for chunk in chunks if chunk)
+
+    def _available_theme_options(self) -> list[dict[str, str]]:
+        return [
+            {"id": preset_id, "name": preset.name}
+            for preset_id in ThemePresets.list_presets()
+            if (preset := ThemePresets.get_preset(preset_id)) is not None
+        ]
+
+    def _build_auto_theme_prompt(self, content: str | None) -> str:
+        options = self._available_theme_options()
+        return (
+            "Choose the best PowerPoint visual theme preset for the presentation content.\n"
+            'Return JSON only in this shape: {"theme_preset":"preset_id"}.\n'
+            "The theme_preset value must be exactly one id from the available presets.\n\n"
+            f"Available presets:\n{json.dumps(options, ensure_ascii=False)}\n\n"
+            f"Presentation content:\n{(content or '').strip()[:6000]}"
+        )
+
+    def _extract_theme_preset_id(self, response_content: Any) -> str | None:
+        text = str(response_content or "").strip()
+        available = ThemePresets.list_presets()
+        if text in set(available):
+            return text
+
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            payload = None
+
+        if isinstance(payload, dict):
+            candidate = payload.get("theme_preset") or payload.get("preset") or payload.get("id")
+            if isinstance(candidate, str) and candidate in available:
+                return candidate
+
+        textual_matches = [preset_id for preset_id in available if preset_id in text]
+        if len(textual_matches) == 1:
+            return textual_matches[0]
+
+        return None
+
+    async def _select_auto_theme_preset(self, content: str | None, llm: Model | Any | None) -> str:
+        """Ask the configured LLM to select one existing theme preset id."""
+        if llm is None:
+            logger.warning("Auto Theme requested without an LLM; using fallback theme preset")
+            return AUTO_THEME_FALLBACK
+
+        prompt = self._build_auto_theme_prompt(content)
+        message = Message(role="user", content=prompt)
+
+        try:
+            response = await llm.aresponse([message])
+            response_content = response.content if hasattr(response, "content") else response
+            selected_preset = self._extract_theme_preset_id(response_content)
+            if selected_preset:
+                return selected_preset
+            logger.warning(f"Auto Theme LLM returned invalid preset: {response_content!r}")
+        except Exception as e:
+            logger.warning(f"Auto Theme LLM selection failed: {e}")
+
+        return AUTO_THEME_FALLBACK
+
+    async def _resolve_theme(
+        self,
+        theme: PresentationTheme | None = None,
+        theme_preset: str | None = None,
+        auto_content: str | None = None,
+        auto_theme_llm: Model | Any | None = None,
     ) -> PresentationTheme | None:
         """
         Resolve theme from either direct theme object or preset name.
 
         Args:
             theme: Direct theme object (takes priority)
-            theme_preset: Theme preset name
+            theme_preset: Theme preset name, or "auto" to infer from content
+            auto_content: Topic or slide content used when theme_preset is "auto"
+            auto_theme_llm: LLM used to select an existing preset when theme_preset is "auto"
 
         Returns:
             Resolved theme or None if neither is provided
@@ -64,6 +151,13 @@ class PresentationGenerator:
         if theme:
             return theme
         if theme_preset:
+            if is_auto_theme_preset(theme_preset):
+                selected_preset = await self._select_auto_theme_preset(auto_content, auto_theme_llm)
+                preset_theme = ThemePresets.get_preset(selected_preset)
+                if preset_theme:
+                    logger.info(f"Auto-selected theme preset: {selected_preset}")
+                    return preset_theme
+
             preset_theme = ThemePresets.get_preset(theme_preset)
             if preset_theme:
                 logger.info(f"Using theme preset: {theme_preset}")
@@ -178,7 +272,13 @@ class PresentationGenerator:
         template_prs = await loop.run_in_executor(None, Presentation, template)
 
         # Apply theme if provided
-        theme = self._resolve_theme(request.theme, request.theme_preset)
+        auto_theme_llm = await get_llm_instance(request) if is_auto_theme_preset(request.theme_preset) else None
+        theme = await self._resolve_theme(
+            request.theme,
+            request.theme_preset,
+            auto_content=self._request_theme_context(request, markdown_doc.text),
+            auto_theme_llm=auto_theme_llm,
+        )
         if theme:
             logger.info(f"Applying theme: {theme.name}")
             self.apply_theme_colors(template_prs, theme)
@@ -210,6 +310,7 @@ class PresentationGenerator:
         export_as: ExportFormat = ExportFormat.PPTX,
         theme: PresentationTheme | None = None,
         theme_preset: str | None = None,
+        user_id: uuid.UUID | None = None,
     ) -> str:
         """Generate a presentation directly from markdown content.
 
@@ -220,6 +321,7 @@ class PresentationGenerator:
             export_as: Export format ("pptx" or "pdf")
             theme: Optional theme to apply to the presentation
             theme_preset: Optional theme preset name
+            user_id: User ID for LLM config lookup (required for auto theme)
 
         Returns:
             The output path of the generated presentation
@@ -234,8 +336,25 @@ class PresentationGenerator:
         loop = asyncio.get_event_loop()
         template_prs = await loop.run_in_executor(None, Presentation, template)
 
+        # Resolve auto-theme LLM internally
+        auto_theme_llm = None
+        if is_auto_theme_preset(theme_preset) and user_id is not None:
+            auto_theme_llm = await get_llm_instance(
+                GeneratePresentationRequest(
+                    content=markdown_content[:6000],
+                    template=template_name,
+                    export_as=export_as,
+                    user_id=user_id,
+                )
+            )
+
         # Apply theme colors if provided
-        theme = self._resolve_theme(theme, theme_preset)
+        theme = await self._resolve_theme(
+            theme,
+            theme_preset,
+            auto_content=markdown_content,
+            auto_theme_llm=auto_theme_llm,
+        )
         if theme:
             logger.info(f"Applying theme: {theme.name}")
             self.apply_theme_colors(template_prs, theme)
@@ -268,6 +387,7 @@ class PresentationGenerator:
         export_as: ExportFormat = ExportFormat.PPTX,
         theme: PresentationTheme | None = None,
         theme_preset: str | None = None,
+        user_id: uuid.UUID | None = None,
     ) -> AsyncGenerator[StreamEventT, None]:
         """Generate a presentation from markdown with streaming progress events.
 
@@ -278,6 +398,7 @@ class PresentationGenerator:
             export_as: Export format ("pptx" or "pdf")
             theme: Optional theme to apply to the presentation
             theme_preset: Optional theme preset name
+            user_id: User ID for LLM config lookup (required for auto theme)
 
         Yields:
             Stream events containing conversion progress
@@ -301,8 +422,25 @@ class PresentationGenerator:
             loop = asyncio.get_event_loop()
             template_prs = await loop.run_in_executor(None, Presentation, template)
 
+            # Resolve auto-theme LLM internally
+            auto_theme_llm = None
+            if is_auto_theme_preset(theme_preset) and user_id is not None:
+                auto_theme_llm = await get_llm_instance(
+                    GeneratePresentationRequest(
+                        content=markdown_content[:6000],
+                        template=template_name,
+                        export_as=export_as,
+                        user_id=user_id,
+                    )
+                )
+
             # Apply theme if provided
-            theme = self._resolve_theme(theme, theme_preset)
+            theme = await self._resolve_theme(
+                theme,
+                theme_preset,
+                auto_content=markdown_content,
+                auto_theme_llm=auto_theme_llm,
+            )
             if theme:
                 yield ProgressEvent(
                     stage="presentation_export",
@@ -412,7 +550,13 @@ class PresentationGenerator:
             template_prs = await loop.run_in_executor(None, Presentation, template)
 
             # Apply theme if provided
-            theme = self._resolve_theme(request.theme, request.theme_preset)
+            auto_theme_llm = await get_llm_instance(request) if is_auto_theme_preset(request.theme_preset) else None
+            theme = await self._resolve_theme(
+                request.theme,
+                request.theme_preset,
+                auto_content=self._request_theme_context(request, final_content),
+                auto_theme_llm=auto_theme_llm,
+            )
             if theme:
                 yield ProgressEvent(
                     stage="presentation_export",

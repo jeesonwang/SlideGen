@@ -49,4 +49,4 @@ def test_markdown_routes_and_generator_forward_theme_preset() -> None:
 
     assert "theme_preset=request.theme_preset" in router_source
     assert "theme_preset: str | None = None" in generator_source
-    assert "self._resolve_theme(theme, theme_preset)" in generator_source
+    assert "auto_content=markdown_content" in generator_source

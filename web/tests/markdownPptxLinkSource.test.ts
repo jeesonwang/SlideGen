@@ -28,10 +28,15 @@ assert.equal(actionBubbleSource.includes('slidegenApi.generatePPTXFromMarkdown')
 assert.equal(actionBubbleSource.includes('slidegenApi.getThemePresets'), true);
 assert.equal(actionBubbleSource.includes('Generate PPTX'), true);
 assert.equal(actionBubbleSource.includes('Download PPTX'), true);
+assert.equal(actionBubbleSource.includes('Auto Theme'), true);
+assert.equal(actionBubbleSource.includes("'auto'"), true);
 assert.equal(actionBubbleSource.includes('PPT template'), true);
 assert.equal(actionBubbleSource.includes('Choose the slide structure and base layout.'), true);
 assert.equal(actionBubbleSource.includes('PPT theme'), true);
-assert.equal(actionBubbleSource.includes('Choose the visual style: colors, typography, and accents.'), true);
+assert.equal(
+  actionBubbleSource.includes('Automatically match colors, typography, and accents to the content.'),
+  true
+);
 assert.equal(actionBubbleSource.includes('-mt-1'), false);
 assert.equal(actionBubbleSource.includes('rounded-[1.75rem] border border-border/70'), true);
 

@@ -70,7 +70,7 @@ class GeneratePresentationRequest(BaseGenerationRequest):
     # Theme related fields
     theme: PresentationTheme | None = Field(default=None, description="Optional theme to apply to the presentation")
     theme_preset: str | None = Field(
-        default=None, description="Optional theme preset name (e.g., 'sunset_boulevard', 'ocean_breeze')"
+        default=None, description="Optional theme preset name, or 'auto' to infer from content"
     )
 
 
@@ -90,7 +90,7 @@ class MarkdownToPPTRequest(BaseModel):
     # Theme related fields
     theme: PresentationTheme | None = Field(default=None, description="Optional theme to apply to the presentation")
     theme_preset: str | None = Field(
-        default=None, description="Optional theme preset name (e.g., 'sunset_boulevard', 'ocean_breeze')"
+        default=None, description="Optional theme preset name, or 'auto' to infer from content"
     )
 
 

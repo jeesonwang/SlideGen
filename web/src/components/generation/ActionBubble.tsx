@@ -14,7 +14,7 @@ interface ActionBubbleProps {
   onError?: (error: string) => void;
 }
 
-const DEFAULT_THEME_VALUE = '__default_theme__';
+const AUTO_THEME_PRESET = 'auto';
 
 export const ActionBubble = ({
   markdownContent,
@@ -24,7 +24,7 @@ export const ActionBubble = ({
 }: ActionBubbleProps) => {
   const [generating, setGenerating] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const [selectedThemePreset, setSelectedThemePreset] = useState<string | null>(null);
+  const [selectedThemePreset, setSelectedThemePreset] = useState(AUTO_THEME_PRESET);
   const { template, setTemplate } = useGenerationStore();
   const { data: templates, isLoading: templatesLoading } = useTemplates();
   const { data: themePresets, isLoading: themesLoading } = useQuery<ThemePreset[]>({
@@ -43,7 +43,7 @@ export const ActionBubble = ({
 
   const themeOptions = useMemo(
     () => [
-      { label: 'Default theme', value: DEFAULT_THEME_VALUE },
+      { label: 'Auto Theme', value: AUTO_THEME_PRESET },
       ...(themePresets || []).map((item) => ({
         label: item.name,
         value: item.id,
@@ -128,16 +128,14 @@ export const ActionBubble = ({
           </span>
           <Select
             aria-label="Select theme preset"
-            value={selectedThemePreset ?? DEFAULT_THEME_VALUE}
+            value={selectedThemePreset}
             options={themeOptions}
             loading={themesLoading}
-            onChange={(value) =>
-              setSelectedThemePreset(value === DEFAULT_THEME_VALUE ? null : value)
-            }
+            onChange={setSelectedThemePreset}
             className="w-full"
           />
           <span className="block text-xs leading-5 text-text-muted">
-            Choose the visual style: colors, typography, and accents.
+            Automatically match colors, typography, and accents to the content.
           </span>
         </label>
       </div>

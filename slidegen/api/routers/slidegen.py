@@ -449,6 +449,7 @@ async def generate_pptx_from_markdown(request: MarkdownToPPTRequest, current_use
             output_path=output_path,
             export_as=request.export_as,
             theme_preset=request.theme_preset,
+            user_id=current_user.id,
         )
 
         logger.info(f"Presentation generated successfully: {result_path}")
@@ -515,6 +516,7 @@ async def generate_pptx_from_markdown_stream(
                 output_path=output_path,
                 export_as=request.export_as,
                 theme_preset=request.theme_preset,
+                user_id=current_user.id,
             ):
                 # Convert Pydantic model to dict and then to JSON
                 event_data = event.model_dump()
