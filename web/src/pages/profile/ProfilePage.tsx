@@ -41,7 +41,7 @@ export const ProfilePage = () => {
   }
 
   return (
-    <div className="max-w-[800px] mx-auto">
+    <div className="max-w-[800px] mx-auto px-4 sm:px-6">
       <Title level={2}>Profile</Title>
       <Text type="secondary">Manage your account information and settings</Text>
 

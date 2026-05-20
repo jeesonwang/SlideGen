@@ -24,7 +24,7 @@ interface TemplateSelectorProps {
 
 const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, templates }) => {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {templates.map((t) => {
         const isSelected = value === t.id;
         return (
@@ -32,7 +32,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, te
             type="button"
             key={t.id}
             className={cn(
-              "w-full rounded-lg border-2 bg-surface-50/70 p-4 text-left transition-all hover:shadow-md",
+              "w-full rounded-lg border-2 bg-surface-50/70 p-4 text-left transition-colors hover:shadow-md",
               isSelected ? "border-primary-500 bg-primary-500/10" : "border-border/70 hover:border-primary-300"
             )}
             onClick={() => onChange?.(t.id)}
@@ -45,6 +45,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, te
                   <img
                     src={t.thumbnail}
                     alt={t.name}
+                    loading="lazy"
                     className="h-full w-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
@@ -54,20 +55,20 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ value, onChange, te
                   <div
                     className={cn(
                       "hidden flex h-full w-full items-center justify-center",
-                      t.id.includes('purple') ? "bg-primary-500/12 text-primary-500" : "bg-surface-100 text-text-secondary"
+                      t.id === 'modern' ? "bg-primary-500/12 text-primary-500" : "bg-surface-100 text-text-secondary"
                     )}
                   >
-                    <div className={cn("h-6 w-6 rounded-full", t.id.includes('purple') ? "bg-accent-purple" : "bg-surface-400")} />
+                    <div className={cn("h-6 w-6 rounded-full", t.id === 'modern' ? "bg-accent-earth" : "bg-surface-400")} />
                   </div>
                 </div>
               ) : (
                 <div
                   className={cn(
                     "flex h-12 w-12 items-center justify-center rounded-lg",
-                    t.id.includes('purple') ? "bg-primary-500/12 text-primary-500" : "bg-surface-100 text-text-secondary"
+                    t.id === 'modern' ? "bg-primary-500/12 text-primary-500" : "bg-surface-100 text-text-secondary"
                   )}
                 >
-                  <div className={cn("h-6 w-6 rounded-full", t.id.includes('purple') ? "bg-accent-purple" : "bg-surface-400")} />
+                  <div className={cn("h-6 w-6 rounded-full", t.id === 'modern' ? "bg-accent-earth" : "bg-surface-400")} />
                 </div>
               )}
               <div>

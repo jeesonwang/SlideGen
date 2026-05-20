@@ -1,4 +1,4 @@
-/* Google Fonts - Plus Jakarta Sans */
+/* Plus Jakarta Sans - self-hosted via Google Fonts with display swap */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
@@ -16,46 +16,16 @@
   --color-border: 215 207 195;
   --color-text-main: 46 57 74;
   --color-text-secondary: 103 116 132;
-  --color-text-muted: 135 145 156;
+  --color-text-muted: 110 120 134;
   --color-primary-500: 67 128 222;
   --color-success-500: 52 170 127;
   --color-brand-strong: 51 103 176;
   --color-brand-surface: 235 242 251;
   --color-brand-border: 196 212 235;
   --color-brand-contrast: 254 252 248;
-  --app-gradient-start: 248 244 237;
-  --app-gradient-end: 241 236 228;
-  --glass-panel-bg: 254 252 248;
-  --glass-panel-hover-bg: 249 246 241;
-  --glass-panel-border: 82 91 102;
-  --modern-card-from: 254 252 248;
-  --modern-card-to: 246 241 234;
-  --hero-overlay-from: 67 128 222;
-  --hero-overlay-mid: 254 252 248;
-  --hero-overlay-to: 154 125 98;
-  --shadow-soft: 57 72 98;
-  --shadow-glass: 57 72 98;
-  color-scheme: light;
-}
-
-:root[data-theme='light'] {
-  --color-background: 243 237 229;
-  --color-surface-50: 254 252 248;
-  --color-surface-100: 247 243 236;
-  --color-surface-200: 236 229 218;
-  --color-surface-300: 220 210 196;
-  --color-surface-400: 187 175 160;
-  --color-surface-500: 144 132 119;
-  --color-border: 215 207 195;
-  --color-text-main: 46 57 74;
-  --color-text-secondary: 103 116 132;
-  --color-text-muted: 135 145 156;
-  --color-primary-500: 67 128 222;
-  --color-success-500: 52 170 127;
-  --color-brand-strong: 51 103 176;
-  --color-brand-surface: 235 242 251;
-  --color-brand-border: 196 212 235;
-  --color-brand-contrast: 254 252 248;
+  --color-accent-earth: 139 103 72;
+  --color-accent-rose: 184 105 92;
+  --color-accent-teal: 65 117 107;
   --app-gradient-start: 248 244 237;
   --app-gradient-end: 241 236 228;
   --glass-panel-bg: 254 252 248;
@@ -89,6 +59,9 @@
   --color-brand-surface: 48 57 68;
   --color-brand-border: 88 110 133;
   --color-brand-contrast: 26 31 39;
+  --color-accent-earth: 184 142 108;
+  --color-accent-rose: 210 130 115;
+  --color-accent-teal: 90 155 143;
   --app-gradient-start: 34 40 49;
   --app-gradient-end: 26 31 39;
   --glass-panel-bg: 34 40 49;
@@ -124,46 +97,95 @@
     min-height: 100vh;
     transition:
       background-color 0.2s ease,
-      color 0.2s ease,
-      background 0.2s ease;
+      color 0.2s ease;
   }
 
   #root {
     min-height: 100vh;
+    min-height: 100dvh;
     @apply flex flex-col;
   }
 }
 
 @layer components {
-  .glass-panel {
-    background: rgb(var(--color-surface-50) / 0.95);
-    border-color: rgb(var(--color-border) / 0.7);
-    box-shadow: 0 12px 28px -24px rgb(var(--shadow-glass) / 0.14);
-    @apply border;
+  /* --- Unified surface card (replaces glass-panel, modern-card, stat-card, dashboard-hero) --- */
+  .surface-card {
+    background: rgb(var(--color-surface-50) / 0.98);
+    border: 1px solid rgb(var(--color-border) / 0.7);
+    box-shadow: 0 12px 28px -24px rgb(var(--shadow-soft) / 0.12);
+    @apply rounded-2xl;
   }
 
-  .glass-panel-hover {
-    @apply transition-all duration-300 hover:shadow-glow/20;
+  .surface-card-elevated {
+    background: rgb(var(--color-surface-50) / 0.98);
+    border: 1px solid rgb(var(--color-border) / 0.7);
+    box-shadow: 0 18px 40px -26px rgb(var(--shadow-soft) / 0.28);
+    @apply rounded-2xl;
   }
 
-  .glass-panel-hover:hover {
-    background: rgb(var(--color-surface-50) / 1);
-    border-color: rgb(var(--color-border) / 0.82);
+  /* --- Workbench panel (main content areas with depth) --- */
+  .workbench-panel {
+    background: linear-gradient(
+      180deg,
+      rgb(var(--color-surface-50) / 0.95) 0%,
+      rgb(var(--color-surface-50) / 0.88) 100%
+    );
+    border: 1px solid rgb(var(--color-border) / 0.72);
+    box-shadow: 0 30px 70px -52px rgb(var(--shadow-soft) / 0.34);
+    backdrop-filter: blur(14px);
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .workbench-muted-panel {
+    background: rgb(var(--color-surface-100) / 0.85);
+    border: 1px solid rgb(var(--color-border) / 0.65);
+    box-shadow: 0 20px 40px -34px rgb(var(--shadow-soft) / 0.24);
+  }
+
+  .workbench-sidebar-shell {
+    border: 1px solid rgb(var(--color-border) / 0.76);
+    background: linear-gradient(
+      180deg,
+      rgb(var(--color-surface-50) / 0.94) 0%,
+      rgb(var(--color-surface-50) / 0.88) 100%
+    );
+    box-shadow: 0 32px 70px -52px rgb(var(--shadow-soft) / 0.3);
+    backdrop-filter: blur(16px);
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .workbench-stage-panel {
+    background: linear-gradient(
+      180deg,
+      rgb(var(--color-surface-50) / 0.98) 0%,
+      rgb(var(--color-surface-50) / 0.94) 100%
+    );
+    border-color: rgb(var(--color-brand-border) / 0.76);
+    box-shadow: 0 36px 84px -52px rgb(var(--shadow-soft) / 0.28);
+  }
+
+  .workbench-tip-panel {
+    background: rgb(var(--color-surface-50) / 0.92);
+    border: 1px solid rgb(var(--color-brand-border) / 0.58);
+    box-shadow: 0 18px 44px -34px rgb(var(--shadow-soft) / 0.2);
+    backdrop-filter: blur(12px);
   }
 
   /* Modern Input */
   .dark-input {
-    @apply bg-surface-50 border border-border/70 rounded-xl px-4 py-2.5 text-text-main placeholder-text-muted focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all duration-200;
+    @apply bg-surface-50 border border-border/70 rounded-xl px-4 py-2.5 text-text-main placeholder-text-muted focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-colors duration-200;
   }
 
-  /* Primary Button with Gradient */
+  /* Primary Button */
   .btn-primary {
-    @apply bg-primary-gradient text-white px-5 py-2.5 rounded-xl font-semibold tracking-wide hover:opacity-95 transition-all duration-300 shadow-glow active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed border-0;
+    @apply bg-primary-gradient text-white px-5 py-2.5 rounded-xl font-semibold tracking-wide hover:opacity-95 transition-colors duration-200 shadow-glow active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed border-0;
   }
 
   /* Secondary Button */
   .btn-secondary {
-    @apply bg-surface-100 text-text-main px-5 py-2.5 rounded-xl font-medium hover:bg-surface-200 transition-all active:scale-[0.98] border border-border/70 hover:border-border;
+    @apply bg-surface-100 text-text-main px-5 py-2.5 rounded-xl font-medium hover:bg-surface-200 transition-colors duration-200 active:scale-[0.98] border border-border/70 hover:border-border;
   }
 
   .brand-mark {
@@ -201,11 +223,11 @@
     border-color: rgb(var(--color-brand-strong) / 0.45);
     color: rgb(var(--color-brand-contrast) / 0.88);
   }
-  
+
   /* Scrollbar Styling */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
@@ -215,28 +237,18 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-surface-500/30 rounded-full hover:bg-surface-500/50 transition-colors;
   }
-  
-  .modern-card {
-    background: rgb(var(--color-surface-50) / 0.98);
-    box-shadow: 0 12px 28px -24px rgb(var(--shadow-soft) / 0.12);
-    @apply border border-border/60 rounded-2xl overflow-hidden;
-  }
 
-  .section-card {
-    box-shadow: 0 18px 40px -26px rgb(var(--shadow-soft) / 0.28);
-    @apply border-border/60;
+  /* Keep legacy class names as aliases for backward compatibility */
+  .glass-panel { @apply surface-card; }
+  .glass-panel-hover { @apply transition-colors duration-200; }
+  .glass-panel-hover:hover {
+    background: rgb(var(--color-surface-50) / 1);
+    border-color: rgb(var(--color-border) / 0.82);
   }
-
-  .stat-card {
-    background: rgb(var(--color-surface-50) / 0.98);
-    @apply border-border/60;
-  }
-
-  .dashboard-hero {
-    background: rgb(var(--color-surface-50) / 0.98);
-    box-shadow: 0 12px 28px -24px rgb(var(--shadow-soft) / 0.12);
-    @apply rounded-3xl border border-border/60 px-6 py-5;
-  }
+  .modern-card { @apply surface-card; }
+  .section-card { @apply surface-card-elevated; }
+  .stat-card { @apply surface-card; }
+  .dashboard-hero { @apply surface-card rounded-3xl px-6 py-5; }
 
   .workbench-app {
     background:
@@ -259,51 +271,6 @@
       radial-gradient(circle at top left, rgb(var(--color-primary-500) / 0.06), transparent 24%);
   }
 
-  .workbench-panel {
-    background: linear-gradient(
-      180deg,
-      rgb(var(--color-surface-50) / 0.95) 0%,
-      rgb(var(--color-surface-50) / 0.88) 100%
-    );
-    border: 1px solid rgb(var(--color-border) / 0.72);
-    box-shadow: 0 30px 70px -52px rgb(var(--shadow-soft) / 0.34);
-    backdrop-filter: blur(14px);
-  }
-
-  .workbench-muted-panel {
-    background: rgb(var(--color-surface-100) / 0.85);
-    border: 1px solid rgb(var(--color-border) / 0.65);
-    box-shadow: 0 20px 40px -34px rgb(var(--shadow-soft) / 0.24);
-  }
-
-  .workbench-sidebar-shell {
-    border: 1px solid rgb(var(--color-border) / 0.76);
-    background: linear-gradient(
-      180deg,
-      rgb(var(--color-surface-50) / 0.94) 0%,
-      rgb(var(--color-surface-50) / 0.88) 100%
-    );
-    box-shadow: 0 32px 70px -52px rgb(var(--shadow-soft) / 0.3);
-    backdrop-filter: blur(16px);
-  }
-
-  .workbench-stage-panel {
-    background: linear-gradient(
-      180deg,
-      rgb(var(--color-surface-50) / 0.98) 0%,
-      rgb(var(--color-surface-50) / 0.94) 100%
-    );
-    border-color: rgb(var(--color-brand-border) / 0.76);
-    box-shadow: 0 36px 84px -52px rgb(var(--shadow-soft) / 0.28);
-  }
-
-  .workbench-tip-panel {
-    background: rgb(var(--color-surface-50) / 0.92);
-    border: 1px solid rgb(var(--color-brand-border) / 0.58);
-    box-shadow: 0 18px 44px -34px rgb(var(--shadow-soft) / 0.2);
-    backdrop-filter: blur(12px);
-  }
-
   .outline-editor-shell:fullscreen {
     width: 100%;
     height: 100%;
@@ -320,7 +287,7 @@
   }
 }
 
-/* Ant Design Dark Mode Overrides */
+/* Ant Design Overrides - using stable selectors, no hashed class names */
 .ant-card {
   @apply !bg-transparent !border-none !text-text-main;
 }
@@ -341,9 +308,10 @@
   @apply !text-text-main;
 }
 
-/* Global Reset for AntD in Dark Mode context */
-:where(.css-dev-only-do-not-override-1k979oh).ant-btn-primary {
+/* Primary button override via stable selector */
+.ant-btn-primary:not(.ant-btn-dangerous) {
   background-color: rgb(var(--color-brand-strong)) !important;
+  border-color: rgb(var(--color-brand-strong)) !important;
 }
 
 .ant-select-selector {
@@ -382,8 +350,6 @@
   @apply !text-text-main;
 }
 
-/* ===== Enhanced Ant Design Dark Mode Overrides ===== */
-
 /* Input Number */
 .ant-input-number {
   @apply !bg-surface-100/50 !border-border/70 !text-text-main;
@@ -411,7 +377,7 @@
   @apply !text-text-secondary;
 }
 
-/* Select - Enhanced for dark mode visibility */
+/* Select - Enhanced */
 .ant-select-selector {
   @apply !bg-surface-100/50 !border-border/70;
   color: rgb(var(--color-text-main)) !important;
@@ -518,7 +484,7 @@
   @apply !text-text-main;
 }
 
-/* Table - Dark Mode Overrides */
+/* Table Overrides */
 .ant-table {
   @apply !bg-transparent !text-text-main;
 }
@@ -539,7 +505,7 @@
   @apply !bg-surface-100/30 !text-text-main;
 }
 
-.ant-table-tbody > tr.ant-table-row:hover > td, 
+.ant-table-tbody > tr.ant-table-row:hover > td,
 .ant-table-tbody > tr > td.ant-table-cell-row-hover {
   background: rgb(var(--color-surface-100) / 0.92) !important;
 }
@@ -576,7 +542,7 @@
 .session-table .ant-table-thead > tr > th {
   background: rgb(var(--color-surface-100) / 0.98) !important;
   color: rgb(var(--color-text-secondary)) !important;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.02em;
 }

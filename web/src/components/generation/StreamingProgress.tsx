@@ -2,7 +2,7 @@
  * Streaming Progress Component for SSE
  */
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Progress, Timeline, Typography, Alert, Button, Space } from 'antd';
 import {
   LoadingOutlined,
@@ -139,14 +139,6 @@ export const StreamingProgress: React.FC<StreamingProgressProps> = ({
     },
   });
 
-  const strokeColor = useMemo(
-    () => ({
-      '0%': '#108ee9',
-      '100%': '#87d068',
-    }),
-    []
-  );
-
   useEffect(() => {
     connect(streamRequest);
 
@@ -191,7 +183,6 @@ export const StreamingProgress: React.FC<StreamingProgressProps> = ({
           <Progress
             percent={Math.round(progress)}
             status={hasError ? 'exception' : isConnected ? 'active' : 'normal'}
-            strokeColor={strokeColor}
           />
 
           {hasError && error && (

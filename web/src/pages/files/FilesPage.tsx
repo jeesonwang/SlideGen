@@ -72,7 +72,7 @@ export const FilesPage = () => {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft workbench-panel lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
               Reference workspace
             </div>
             <Title level={2} className="!m-0 !mt-3 !text-text-main">

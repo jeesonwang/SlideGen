@@ -50,7 +50,7 @@ export const SignupPage = () => {
                 </svg>
               </div>
             </div>
-            <Title level={2} className="!mb-2 !font-heading !text-text-main">
+            <Title level={1} className="!mb-2 !font-heading !text-text-main">
               {APP_NAME}
             </Title>
             <Text type="secondary" className="!text-text-secondary text-base">
@@ -69,6 +69,7 @@ export const SignupPage = () => {
               type="error"
               showIcon
               closable
+              role="alert"
               className="!rounded-lg"
             />
           )}
@@ -164,7 +165,7 @@ export const SignupPage = () => {
                 size="large"
                 block
                 loading={isSigningUp}
-                className="!h-12 !rounded-lg !bg-primary-600 hover:!bg-primary-700 !font-medium !shadow-soft transition-all duration-200"
+                className="!h-12 !rounded-lg !font-medium transition-colors duration-200"
               >
                 Sign Up
               </Button>

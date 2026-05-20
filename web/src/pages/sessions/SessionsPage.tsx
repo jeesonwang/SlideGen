@@ -74,7 +74,7 @@ export const SessionsPage = () => {
       <div className={getSessionsPageContentClassName()}>
         <div className="flex flex-col gap-5 rounded-[2rem] border border-border/70 bg-surface-50 p-6 shadow-soft workbench-panel lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
               Project archive
             </div>
             <Title level={2} className="!mb-0 !text-text-main">

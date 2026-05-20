@@ -69,7 +69,7 @@ export const DashboardPage = () => {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-7 shadow-soft workbench-panel">
-            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
+            <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
               Project workspace
             </div>
             <Title level={2} className="!mb-3 !text-text-main">
@@ -120,10 +120,10 @@ export const DashboardPage = () => {
           <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft workbench-panel">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
                   Continue recent work
                 </div>
-                <Title level={4} className="!mb-0 !mt-2 !text-text-main">
+                <Title level={3} className="!mb-0 !mt-2 !text-text-main">
                   {latestSession
                     ? getSessionDisplayTitle(latestSession.title, latestSession.topic)
                     : 'Create your first presentation'}
@@ -179,10 +179,10 @@ export const DashboardPage = () => {
           <div className="rounded-[2rem] border border-border/70 bg-surface-50 px-6 py-6 shadow-soft workbench-panel">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-secondary">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
                   Recently updated projects
                 </div>
-                <Title level={4} className="!mb-0 !mt-2 !text-text-main">
+                <Title level={3} className="!mb-0 !mt-2 !text-text-main">
                   Keep your work moving
                 </Title>
               </div>

@@ -5,6 +5,14 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    screens: {
+      'xs': '375px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         background: 'rgb(var(--color-background) / <alpha-value>)',
@@ -17,17 +25,17 @@ export default {
           500: 'rgb(var(--color-surface-500) / <alpha-value>)',
         },
         primary: {
-          50: '#eef4fb',
-          100: '#d9e7f7',
-          200: '#bdd4ee',
-          300: '#93b8df',
-          400: '#5e95cb',
-          500: '#3d78b3',
-          600: '#315f8f',
-          700: '#294f76',
-          800: '#263f5d',
-          900: '#21354c',
-          DEFAULT: '#3d78b3',
+          DEFAULT: 'rgb(var(--color-primary-500) / <alpha-value>)',
+          50: 'rgb(var(--color-primary-500) / 0.1)',
+          100: 'rgb(var(--color-primary-500) / 0.2)',
+          200: 'rgb(var(--color-primary-500) / 0.3)',
+          300: 'rgb(var(--color-primary-500) / 0.5)',
+          400: 'rgb(var(--color-primary-500) / 0.7)',
+          500: 'rgb(var(--color-primary-500) / <alpha-value>)',
+          600: 'rgb(var(--color-primary-500) / 0.85)',
+          700: 'rgb(var(--color-primary-500) / 0.7)',
+          800: 'rgb(var(--color-primary-500) / 0.6)',
+          900: 'rgb(var(--color-primary-500) / 0.5)',
         },
         brand: {
           strong: 'rgb(var(--color-brand-strong) / <alpha-value>)',
@@ -36,9 +44,9 @@ export default {
           contrast: 'rgb(var(--color-brand-contrast) / <alpha-value>)',
         },
         accent: {
-          purple: '#8b6748',
-          pink: '#b8695c',
-          cyan: '#41756b',
+          earth: 'rgb(var(--color-accent-earth) / <alpha-value>)',
+          rose: 'rgb(var(--color-accent-rose) / <alpha-value>)',
+          teal: 'rgb(var(--color-accent-teal) / <alpha-value>)',
         },
         border: 'rgb(var(--color-border) / <alpha-value>)',
         text: {
@@ -49,39 +57,30 @@ export default {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'primary-gradient': 'linear-gradient(135deg, #3d78b3 0%, #315f8f 100%)',
-        'surface-gradient': 'linear-gradient(180deg, rgba(252, 250, 246, 0.98) 0%, rgba(245, 241, 234, 0.98) 100%)',
+        'primary-gradient': 'linear-gradient(135deg, rgb(var(--color-brand-strong)) 0%, rgb(var(--color-primary-500)) 100%)',
+        'surface-gradient': 'linear-gradient(180deg, rgb(var(--color-surface-50) / 0.98) 0%, rgb(var(--color-surface-100) / 0.98) 100%)',
       },
       fontFamily: {
-        heading: ['"IBM Plex Sans"', 'sans-serif'],
-        body: ['"IBM Plex Sans"', 'sans-serif'],
-        sans: ['"IBM Plex Sans"', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
       },
       boxShadow: {
-        'soft': '0 12px 28px -24px rgba(54, 72, 96, 0.18)',
-        'glass': '0 16px 32px -24px rgba(54, 72, 96, 0.18)',
-        'glow': '0 8px 18px rgba(49, 95, 143, 0.12)',
-        'glow-strong': '0 14px 28px rgba(49, 95, 143, 0.16)',
+        'soft': '0 12px 28px -24px rgb(var(--shadow-soft) / 0.14)',
+        'glass': '0 16px 32px -24px rgb(var(--shadow-glass) / 0.14)',
+        'glow': '0 8px 18px rgb(var(--shadow-soft) / 0.1)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.4s ease-out',
-        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideUp: {
-          '0%': { transform: 'translateY(20px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
+        pulse: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.5' },
         },
       },
     },
   },
   plugins: [],
   corePlugins: {
-    preflight: true, // Re-enabling preflight for better consistency, unless strictly forbidden. The previous file had it false, likely for AntD compat. I should check if I should keep it false.
+    preflight: true,
   },
 }

@@ -47,7 +47,7 @@ export const ConfigurationPanel = () => {
   } = useGenerationStore();
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-3 text-text-main xl:flex-nowrap xl:gap-2.5">
+    <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3 text-text-main xl:flex xl:flex-nowrap xl:gap-2.5">
       <div className={cn(fieldClassName, 'xl:w-[7rem]')}>
         <label htmlFor="generation-slide-count" className={labelClassName}>
           Pages

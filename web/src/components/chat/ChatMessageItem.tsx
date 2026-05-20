@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { CopyOutlined, EditOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Input, Tooltip } from 'antd';
 import type { ChatMessagePublic } from '../../api/types/chatMessage.types';
@@ -24,7 +25,7 @@ interface ChatMessageItemProps {
   formatTime: (dateString: string) => string;
 }
 
-export const ChatMessageItem = ({
+export const ChatMessageItem = memo(({
   message,
   isStreaming,
   hasMessages,
@@ -75,7 +76,7 @@ export const ChatMessageItem = ({
               : 'max-w-[min(100%,42rem)]'
           )}
         >
-          <div className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
+          <div className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">
             <span>{message.role === 'assistant' ? 'Presentation Assistant' : 'Your Prompt'}</span>
             <span>·</span>
             <span>{formatTime(message.create_time)}</span>
@@ -126,7 +127,7 @@ export const ChatMessageItem = ({
                       type="button"
                       onClick={() => onCopyMessage(message.content)}
                       aria-label="Copy message"
-                      className="flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-text-secondary transition-colors hover:bg-surface-100/80 hover:text-text-main"
+                      className="flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent text-text-secondary transition-colors hover:bg-surface-100/80 hover:text-text-main"
                     >
                       <CopyOutlined className="text-[0.9rem]" />
                     </button>
@@ -137,7 +138,7 @@ export const ChatMessageItem = ({
                       onClick={() => onEditMessageStart(message.id, message.content)}
                       disabled={isStreaming}
                       aria-label="Edit message"
-                      className="flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-text-secondary transition-colors hover:bg-surface-100/80 hover:text-text-main disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent text-text-secondary transition-colors hover:bg-surface-100/80 hover:text-text-main disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <EditOutlined className="text-[0.9rem]" />
                     </button>
@@ -155,7 +156,7 @@ export const ChatMessageItem = ({
             <RobotOutlined />
           </div>
           <div className="min-w-0 w-full max-w-[min(100%,72rem)] flex-1">
-            <div className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
+            <div className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">
               <span>Presentation Assistant</span>
               <span>·</span>
               <span>Ready to export</span>
@@ -166,4 +167,4 @@ export const ChatMessageItem = ({
       ) : null}
     </div>
   );
-};
+});

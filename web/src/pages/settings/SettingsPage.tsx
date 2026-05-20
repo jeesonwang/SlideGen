@@ -62,7 +62,7 @@ export const SettingsPage = () => {
 
       <section className="rounded-[2rem] border border-border/70 bg-surface-50 p-6 shadow-soft sm:p-8">
         <div className="max-w-3xl space-y-2">
-          <Title level={4} className="!mb-0 !text-text-main">
+          <Title level={3} className="!mb-0 !text-text-main">
             Appearance Theme
           </Title>
           <Text className="block text-sm leading-6 text-text-secondary">
@@ -70,7 +70,7 @@ export const SettingsPage = () => {
           </Text>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Theme selection">
           {THEME_MODE_OPTIONS.map((option) => {
             const selected = option.value === themeMode;
 
@@ -79,9 +79,10 @@ export const SettingsPage = () => {
                 key={option.value}
                 type="button"
                 onClick={() => setThemeMode(option.value)}
-                aria-pressed={selected}
+                role="radio"
+                aria-checked={selected}
                 className={[
-                  'group flex min-h-[124px] w-full flex-col justify-between rounded-2xl border px-4 py-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                  'group flex min-h-[124px] w-full flex-col justify-between rounded-2xl border px-4 py-4 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   selected
                     ? 'border-brand-border bg-brand-surface text-text-main shadow-soft'
                     : 'border-border/70 bg-surface-50 text-text-secondary hover:border-brand-border hover:bg-surface-100/90 hover:text-text-main',

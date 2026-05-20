@@ -23,6 +23,14 @@ import { ChatMessageItem } from './ChatMessageItem';
 import { usePresentationStream } from './usePresentationStream';
 import { DEFAULT_PRESENTATION_TITLE } from '../../utils/constants';
 
+const formatTime = (dateString: string) => {
+  try {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+};
+
 export const ChatInterface = () => {
   const [input, setInput] = useState('');
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -286,14 +294,6 @@ export const ChatInterface = () => {
     setMarkdownContent(nextContent);
   };
 
-  const formatTime = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '';
-    }
-  };
-
   const renderComposerCard = () => (
     <ComposerCard
       input={input}
@@ -338,7 +338,8 @@ export const ChatInterface = () => {
                 }}
                 disabled={updateSessionMutation.isPending}
                 maxLength={120}
-                className="!h-8 w-full max-w-full !text-[15px] sm:w-[min(32rem,60vw)]"
+                aria-label="Project title"
+                className="!h-8 w-full max-w-full !text-base sm:w-[min(32rem,60vw)]"
               />
             ) : (
               <button
@@ -346,7 +347,7 @@ export const ChatInterface = () => {
                 onClick={handleTitleEditStart}
                 disabled={!currentSessionId || updateSessionMutation.isPending}
                 className={cn(
-                  'm-0 max-w-full truncate border-0 bg-transparent p-0 text-left text-[15px] font-semibold tracking-tight text-text-main transition-colors sm:max-w-[min(34rem,62vw)] sm:text-[16px]',
+                  'm-0 max-w-full truncate border-0 bg-transparent p-0 text-left text-base font-semibold tracking-tight text-text-main transition-colors sm:max-w-[min(34rem,62vw)] sm:text-base',
                   currentSessionId ? 'cursor-text hover:text-brand-strong' : 'cursor-default'
                 )}
                 title={currentSessionId ? 'Click to rename this project' : chatHeaderTitle}
@@ -359,7 +360,7 @@ export const ChatInterface = () => {
       </div>
 
       {error ? (
-        <div className="mx-4 mt-4 rounded-2xl border border-red-300/60 bg-red-50 px-4 py-3 text-sm text-red-600 sm:mx-6 lg:mx-8">
+        <div className="mx-4 mt-4 rounded-2xl border border-red-300/60 bg-red-50 px-4 py-3 text-sm text-red-600 sm:mx-6 lg:mx-8" role="alert">
           {error}
         </div>
       ) : null}
@@ -403,7 +404,7 @@ export const ChatInterface = () => {
                       <RobotOutlined />
                     </div>
                     <div className="min-w-0 max-w-[min(100%,42rem)]">
-                      <div className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
+                      <div className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">
                         Presentation Assistant · Generating
                       </div>
                       <div className="rounded-[1.75rem] border border-border/70 bg-surface-50 px-5 py-4 text-sm leading-7 text-text-main shadow-sm">

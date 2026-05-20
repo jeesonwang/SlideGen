@@ -1,4 +1,4 @@
-import type { ChangeEvent, RefObject } from 'react';
+import { memo, type ChangeEvent, type RefObject } from 'react';
 import {
   FileAddOutlined,
   FileTextOutlined,
@@ -26,7 +26,7 @@ interface ComposerCardProps {
   onRemoveReferenceFile: (fileId: string) => void;
 }
 
-export const ComposerCard = ({
+export const ComposerCard = memo(({
   input,
   isStreaming,
   hasMessages,
@@ -146,4 +146,4 @@ export const ComposerCard = ({
       </div>
     </div>
   </div>
-);
+));

@@ -32,13 +32,13 @@ export const FileList: React.FC<FileListProps> = ({
 }) => {
   const getFileIcon = (contentType?: string | null, filename?: string) => {
     if (contentType?.includes('pdf')) {
-      return <FilePdfOutlined className="text-red-500 text-xl" />;
+      return <FilePdfOutlined className="text-text-secondary text-xl" />;
     }
     if (contentType?.includes('word') || filename?.endsWith('.docx')) {
-      return <FileWordOutlined className="text-primary-500 text-xl" />;
+      return <FileWordOutlined className="text-text-secondary text-xl" />;
     }
     if (filename?.endsWith('.md')) {
-      return <FileMarkdownOutlined className="text-emerald-600 text-xl" />;
+      return <FileMarkdownOutlined className="text-text-secondary text-xl" />;
     }
     return <FileTextOutlined className="text-text-secondary text-xl" />;
   };

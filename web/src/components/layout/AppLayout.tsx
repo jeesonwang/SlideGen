@@ -20,7 +20,7 @@ const RouteScopedLayout = ({
 
   return (
     <>
-      <Layout className="workbench-app h-screen w-screen overflow-hidden bg-background flex flex-row">
+      <Layout className="workbench-app h-screen h-dvh w-screen overflow-hidden bg-background flex flex-row">
         {!isMobile && (
           <Sider
             width={260}

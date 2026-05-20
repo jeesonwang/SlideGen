@@ -2,7 +2,7 @@
  * Main App component with providers
  */
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider, Spin } from 'antd';
@@ -50,18 +50,39 @@ const AppShell = () => {
     };
   }, []);
 
+  // Cross-tab theme sync
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'ui-storage') {
+        try {
+          const parsed = JSON.parse(event.newValue || '{}');
+          if (parsed?.state?.themeMode && parsed.state.themeMode !== themeMode) {
+            useUIStore.setState({ themeMode: parsed.state.themeMode });
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [themeMode]);
+
   useEffect(() => {
     document.documentElement.dataset.theme = resolvedTheme;
     document.documentElement.style.colorScheme = resolvedTheme;
   }, [resolvedTheme]);
 
+  const antdTheme = useMemo(() => getAntdThemeConfig(resolvedTheme), [resolvedTheme]);
+
   return (
-    <ConfigProvider
-      theme={getAntdThemeConfig(resolvedTheme)}
-    >
+    <ConfigProvider theme={antdTheme}>
       <Suspense
         fallback={
-          <div className="flex justify-center items-center h-screen bg-background">
+          <div className="flex justify-center items-center h-screen h-dvh bg-background">
             <div className="text-center">
               <Spin size="large" />
               <p className="mt-4 text-text-secondary font-medium">Loading...</p>

@@ -9,15 +9,7 @@ export const NotFoundPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        padding: 24,
-      }}
-    >
+    <div className="flex items-center justify-center min-h-screen p-6 bg-background">
       <Result
         status="404"
         title="404"

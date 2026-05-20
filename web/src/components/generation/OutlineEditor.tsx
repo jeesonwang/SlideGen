@@ -311,6 +311,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
     const targetIndex = sectionEntries.findIndex(
       (entry) => entry.section.id === targetSectionId
     );
+    // TODO: pre-measure section rects to avoid layout thrashing during drag
     const sectionBounds = event.currentTarget.getBoundingClientRect();
 
     return resolveSectionDropPosition({
@@ -752,8 +753,9 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           <button
             type="button"
             onClick={() => setActiveView('outline')}
+            aria-pressed={activeView === 'outline'}
             className={cn(
-              'rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-all',
+              'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
               activeView === 'outline'
                 ? 'bg-surface-50 text-text-main shadow-sm'
                 : 'text-text-secondary hover:text-text-main'
@@ -764,8 +766,9 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           <button
             type="button"
             onClick={() => setActiveView('markdown')}
+            aria-pressed={activeView === 'markdown'}
             className={cn(
-              'rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-all',
+              'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
               activeView === 'markdown'
                 ? 'bg-surface-50 text-text-main shadow-sm'
                 : 'text-text-secondary hover:text-text-main'
@@ -807,8 +810,8 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
       </div>
 
       {activeView === 'outline' && (
-        <div className="rounded-2xl border border-border/60 bg-surface-50 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-text-secondary">
+        <div className="rounded-2xl border border-border/60 bg-surface-50 px-4 py-3 shadow-[0_10px_24px_rgb(var(--shadow-soft)/0.04)]">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-text-secondary">
             <OrderedListOutlined />
             Presentation Title
           </div>
@@ -816,7 +819,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
             value={outline.presentationTitle}
             onChange={(event) => handlePresentationTitleChange(event.target.value)}
             placeholder="Enter presentation title"
-            className="!h-10 !rounded-xl !border-border/60 !bg-surface-50 !text-[15px] !font-semibold !text-text-main"
+            className="!h-10 !rounded-xl !border-border/60 !bg-surface-50 !text-base !font-semibold !text-text-main"
           />
         </div>
       )}
@@ -830,12 +833,12 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
         'outline-editor-shell w-full',
         isFullscreen && 'flex h-full flex-col bg-surface-50',
         isPseudoFullscreen &&
-          'fixed inset-4 z-50 flex flex-col rounded-[28px] bg-surface-50 shadow-[0_24px_60px_rgba(15,23,42,0.14)]'
+          'fixed inset-4 z-50 flex flex-col rounded-[28px] bg-surface-50 shadow-[0_24px_60px_rgb(var(--shadow-soft)/0.14)]'
       )}
     >
       <div
         className={cn(
-          'overflow-hidden rounded-[28px] border border-border/70 bg-surface-50 shadow-[0_16px_40px_rgba(15,23,42,0.08)]',
+          'overflow-hidden rounded-[28px] border border-border/70 bg-surface-50 shadow-[0_16px_40px_rgb(var(--shadow-soft)/0.08)]',
           isFullscreen && 'flex min-h-0 flex-1 flex-col'
         )}
       >
@@ -848,15 +851,15 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           )}
         >
           {activeView === 'markdown' ? (
-            <div className="rounded-[24px] border border-border/70 bg-surface-50 px-4 py-4 shadow-[0_8px_22px_rgba(15,23,42,0.05)]">
+            <div className="rounded-[24px] border border-border/70 bg-surface-50 px-4 py-4 shadow-[0_8px_22px_rgb(var(--shadow-soft)/0.05)]">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <span className="text-xs font-semibold uppercase tracking-[0.22em] text-text-secondary">
                   Markdown Source
                 </span>
-                <span className="text-[12px] text-text-secondary/70">Raw markdown preview</span>
+                <span className="text-xs text-text-secondary/70">Raw markdown preview</span>
               </div>
               <div className="rounded-2xl border border-border/70 bg-surface-50 px-4 py-4">
-                <pre className="whitespace-pre-wrap break-words font-mono text-[13px] leading-6 text-text-main">
+                <pre className="whitespace-pre-wrap break-words font-mono text-sm leading-6 text-text-main">
                   {currentMarkdown || '# Empty markdown'}
                 </pre>
               </div>
@@ -867,29 +870,29 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                 <>
                   <div className="overflow-hidden rounded-2xl border border-border/70 bg-surface-50">
                     <div className="flex min-w-0 items-center gap-2.5 bg-surface-100/55 px-3 py-3">
-                      <span className="w-7 shrink-0 text-center text-[17px] font-semibold text-brand-strong">
+                      <span className="w-7 shrink-0 text-center text-lg font-semibold text-brand-strong">
                         1
                       </span>
                       <span className="h-8 w-px bg-border/70" />
-                      <span className="w-20 shrink-0 text-[14px] font-semibold text-text-main">
+                      <span className="w-20 shrink-0 text-sm font-semibold text-text-main">
                         Cover
                       </span>
                       <Input
                         value={outline.presentationTitle}
                         onChange={(event) => handlePresentationTitleChange(event.target.value)}
                         placeholder="Presentation title"
-                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
+                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-base !font-semibold !text-text-main"
                       />
                     </div>
                   </div>
 
                   <div className="overflow-hidden rounded-2xl border border-border/70 bg-surface-50">
                     <div className="flex min-w-0 items-center gap-2.5 bg-surface-100/55 px-3 py-3">
-                      <span className="w-7 shrink-0 text-center text-[17px] font-semibold text-brand-strong">
+                      <span className="w-7 shrink-0 text-center text-lg font-semibold text-brand-strong">
                         2
                       </span>
                       <span className="h-8 w-px bg-border/70" />
-                      <span className="text-[14px] font-semibold text-text-main">Catalog</span>
+                      <span className="text-sm font-semibold text-text-main">Catalog</span>
                     </div>
                     <div className="space-y-2 px-4 py-4 sm:px-[8.125rem]">
                       {catalogItems.map((catalogItem) => (
@@ -897,7 +900,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                           key={catalogItem.id}
                           className="group/catalog flex min-h-10 items-center gap-3 rounded-lg px-2 py-1 transition-colors hover:bg-surface-100/60"
                         >
-                          <span className="w-20 shrink-0 text-[13px] font-semibold text-text-secondary">
+                          <span className="w-20 shrink-0 text-sm font-semibold text-text-secondary">
                             {catalogItem.label}
                           </span>
                           <Input
@@ -906,7 +909,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                               handleCatalogItemTitleChange(catalogItem, event.target.value)
                             }
                             placeholder={`Chapter ${catalogItem.chapterNumber} title`}
-                            className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
+                            className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-base !font-semibold !text-text-main"
                             aria-label={`Edit catalog item ${catalogItem.chapterNumber}`}
                           />
                         </div>
@@ -926,18 +929,18 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                 >
                   <div className="flex flex-col gap-2 border-b border-border/60 bg-surface-100/65 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                      <span className="w-7 shrink-0 text-center text-[17px] font-semibold text-brand-strong">
+                      <span className="w-7 shrink-0 text-center text-lg font-semibold text-brand-strong">
                         {chapterIndex + 3}
                       </span>
                       <span className="h-8 w-px bg-border/70" />
-                      <span className="text-[14px] font-semibold text-text-main">Chapter</span>
+                      <span className="text-sm font-semibold text-text-main">Chapter</span>
                       <Input
                         value={chapter.title}
                         onChange={(event) =>
                           handleChapterTitleChange(chapter.id, event.target.value)
                         }
                         placeholder="Chapter title"
-                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
+                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-base !font-semibold !text-text-main"
                       />
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -982,17 +985,17 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                           key={section.id}
                           data-outline-section-drag-preview={section.id}
                           className={cn(
-                            'group overflow-hidden rounded-xl border bg-surface-50 transition-all duration-200',
+                            'group overflow-hidden rounded-xl border bg-surface-50 transition-colors duration-200',
                             isActive
-                              ? 'border-brand-border shadow-[0_0_0_1px_rgba(49,95,143,0.14)]'
+                              ? 'border-brand-border shadow-[0_0_0_1px_rgb(var(--color-brand-strong)/0.14)]'
                               : 'border-border/70 hover:border-brand-border',
                             isSectionDragTarget && 'border-brand-border bg-brand-surface/35',
                             isSectionDragTarget &&
                               dragOverSection?.position === 'before' &&
-                              'shadow-[inset_0_2px_0_rgba(49,95,143,0.65)]',
+                              'shadow-[inset_0_2px_0_rgb(var(--color-brand-strong)/0.65)]',
                             isSectionDragTarget &&
                               dragOverSection?.position === 'after' &&
-                              'shadow-[inset_0_-2px_0_rgba(49,95,143,0.65)]',
+                              'shadow-[inset_0_-2px_0_rgb(var(--color-brand-strong)/0.65)]',
                             isDraggingSection && 'opacity-60'
                           )}
                           onClick={() => {
@@ -1008,7 +1011,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                           }}
                           role="button"
                           tabIndex={0}
-                          aria-pressed={isActive}
+                          aria-selected={isActive}
                           onDragOver={(event) => {
                             const isSectionDrag =
                               hasDragType(event, OUTLINE_SECTION_DRAG_TYPE) ||
@@ -1058,11 +1061,11 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                               >
                                 <HolderOutlined />
                               </button>
-                              <span className="w-7 shrink-0 text-center text-[17px] font-semibold text-brand-strong">
+                              <span className="w-7 shrink-0 text-center text-lg font-semibold text-brand-strong">
                                 {index + 1}
                               </span>
                               <span className="h-8 w-px bg-border/70" />
-                              <span className="text-[14px] font-semibold text-text-main">
+                              <span className="text-sm font-semibold text-text-main">
                                 Section
                               </span>
                               <Input
@@ -1071,7 +1074,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                   handleSectionTitleChange(section.id, event.target.value)
                                 }
                                 placeholder="Section title"
-                                className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-[15px] !font-semibold !text-text-main"
+                                className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-base !font-semibold !text-text-main"
                               />
                             </div>
 
@@ -1112,7 +1115,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                     key={item.id}
                                     className="group/body flex min-h-9 items-center gap-3 rounded-lg px-2 py-1 text-text-secondary transition-colors hover:bg-surface-100/70 sm:pl-[6.25rem]"
                                   >
-                                    <span className="w-14 shrink-0 text-[12px] font-medium text-text-secondary">
+                                    <span className="w-14 shrink-0 text-xs font-medium text-text-secondary">
                                       Body
                                     </span>
                                     <TextArea
@@ -1122,7 +1125,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                       }
                                       autoSize={{ minRows: 1 }}
                                       placeholder="Body point"
-                                      className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent !px-0 !py-1 !text-[13px] !leading-5 !text-text-secondary !shadow-none"
+                                      className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent !px-0 !py-1 !text-sm !leading-5 !text-text-secondary !shadow-none"
                                     />
                                     <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/body:opacity-100">
                                       <Tooltip title="Delete body">
@@ -1227,7 +1230,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                       >
                                         {isTopicExpanded ? <CaretDownOutlined /> : <CaretRightOutlined />}
                                       </button>
-                                      <span className="w-14 shrink-0 text-left text-[12px] font-medium text-text-secondary">
+                                      <span className="w-14 shrink-0 text-left text-xs font-medium text-text-secondary">
                                         Topic
                                       </span>
                                       <Input
@@ -1240,7 +1243,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                           )
                                         }
                                         placeholder="Topic"
-                                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-[14px] !font-semibold !text-text-main"
+                                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-sm !font-semibold !text-text-main"
                                       />
                                       <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/topic:opacity-100">
                                         <Tooltip title="Add topic">
@@ -1279,7 +1282,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                               key={item.id}
                                               className="group/body flex min-h-9 items-start gap-3 rounded-lg px-2 py-1 text-text-secondary transition-colors hover:bg-surface-100/55"
                                             >
-                                              <span className="w-14 shrink-0 pt-1 text-[12px] font-medium text-text-secondary">
+                                              <span className="w-14 shrink-0 pt-1 text-xs font-medium text-text-secondary">
                                                 Body
                                               </span>
                                               <TextArea
@@ -1293,7 +1296,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                                 }
                                                 autoSize={{ minRows: 1 }}
                                                 placeholder="Body point"
-                                                className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent !px-0 !py-1 !text-[13px] !leading-5 !text-text-secondary !shadow-none"
+                                                className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent !px-0 !py-1 !text-sm !leading-5 !text-text-secondary !shadow-none"
                                               />
                                               <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/body:opacity-100">
                                                 <Tooltip title="Add body below">
@@ -1325,7 +1328,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                             </div>
                                           ))
                                         ) : (
-                                          <div className="rounded-lg px-2 py-1.5 text-[12px] text-text-secondary/70">
+                                          <div className="rounded-lg px-2 py-1.5 text-xs text-text-secondary/70">
                                             No body points yet.
                                           </div>
                                         )}
@@ -1348,14 +1351,14 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-surface text-brand-strong">
                     <OrderedListOutlined className="text-lg" />
                   </div>
-                  <p className="text-[15px] font-semibold text-text-main">No chapters yet</p>
-                  <p className="mt-2 text-[13px] text-text-secondary">
+                  <p className="text-base font-semibold text-text-main">No chapters yet</p>
+                  <p className="mt-2 text-sm text-text-secondary">
                     Generate markdown first, or create the first chapter manually.
                   </p>
                   <button
                     type="button"
                     onClick={() => handleAddChapter()}
-                    className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary-500 px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+                    className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary-500 px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                   >
                     <PlusOutlined />
                     <span>Add First Chapter</span>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import {
   MessageOutlined,
   AppstoreOutlined,
@@ -39,11 +39,17 @@ import { getSidebarUserPanelData } from './sidebarUserPanel';
 import { useUIStore } from '../../store/uiStore';
 import { DEFAULT_PRESENTATION_TITLE } from '../../utils/constants';
 
+const menuItems = [
+  { key: 'dashboard', icon: <AppstoreOutlined />, label: 'Home', path: '/dashboard' },
+  { key: 'projects', icon: <FileOutlined />, label: 'Projects', path: '/sessions' },
+  { key: 'knowledge-base', icon: <BookOutlined />, label: 'Reference Library', path: '/knowledge-base' },
+];
+
 interface SidebarProps {
   onNavigate?: () => void;
 }
 
-export const Sidebar = ({ onNavigate }: SidebarProps) => {
+export const Sidebar = memo(({ onNavigate }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
@@ -51,14 +57,14 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
   const [userPanelOpen, setUserPanelOpen] = useState(false);
   const titleInputRef = useRef<InputRef>(null);
   const skipBlurSubmitRef = useRef(false);
-  
+
   // Stores
   const { user } = useAuthStore();
   const { logout } = useAuth();
   const { currentSessionId, setCurrentSession, loadMessages } = useChatStore();
   const { reset: resetGeneration } = useGenerationStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
-  
+
   // Sessions query - only fetch active (non-archived) sessions
   const { data: sessionsData, isLoading: sessionsLoading } = useSessions({ limit: 10, status: 'active' });
   const createSessionMutation = useCreateSession();
@@ -72,12 +78,6 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       titleInputRef.current?.select();
     }
   }, [editingSessionId]);
-
-  const menuItems = [
-    { key: 'dashboard', icon: <AppstoreOutlined />, label: 'Home', path: '/dashboard' },
-    { key: 'projects', icon: <FileOutlined />, label: 'Projects', path: '/sessions' },
-    { key: 'knowledge-base', icon: <BookOutlined />, label: 'Reference Library', path: '/knowledge-base' },
-  ];
 
   const handleNewChat = async () => {
     try {
@@ -150,7 +150,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       const date = new Date(dateString);
       const now = new Date();
       const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays === 0) return 'Today';
       if (diffDays === 1) return 'Yesterday';
       if (diffDays < 7) return `${diffDays}d ago`;
@@ -216,7 +216,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
             disabled={createSessionMutation.isPending}
             aria-label="New Presentation"
             className={cn(
-              'brand-solid-button flex items-center justify-center rounded-lg text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50',
+              'brand-solid-button flex items-center justify-center rounded-lg text-sm font-semibold transition-colors active:scale-[0.98] disabled:opacity-50',
               sidebarCollapsed ? 'w-12 h-12 mx-auto rounded-[1.1rem]' : 'w-full gap-2 px-4 py-3'
             )}
           >
@@ -228,7 +228,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
 
       {/* Navigation */}
       {!sidebarCollapsed ? (
-        <div className="px-7 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-muted">
+        <div className="px-7 pb-2 text-xs font-bold uppercase tracking-[0.18em] text-text-muted">
           Workspace
         </div>
       ) : null}
@@ -243,7 +243,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
               }}
               aria-label={item.label}
               className={cn(
-                'w-full flex rounded-lg text-sm font-medium transition-all duration-200',
+                'w-full flex rounded-lg text-sm font-medium transition-colors duration-200',
                 sidebarCollapsed
                   ? 'h-11 items-center justify-center px-0'
                   : 'items-center gap-3 px-4 py-3',
@@ -263,7 +263,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       <div className="flex-1 px-4 mt-6 overflow-hidden flex flex-col">
         {!sidebarCollapsed && (
           <>
-            <h3 className="text-[11px] font-bold text-text-muted uppercase tracking-[0.18em] mb-3 px-3">
+            <h3 className="text-xs font-bold text-text-muted uppercase tracking-[0.18em] mb-3 px-3">
               Recent Projects
             </h3>
             <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-1">
@@ -322,7 +322,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                     <div
                       key={session.id}
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-2.5 rounded-[1.1rem] text-left transition-all duration-200 group border border-transparent',
+                        'w-full flex items-center gap-2 px-3 py-2.5 rounded-[1.1rem] text-left transition-colors duration-200 group border border-transparent',
                         currentSessionId === session.id
                           ? 'bg-surface-100 text-text-main border-border/70 shadow-sm'
                           : 'text-text-secondary hover:bg-surface-100/90 hover:text-text-main'
@@ -338,7 +338,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                                 : 'bg-surface-100 group-hover:bg-surface-200'
                             )}
                           >
-                            <MessageOutlined className="text-[10px]" />
+                            <MessageOutlined className="text-[0.625rem]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <Input
@@ -389,12 +389,12 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                                 : 'bg-surface-100 group-hover:bg-surface-200'
                             )}
                           >
-                            <MessageOutlined className="text-[10px]" />
+                            <MessageOutlined className="text-[0.625rem]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 min-w-0">
                               {isPinned ? (
-                                <PushpinOutlined className="text-[10px] text-brand-strong flex-shrink-0" />
+                                <PushpinOutlined className="text-[0.625rem] text-brand-strong flex-shrink-0" />
                               ) : null}
                               <p className="text-sm font-medium truncate m-0 text-text-main group-hover:text-brand-strong transition-colors">
                                 {getSessionDisplayTitle(session.title, session.topic)}
@@ -415,12 +415,12 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
                           type="button"
                           onClick={(event) => event.stopPropagation()}
                           className={cn(
-                            'p-1 rounded text-text-secondary transition-all flex-shrink-0 hover:bg-surface-200 hover:text-text-main',
+                            'p-1 rounded text-text-secondary transition-colors flex-shrink-0 hover:bg-surface-200 hover:text-text-main',
                             currentSessionId === session.id || isEditing
                               ? 'opacity-100'
                               : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                           )}
-                          title="More actions"
+                          aria-label="More actions"
                         >
                           <MoreOutlined className="text-sm" />
                         </button>
@@ -458,7 +458,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
             {!sidebarCollapsed && <span>Settings</span>}
           </button>
         </Tooltip>
-        
+
         <Popover
           trigger="click"
           placement="rightBottom"
@@ -527,4 +527,4 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       </div>
     </div>
   );
-};
+});
