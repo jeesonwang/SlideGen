@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { CopyOutlined, EditOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
-import { Button, Input, Tooltip } from 'antd';
+import { Input, Tooltip } from 'antd';
 import type { ChatMessagePublic } from '../../api/types/chatMessage.types';
 import { cn } from '../../utils/classnames';
 import { ActionBubble } from '../generation/ActionBubble';
@@ -83,21 +83,35 @@ export const ChatMessageItem = memo(({
           </div>
 
           {editingMessageId === message.id ? (
-            <div className="space-y-3 rounded-[1.5rem] border border-brand-border bg-surface-50 p-4">
+            <div className="flex flex-col rounded-[1.75rem] bg-surface-50 transition-all duration-300 min-w-[280px] sm:min-w-[360px]">
               <TextArea
-                autoSize={{ minRows: 2, maxRows: 8 }}
+                autoSize={{ minRows: 1, maxRows: 8 }}
                 value={editingContent}
                 onChange={(event) => onEditingContentChange(event.target.value)}
-                className="!rounded-2xl !border-border/70 !bg-surface-100 !text-text-main"
+                className="!rounded-[1.75rem] !border-0 !bg-transparent focus:!bg-transparent focus:!ring-0 transition-all !text-text-main px-5 pt-4 pb-2 leading-7 text-sm resize-none"
                 autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    onEditMessageSubmit();
+                  }
+                }}
               />
-              <div className="flex justify-end gap-2">
-                <Button size="small" onClick={onEditMessageCancel}>
+              <div className="flex justify-end gap-2 px-4 pb-3 pt-1">
+                <button
+                  type="button"
+                  onClick={onEditMessageCancel}
+                  className="px-4 py-1.5 rounded-xl bg-white text-text-main text-xs font-medium shadow-sm border border-border/40 hover:bg-surface-50 active:scale-[0.98] transition-all cursor-pointer"
+                >
                   Cancel
-                </Button>
-                <Button size="small" type="primary" onClick={onEditMessageSubmit}>
-                  Refill and regenerate
-                </Button>
+                </button>
+                <button
+                  type="button"
+                  onClick={onEditMessageSubmit}
+                  className="px-4 py-1.5 rounded-xl bg-text-main text-white text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  Send
+                </button>
               </div>
             </div>
           ) : isOutlineMessage ? (
