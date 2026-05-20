@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Command line tool to validate Office document XML files against XSD schemas and tracked changes.
+Command line tool to validate Office document XML files against XSD schemas.
 """
 
 from pathlib import Path
 
 from loguru import logger
 
-from .validation import DOCXSchemaValidator, PPTXSchemaValidator, RedliningValidator
+from .validation import PPTXSchemaValidator
 
 
 def validate_document(
@@ -15,11 +15,11 @@ def validate_document(
     original_file: str | Path,
     verbose: bool = False,
 ) -> bool:
-    """Validate Office document XML files.
+    """Validate PowerPoint document XML files.
 
     Args:
-        unpacked_dir: Path to unpacked Office document directory
-        original_file: Path to original file (.docx/.pptx/.xlsx)
+        unpacked_dir: Path to unpacked document directory
+        original_file: Path to original .pptx file
         verbose: Enable verbose output
 
     Returns:
@@ -36,36 +36,15 @@ def validate_document(
     if not original_path.is_file():
         logger.error(f"{original_path} is not a file")
         return False
-    if file_extension not in [".docx", ".pptx", ".xlsx"]:
-        logger.error(f"{original_path} must be a .docx, .pptx, or .xlsx file")
+    if file_extension != ".pptx":
+        logger.error(f"{original_path} must be a .pptx file")
         return False
 
-    # Determine validators
-    validators = []
-    match file_extension:
-        case ".docx":
-            validators = [DOCXSchemaValidator, RedliningValidator]
-        case ".pptx":
-            validators = [PPTXSchemaValidator]
-        case _:
-            logger.error(f"Validation not supported for file type {file_extension}")
-            return False
+    # Validate with PPTXSchemaValidator
+    try:
+        validator = PPTXSchemaValidator(unpacked_path, original_path, verbose=verbose)
+    except Exception as e:
+        logger.debug(f"Error instantiating PPTXSchemaValidator: {e}")
+        raise e
 
-    # Run validators
-    success = True
-    for V in validators:
-        logger.debug(f"V={V}, type(V)={type(V)}")
-        try:
-            validator = V(unpacked_path, original_path, verbose=verbose)
-            logger.debug(f"validator={validator}, type={type(validator)}")
-            logger.debug(f"has validate? {hasattr(validator, 'validate')}")
-            if not hasattr(validator, "validate"):
-                logger.debug(f"dir(validator)={dir(validator)}")
-        except Exception as e:
-            logger.debug(f"Error instantiating V: {e}")
-            raise e
-
-        if not validator.validate():  # type: ignore[attr-defined]
-            success = False
-
-    return success
+    return validator.validate()
