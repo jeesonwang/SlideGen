@@ -124,3 +124,6 @@ uploads/
 # images
 generated_images/
 components/**/*.png
+
+# agent settings
+.codex/environments
