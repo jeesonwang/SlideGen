@@ -112,6 +112,7 @@ export const TopicInput: React.FC<TopicInputProps> = ({ sessionId }) => {
       >
         <TextArea
           rows={4}
+          className="!rounded-xl !border-transparent !bg-surface-50 focus:!bg-surface-100 focus:!border-border/40 focus:!ring-0 transition-all !text-text-main hover:!bg-surface-100"
           placeholder="Enter the topic or content for your presentation. For example: 'AI and Machine Learning Overview' or paste your content here..."
         />
       </Form.Item>
@@ -198,6 +199,7 @@ export const TopicInput: React.FC<TopicInputProps> = ({ sessionId }) => {
           >
             <TextArea
               rows={3}
+              className="!rounded-xl !border-transparent !bg-surface-50 focus:!bg-surface-100 focus:!border-border/40 focus:!ring-0 transition-all !text-text-main hover:!bg-surface-100"
               placeholder="Any specific instructions or requirements for the presentation..."
             />
           </Form.Item>

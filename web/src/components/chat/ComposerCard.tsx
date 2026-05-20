@@ -4,9 +4,8 @@ import {
   FileTextOutlined,
   LoadingOutlined,
   RobotOutlined,
-  SendOutlined,
 } from '@ant-design/icons';
-import { Button, Input } from 'antd';
+import { Input } from 'antd';
 import type { FileMetadataPublic } from '../../api/types/file.types';
 import { ConfigurationPanel } from '../config/ConfigurationPanel';
 
@@ -55,7 +54,7 @@ export const ComposerCard = memo(({
       </div>
     </div>
 
-    <div className="mb-8 flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-background px-4 py-4 shadow-soft sm:px-5 workbench-stage-panel">
+    <div className="mb-8 flex flex-col gap-4 rounded-[2rem] bg-surface-50 px-4 py-4 sm:px-5 workbench-stage-panel">
       <input
         ref={fileInputRef}
         type="file"
@@ -107,41 +106,41 @@ export const ComposerCard = memo(({
         className="!border-none !bg-transparent !px-2 !py-3 !text-base !leading-8 !text-text-main !shadow-none placeholder:!text-text-muted"
       />
 
-      <div className="flex flex-col gap-3 border-t border-border/70 pt-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-3 pt-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="text"
-            icon={<FileAddOutlined />}
+          <button
+            type="button"
             onClick={onOpenFilePicker}
             aria-label="Upload reference files"
-            className="!h-11 !rounded-xl !px-4 !text-text-secondary hover:!bg-surface-100 hover:!text-text-main"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-text-secondary hover:text-text-main hover:bg-surface-100 transition-all font-medium text-sm"
           >
+            <FileAddOutlined />
             Upload references
-          </Button>
+          </button>
 
-          <Button
-            type="link"
+          <button
+            type="button"
             onClick={onGenerate}
             disabled={isStreaming || !hasMessages}
-            className="!h-11 !px-2 !text-xs !font-semibold !text-primary-600 disabled:!text-text-muted"
+            className="inline-flex items-center px-3 py-2 text-primary-600 hover:text-primary-700 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-xs transition-colors"
           >
             Regenerate outline
-          </Button>
+          </button>
         </div>
 
-        <Button
-          type="primary"
-          icon={isStreaming ? <LoadingOutlined /> : <SendOutlined />}
+        <button
+          type="button"
           onClick={onSend}
           disabled={!input.trim() || isStreaming}
           aria-label="Send prompt"
-          className="!h-12 !rounded-2xl !px-6 !font-semibold"
+          className="inline-flex h-11 items-center justify-center gap-2 px-6 rounded-xl bg-primary-500 text-white font-medium hover:bg-primary-600 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
+          {isStreaming ? <LoadingOutlined /> : null}
           Generate Outline
-        </Button>
+        </button>
       </div>
 
-      <div className="border-t border-border/70 pt-3.5">
+      <div className="border-t border-border/30 pt-3.5 mt-2">
         <ConfigurationPanel />
       </div>
     </div>

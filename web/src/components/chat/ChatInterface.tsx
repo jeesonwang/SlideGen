@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { RobotOutlined } from '@ant-design/icons';
-import { Input, Spin, message } from 'antd';
-import type { InputRef } from 'antd';
+import { Spin, message } from 'antd';
 import { cn } from '../../utils/classnames';
 import { useChatStore } from '../../store/chatStore';
 import { useGenerationStore } from '../../store/generationStore';
@@ -44,7 +43,7 @@ export const ChatInterface = () => {
   const activeGenerationRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollToGenerationRef = useRef(false);
   const loadedSessionIdRef = useRef<string | null>(null);
-  const titleInputRef = useRef<InputRef>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const skipTitleBlurSubmitRef = useRef(false);
 
@@ -316,7 +315,7 @@ export const ChatInterface = () => {
         <div className="mx-auto flex max-w-5xl items-center">
           <div className="min-w-0 flex-1">
             {isEditingTitle ? (
-              <Input
+              <input
                 ref={titleInputRef}
                 value={titleDraft}
                 onChange={(event) => setTitleDraft(event.target.value)}
@@ -339,7 +338,7 @@ export const ChatInterface = () => {
                 disabled={updateSessionMutation.isPending}
                 maxLength={120}
                 aria-label="Project title"
-                className="!h-8 w-full max-w-full !text-base sm:w-[min(32rem,60vw)]"
+                className="h-8 w-full max-w-full text-base font-semibold tracking-tight text-text-main sm:w-[min(32rem,60vw)] rounded-md border border-transparent bg-transparent hover:bg-surface-100 focus:bg-surface-100 focus:border-border/40 focus:outline-none focus:ring-0 px-2 -ml-2 transition-all"
               />
             ) : (
               <button

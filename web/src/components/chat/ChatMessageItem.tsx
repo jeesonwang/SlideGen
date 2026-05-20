@@ -108,7 +108,7 @@ export const ChatMessageItem = memo(({
                 <button
                   type="button"
                   onClick={onEditMessageSubmit}
-                  className="px-4 py-1.5 rounded-xl bg-text-main text-white text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
+                  className="px-4 py-1.5 rounded-xl bg-primary-500 text-white text-xs font-medium hover:bg-primary-600 active:scale-[0.98] transition-all cursor-pointer"
                 >
                   Send
                 </button>

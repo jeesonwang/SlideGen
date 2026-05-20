@@ -881,7 +881,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                         value={outline.presentationTitle}
                         onChange={(event) => handlePresentationTitleChange(event.target.value)}
                         placeholder="Presentation title"
-                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-base !font-semibold !text-text-main"
+                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent focus:!ring-0 focus:!outline-none !px-0 !text-base !font-semibold !text-text-main"
                       />
                     </div>
                   </div>
@@ -909,7 +909,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                               handleCatalogItemTitleChange(catalogItem, event.target.value)
                             }
                             placeholder={`Chapter ${catalogItem.chapterNumber} title`}
-                            className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-base !font-semibold !text-text-main"
+                            className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent focus:!ring-0 focus:!outline-none !px-0 !text-base !font-semibold !text-text-main"
                             aria-label={`Edit catalog item ${catalogItem.chapterNumber}`}
                           />
                         </div>
@@ -940,7 +940,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                           handleChapterTitleChange(chapter.id, event.target.value)
                         }
                         placeholder="Chapter title"
-                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-base !font-semibold !text-text-main"
+                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent focus:!ring-0 focus:!outline-none !px-0 !text-base !font-semibold !text-text-main"
                       />
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -1074,7 +1074,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                   handleSectionTitleChange(section.id, event.target.value)
                                 }
                                 placeholder="Section title"
-                                className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-base !font-semibold !text-text-main"
+                                className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent focus:!ring-0 focus:!outline-none !px-0 !text-base !font-semibold !text-text-main"
                               />
                             </div>
 
@@ -1125,7 +1125,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                       }
                                       autoSize={{ minRows: 1 }}
                                       placeholder="Body point"
-                                      className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent !px-0 !py-1 !text-sm !leading-5 !text-text-secondary !shadow-none"
+                                      className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent focus:!ring-0 focus:!outline-none !px-0 !py-1 !text-sm !leading-5 !text-text-secondary !shadow-none"
                                     />
                                     <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/body:opacity-100">
                                       <Tooltip title="Delete body">
@@ -1243,7 +1243,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                           )
                                         }
                                         placeholder="Topic"
-                                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent !px-0 !text-sm !font-semibold !text-text-main"
+                                        className="!h-8 flex-1 !rounded-lg !border-0 !bg-transparent focus:!ring-0 focus:!outline-none !px-0 !text-sm !font-semibold !text-text-main"
                                       />
                                       <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/topic:opacity-100">
                                         <Tooltip title="Add topic">
@@ -1296,7 +1296,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
                                                 }
                                                 autoSize={{ minRows: 1 }}
                                                 placeholder="Body point"
-                                                className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent !px-0 !py-1 !text-sm !leading-5 !text-text-secondary !shadow-none"
+                                                className="!min-h-8 flex-1 !resize-none !rounded-lg !border-0 !bg-transparent focus:!ring-0 focus:!outline-none !px-0 !py-1 !text-sm !leading-5 !text-text-secondary !shadow-none"
                                               />
                                               <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/body:opacity-100">
                                                 <Tooltip title="Add body below">

@@ -12,8 +12,8 @@ const baseComponents: ThemeConfig['components'] = {
   Button: {
     controlHeight: 44,
     controlHeightLG: 48,
-    borderRadius: 10,
-    borderRadiusLG: 12,
+    borderRadius: 12,
+    borderRadiusLG: 16,
   },
   Card: {
     borderRadiusLG: 16,
@@ -57,7 +57,7 @@ const lightTheme: ThemeConfig = {
     ...baseComponents,
     Button: {
       ...baseComponents.Button,
-      primaryShadow: '0 16px 30px rgba(57, 95, 150, 0.18)',
+      primaryShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
     },
     Card: {
       ...baseComponents.Card,
@@ -90,7 +90,7 @@ const darkTheme: ThemeConfig = {
     ...baseComponents,
     Button: {
       ...baseComponents.Button,
-      primaryShadow: '0 10px 22px rgba(147, 184, 223, 0.16)',
+      primaryShadow: '0 4px 12px rgba(255, 255, 255, 0.08)',
     },
     Card: {
       ...baseComponents.Card,
