@@ -548,11 +548,15 @@ class CatalogPage(Page):
             catalog_items = catalog_items[:catalog_num]  # type: ignore
         elif len(catalog_items) < catalog_num:
             # Template has fewer catalog slots than content — clone shapes to fill the page
+            slide_height = prs.slide_height
+            slide_width = prs.slide_width
+            if slide_height is None or slide_width is None:
+                raise PPTTemplateError("Presentation slide dimensions must be defined for catalog pagination")
             max_per_page = CatalogPage._calculate_max_per_page(
                 catalog_items,
                 layout_direction,
-                prs.slide_height,
-                prs.slide_width,
+                int(slide_height),
+                int(slide_width),
             )
             sp_tree = catalog_slide.shapes._spTree
             source_item = catalog_items[-1]
