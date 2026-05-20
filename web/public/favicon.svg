@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SlideGen">
+  <defs>
+    <linearGradient id="mark" x1="12" y1="8" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3367b0" />
+      <stop offset="1" stop-color="#4380de" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#mark)" />
+  <path
+    d="M17 19.5A4.5 4.5 0 0 1 21.5 15h21A4.5 4.5 0 0 1 47 19.5v25A4.5 4.5 0 0 1 42.5 49h-21A4.5 4.5 0 0 1 17 44.5v-25Z"
+    fill="#fefcf8"
+  />
+  <path d="M22 23h20M22 28h20" stroke="#c4d4eb" stroke-width="3" stroke-linecap="round" />
+  <path
+    d="M22.5 34.5A2.5 2.5 0 0 1 25 32h14a2.5 2.5 0 0 1 2.5 2.5V42h-19v-7.5Z"
+    fill="#eaf2fb"
+    stroke="#3367b0"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <path d="M49 12v7M45.5 15.5h7" stroke="#f6c96f" stroke-width="3" stroke-linecap="round" />
+</svg>
