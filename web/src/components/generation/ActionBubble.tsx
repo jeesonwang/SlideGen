@@ -105,25 +105,41 @@ export const ActionBubble = ({
 
   return (
     <div className="flex flex-col gap-3 rounded-[1.75rem] border border-border/70 bg-surface-50 px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,1fr)]">
-        <Select
-          aria-label="Select template"
-          value={template}
-          options={templateOptions}
-          loading={templatesLoading}
-          onChange={setTemplate}
-          className="w-full"
-        />
-        <Select
-          aria-label="Select theme preset"
-          value={selectedThemePreset ?? DEFAULT_THEME_VALUE}
-          options={themeOptions}
-          loading={themesLoading}
-          onChange={(value) =>
-            setSelectedThemePreset(value === DEFAULT_THEME_VALUE ? null : value)
-          }
-          className="w-full"
-        />
+      <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,1fr)]">
+        <label className="min-w-0 space-y-1.5">
+          <span className="block text-xs font-semibold uppercase tracking-[0.08em] text-text-muted">
+            PPT template
+          </span>
+          <Select
+            aria-label="Select template"
+            value={template}
+            options={templateOptions}
+            loading={templatesLoading}
+            onChange={setTemplate}
+            className="w-full"
+          />
+          <span className="block text-xs leading-5 text-text-muted">
+            Choose the slide structure and base layout.
+          </span>
+        </label>
+        <label className="min-w-0 space-y-1.5">
+          <span className="block text-xs font-semibold uppercase tracking-[0.08em] text-text-muted">
+            PPT theme
+          </span>
+          <Select
+            aria-label="Select theme preset"
+            value={selectedThemePreset ?? DEFAULT_THEME_VALUE}
+            options={themeOptions}
+            loading={themesLoading}
+            onChange={(value) =>
+              setSelectedThemePreset(value === DEFAULT_THEME_VALUE ? null : value)
+            }
+            className="w-full"
+          />
+          <span className="block text-xs leading-5 text-text-muted">
+            Choose the visual style: colors, typography, and accents.
+          </span>
+        </label>
       </div>
 
       <Button
