@@ -390,6 +390,12 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
                 # Check if this is the final PPTX conversion completion
                 if event_type == "step_completed" and event_data.get("step_name") == "Presentation Export":
                     # Emit final completion event with download URL
+                    logger.info(
+                        "Streaming PPT generation completed for user {}: filename={}, download_url={}",
+                        current_user.id,
+                        filename,
+                        f"/api/v1/slidegen/download/{filename}",
+                    )
                     final_event = {
                         "event": "generation_completed",
                         "output_path": output_path,
@@ -528,6 +534,12 @@ async def generate_pptx_from_markdown_stream(
                 # Check if this is the final PPTX conversion completion
                 if event_type == "step_completed" and event_data.get("step_name") == "Presentation Export":
                     # Emit final completion event with download URL
+                    logger.info(
+                        "Streaming PPT generation from markdown completed for user {}: filename={}, download_url={}",
+                        current_user.id,
+                        filename,
+                        f"/api/v1/slidegen/download/{filename}",
+                    )
                     final_event = {
                         "event": "generation_completed",
                         "output_path": output_path,
@@ -546,7 +558,15 @@ async def generate_pptx_from_markdown_stream(
             }
             yield f"event: workflow_error\ndata: {json.dumps(error_event)}\n\n"
 
-    logger.info(f"Starting streaming PPT generation from markdown for user {current_user.id}")
+    logger.info(
+        "Starting streaming PPT generation from markdown for user {}: template={}, export_as={}, "
+        "markdown_chars={}, output_path={}",
+        current_user.id,
+        request.template,
+        request.export_as.value,
+        len(request.markdown_content),
+        output_path,
+    )
 
     return StreamingResponse(
         event_generator(),

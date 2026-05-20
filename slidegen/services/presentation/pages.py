@@ -889,6 +889,12 @@ class ChapterContentPage(Page):
                             prompt_text = titles[idx] if idx < len(titles) else content.element_text
                             prompt = ImagePrompt(prompt=prompt_text, theme_prompt=None)
 
+                            logger.info(
+                                "{}: generating image asset for slide '{}' using prompt '{}...'",
+                                ChapterContentPage.__name__,
+                                content.element_text,
+                                prompt_text[:20],
+                            )
                             image_result = await ChapterContentPage.image_generator.generate_image(prompt)
                             if image_result.path and os.path.exists(image_result.path):
                                 image_path = image_result.path
@@ -916,6 +922,12 @@ class ChapterContentPage(Page):
                             else:
                                 query = content.element_text
 
+                            logger.info(
+                                "{}: searching icon for slide '{}' using query '{}'",
+                                ChapterContentPage.__name__,
+                                content.element_text,
+                                query,
+                            )
                             results = await ChapterContentPage.icon_searcher.search_icons(query, k=1)
                             if results:
                                 rel_path = results[0]

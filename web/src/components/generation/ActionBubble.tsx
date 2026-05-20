@@ -1,11 +1,12 @@
 import { DownloadOutlined, FilePptOutlined, LoadingOutlined } from '@ant-design/icons';
-import { Button, Select, message } from 'antd';
+import { Button, Progress, Select, message } from 'antd';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { slidegenApi } from '../../api/endpoints/slidegen';
 import { useTemplates } from '../../hooks/useTemplates';
+import { useSSE } from '../../hooks/useSSE';
 import { useGenerationStore } from '../../store/generationStore';
-import type { ThemePreset } from '../../api/types/slidegen.types';
+import type { SSEEvent, ThemePreset } from '../../api/types/slidegen.types';
 
 interface ActionBubbleProps {
   markdownContent: string;
@@ -15,6 +16,7 @@ interface ActionBubbleProps {
 }
 
 const AUTO_THEME_PRESET = 'auto';
+const INITIAL_PROGRESS_MESSAGE = 'Waiting for export to start...';
 
 export const ActionBubble = ({
   markdownContent,
@@ -24,6 +26,9 @@ export const ActionBubble = ({
 }: ActionBubbleProps) => {
   const [generating, setGenerating] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState(INITIAL_PROGRESS_MESSAGE);
+  const [progressError, setProgressError] = useState<string | null>(null);
   const [selectedThemePreset, setSelectedThemePreset] = useState(AUTO_THEME_PRESET);
   const { template, setTemplate } = useGenerationStore();
   const { data: templates, isLoading: templatesLoading } = useTemplates();
@@ -52,7 +57,48 @@ export const ActionBubble = ({
     [themePresets]
   );
 
-  const handleGenerate = async () => {
+  const handleStreamMessage = useCallback(
+    (event: SSEEvent) => {
+      switch (event.event) {
+        case 'step_started':
+          setProgress((currentProgress) => Math.max(currentProgress, 3));
+          setProgressMessage(event.message || event.step_name);
+          break;
+        case 'progress':
+          setProgress(Math.round(event.progress));
+          setProgressMessage(event.message || event.stage);
+          break;
+        case 'step_completed':
+          setProgress((currentProgress) => Math.max(currentProgress, 95));
+          setProgressMessage(event.message || event.step_name);
+          break;
+        case 'generation_completed':
+          setProgress(100);
+          setProgressMessage(event.message || 'Presentation is ready.');
+          setProgressError(null);
+          setDownloadUrl(event.download_url);
+          setGenerating(false);
+          onGenerationComplete?.(event.download_url);
+          message.success('PPTX ready to download.');
+          break;
+        default:
+          break;
+      }
+    },
+    [onGenerationComplete]
+  );
+
+  const { connect } = useSSE({
+    onMessage: handleStreamMessage,
+    onError: (error) => {
+      setGenerating(false);
+      setProgressError(error.message);
+      setProgressMessage('Generation failed.');
+      onError?.(error.message);
+    },
+  });
+
+  const handleGenerate = () => {
     if (!markdownContent.trim()) {
       const errorMessage = 'No markdown content available for PPTX generation.';
       message.error(errorMessage);
@@ -62,34 +108,19 @@ export const ActionBubble = ({
 
     setGenerating(true);
     setDownloadUrl(null);
+    setProgress(0);
+    setProgressError(null);
+    setProgressMessage(INITIAL_PROGRESS_MESSAGE);
     onGenerationStart?.();
 
-    try {
-      const response = await slidegenApi.generatePPTXFromMarkdown({
+    connect(
+      slidegenApi.getPPTXFromMarkdownStreamRequest({
         markdown_content: markdownContent,
         template,
         export_as: 'pptx',
         theme_preset: selectedThemePreset,
-      });
-
-      if (!response.success || !response.result?.download_url) {
-        const errorMessage = response.error || response.message || 'PPTX generation failed.';
-        message.error(errorMessage);
-        onError?.(errorMessage);
-        return;
-      }
-
-      setDownloadUrl(response.result.download_url);
-      onGenerationComplete?.(response.result.download_url);
-      message.success('PPTX ready to download.');
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'PPTX generation failed. Please try again.';
-      message.error(errorMessage);
-      onError?.(errorMessage);
-    } finally {
-      setGenerating(false);
-    }
+      })
+    );
   };
 
   const handleDownload = () => {
@@ -104,7 +135,7 @@ export const ActionBubble = ({
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-[1.75rem] border border-border/70 bg-surface-50 px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-[1.75rem] border border-border/70 bg-surface-50 px-4 py-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,1fr)]">
         <label className="min-w-0 space-y-1.5">
           <span className="block text-xs font-semibold uppercase tracking-[0.08em] text-text-muted">
@@ -115,6 +146,7 @@ export const ActionBubble = ({
             value={template}
             options={templateOptions}
             loading={templatesLoading}
+            disabled={generating}
             onChange={setTemplate}
             className="w-full"
           />
@@ -131,6 +163,7 @@ export const ActionBubble = ({
             value={selectedThemePreset}
             options={themeOptions}
             loading={themesLoading}
+            disabled={generating}
             onChange={setSelectedThemePreset}
             className="w-full"
           />
@@ -146,11 +179,28 @@ export const ActionBubble = ({
           generating ? <LoadingOutlined /> : downloadUrl ? <DownloadOutlined /> : <FilePptOutlined />
         }
         loading={generating}
+        disabled={generating}
         onClick={downloadUrl ? handleDownload : () => void handleGenerate()}
         className="!h-10 !rounded-xl !px-4 !font-semibold"
       >
         {generating ? 'Generating...' : downloadUrl ? 'Download PPTX' : 'Generate PPTX'}
       </Button>
+
+      {(generating || progress > 0 || progressError) && (
+        <div className="w-full">
+          <div className="mb-1 flex items-center justify-between gap-3 text-xs text-text-muted">
+            <span className="truncate">{progressMessage}</span>
+            <span className="shrink-0 tabular-nums">{progress}%</span>
+          </div>
+          <Progress
+            percent={progress}
+            size="small"
+            showInfo={false}
+            status={progressError ? 'exception' : generating ? 'active' : 'success'}
+          />
+          {progressError && <p className="mt-1 text-xs text-red-500">{progressError}</p>}
+        </div>
+      )}
     </div>
   );
 };

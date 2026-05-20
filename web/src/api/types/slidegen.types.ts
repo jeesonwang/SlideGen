@@ -54,6 +54,7 @@ export interface GenerateMarkdownRequest extends BaseGenerationRequest {
 
 export interface MarkdownStreamRequestConfig {
   url: string;
+  allowReconnect?: boolean;
   options: {
     method: 'POST';
     headers: {
@@ -76,6 +77,7 @@ export const StreamEventType = {
   WORKFLOW_STARTED: 'workflow_started',
   WORKFLOW_COMPLETED: 'workflow_completed',
   WORKFLOW_ERROR: 'workflow_error',
+  GENERATION_COMPLETED: 'generation_completed',
   STEP_STARTED: 'step_started',
   STEP_COMPLETED: 'step_completed',
   STEP_ERROR: 'step_error',
@@ -111,6 +113,14 @@ export interface WorkflowCompletedEvent {
 export interface WorkflowErrorEvent {
   event: 'workflow_error';
   error: string;
+  message: string;
+}
+
+export interface GenerationCompletedEvent {
+  event: 'generation_completed';
+  output_path: string;
+  filename: string;
+  download_url: string;
   message: string;
 }
 
@@ -162,6 +172,7 @@ export type SSEEvent =
   | WorkflowStartedEvent
   | WorkflowCompletedEvent
   | WorkflowErrorEvent
+  | GenerationCompletedEvent
   | StepStartedEvent
   | StepCompletedEvent
   | StepErrorEvent

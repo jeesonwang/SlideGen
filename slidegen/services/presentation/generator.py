@@ -4,6 +4,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from functools import partial
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from agno.models.base import Model
@@ -326,19 +327,31 @@ class PresentationGenerator:
         Returns:
             The output path of the generated presentation
         """
+        started_at = perf_counter()
         template = self.get_template_path(template_name)
-        logger.info(f"Starting presentation generation from markdown with template: {template}")
+        logger.info(
+            "Starting presentation generation from markdown: template={}, export_as={}, markdown_chars={}, output_path={}",
+            template,
+            export_as.value,
+            len(markdown_content),
+            output_path,
+        )
 
         # Parse markdown content
+        parse_started_at = perf_counter()
         markdown_doc = MarkdownDocument(markdown_content)
+        logger.info("Markdown parsed in {:.2f}s", perf_counter() - parse_started_at)
 
         # Load template
         loop = asyncio.get_event_loop()
+        load_started_at = perf_counter()
         template_prs = await loop.run_in_executor(None, Presentation, template)
+        logger.info("Template loaded in {:.2f}s", perf_counter() - load_started_at)
 
         # Resolve auto-theme LLM internally
         auto_theme_llm = None
         if is_auto_theme_preset(theme_preset) and user_id is not None:
+            logger.info("Resolving LLM instance for auto theme")
             auto_theme_llm = await get_llm_instance(
                 GeneratePresentationRequest(
                     content=markdown_content[:6000],
@@ -349,34 +362,46 @@ class PresentationGenerator:
             )
 
         # Apply theme colors if provided
+        theme_started_at = perf_counter()
         theme = await self._resolve_theme(
             theme,
             theme_preset,
             auto_content=markdown_content,
             auto_theme_llm=auto_theme_llm,
         )
+        logger.info("Theme resolved in {:.2f}s", perf_counter() - theme_started_at)
         if theme:
             logger.info(f"Applying theme: {theme.name}")
             self.apply_theme_colors(template_prs, theme)
 
         # Convert to PPT
+        convert_started_at = perf_counter()
         logger.info("Converting Markdown to PowerPoint...")
         presentation = await self.converter.generate(template_prs, markdown_doc)
+        logger.info("Markdown converted to PowerPoint in {:.2f}s", perf_counter() - convert_started_at)
 
         # Save PPTX to temp, then conditionally convert
         pptx_tmp = output_path + ".pptx"
+        save_started_at = perf_counter()
         logger.info(f"Saving temporary presentation to: {pptx_tmp}")
         await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
+        logger.info("Temporary presentation saved in {:.2f}s", perf_counter() - save_started_at)
 
         if export_as == ExportFormat.PDF:
+            pdf_started_at = perf_counter()
             logger.info(f"Converting PPTX to PDF: {output_path}")
             await loop.run_in_executor(None, partial(pdf_exporter.convert, pptx_tmp, output_path))
             Path(pptx_tmp).unlink(missing_ok=True)
+            logger.info("PDF conversion completed in {:.2f}s", perf_counter() - pdf_started_at)
         else:
             logger.info(f"Moving presentation to: {output_path}")
             Path(pptx_tmp).rename(output_path)
 
-        logger.info(f"Successfully generated presentation from markdown: {output_path}")
+        logger.info(
+            "Successfully generated presentation from markdown: {}, total_time={:.2f}s",
+            output_path,
+            perf_counter() - started_at,
+        )
         return output_path
 
     async def generate_from_markdown_stream(
@@ -404,13 +429,22 @@ class PresentationGenerator:
             Stream events containing conversion progress
         """
         try:
+            started_at = perf_counter()
             template = self.get_template_path(template_name)
-            logger.info(f"Starting streaming presentation generation from markdown with template: {template}")
+            logger.info(
+                "Starting streaming presentation generation from markdown: template={}, export_as={}, "
+                "markdown_chars={}, output_path={}",
+                template,
+                export_as.value,
+                len(markdown_content),
+                output_path,
+            )
 
             yield StepStartedEvent(
                 step_name="Presentation Export",
                 message="Converting markdown to presentation format...",
             )
+            logger.info("PPT stream progress 0%: loading template")
 
             yield ProgressEvent(
                 stage="presentation_export",
@@ -420,11 +454,14 @@ class PresentationGenerator:
 
             # Load template
             loop = asyncio.get_event_loop()
+            load_started_at = perf_counter()
             template_prs = await loop.run_in_executor(None, Presentation, template)
+            logger.info("Template loaded in {:.2f}s", perf_counter() - load_started_at)
 
             # Resolve auto-theme LLM internally
             auto_theme_llm = None
             if is_auto_theme_preset(theme_preset) and user_id is not None:
+                logger.info("Resolving LLM instance for auto theme")
                 auto_theme_llm = await get_llm_instance(
                     GeneratePresentationRequest(
                         content=markdown_content[:6000],
@@ -442,6 +479,7 @@ class PresentationGenerator:
                 auto_theme_llm=auto_theme_llm,
             )
             if theme:
+                logger.info("PPT stream progress 10%: applying theme {}", theme.name)
                 yield ProgressEvent(
                     stage="presentation_export",
                     progress=10.0,
@@ -449,6 +487,7 @@ class PresentationGenerator:
                 )
                 self.apply_theme_colors(template_prs, theme)
 
+            logger.info("PPT stream progress 20%: parsing markdown content")
             yield ProgressEvent(
                 stage="presentation_export",
                 progress=20.0,
@@ -456,8 +495,11 @@ class PresentationGenerator:
             )
 
             # Parse markdown
+            parse_started_at = perf_counter()
             markdown_doc = MarkdownDocument(markdown_content)
+            logger.info("Markdown parsed in {:.2f}s", perf_counter() - parse_started_at)
 
+            logger.info("PPT stream progress 40%: converting markdown to slides")
             yield ProgressEvent(
                 stage="presentation_export",
                 progress=40.0,
@@ -465,8 +507,11 @@ class PresentationGenerator:
             )
 
             # Convert to PPT
+            convert_started_at = perf_counter()
             presentation = await self.converter.generate(template_prs, markdown_doc)
+            logger.info("Markdown converted to PowerPoint in {:.2f}s", perf_counter() - convert_started_at)
 
+            logger.info("PPT stream progress 80%: saving presentation file")
             yield ProgressEvent(
                 stage="presentation_export",
                 progress=80.0,
@@ -475,9 +520,12 @@ class PresentationGenerator:
 
             # Save PPTX to temp, then conditionally convert
             pptx_tmp = output_path + ".pptx"
+            save_started_at = perf_counter()
             await loop.run_in_executor(None, partial(presentation.save, pptx_tmp))
+            logger.info("Temporary presentation saved in {:.2f}s", perf_counter() - save_started_at)
 
             if export_as == ExportFormat.PDF:
+                logger.info("PPT stream progress 90%: converting PPTX to PDF")
                 yield ProgressEvent(
                     stage="presentation_export",
                     progress=90.0,
@@ -488,6 +536,7 @@ class PresentationGenerator:
             else:
                 Path(pptx_tmp).rename(output_path)
 
+            logger.info("PPT stream progress 100%: presentation saved successfully")
             yield ProgressEvent(
                 stage="presentation_export",
                 progress=100.0,
@@ -500,7 +549,11 @@ class PresentationGenerator:
                 message="Presentation file generated successfully",
             )
 
-            logger.info(f"Successfully generated presentation from markdown: {output_path}")
+            logger.info(
+                "Successfully generated presentation from markdown: {}, total_time={:.2f}s",
+                output_path,
+                perf_counter() - started_at,
+            )
 
         except Exception as e:
             logger.exception(f"Failed to generate presentation from markdown: {e}")

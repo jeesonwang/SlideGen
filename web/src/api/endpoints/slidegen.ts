@@ -56,6 +56,7 @@ export const slidegenApi = {
 
     return {
       url: url.toString(),
+      allowReconnect: false,
       options: {
         method: 'POST',
         headers: {
@@ -81,6 +82,35 @@ export const slidegenApi = {
       }
     );
     return response.data;
+  },
+
+  /**
+   * Generate PPTX from markdown content with SSE progress updates.
+   */
+  getPPTXFromMarkdownStreamRequest: (data: MarkdownToPPTRequest): MarkdownStreamRequestConfig => {
+    const url = new URL(
+      buildApiUrl(
+        API_ENDPOINTS.SLIDEGEN.GENERATE_PPTX_FROM_MARKDOWN_STREAM,
+        import.meta.env.VITE_API_BASE_URL,
+        import.meta.env.DEV
+      ),
+      window.location.origin
+    );
+
+    const token = useAuthStore.getState().token;
+
+    return {
+      url: url.toString(),
+      allowReconnect: false,
+      options: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(data),
+      },
+    };
   },
 
   /**

@@ -84,6 +84,11 @@ export const useSSE = (options: UseSSEOptions = {}): UseSSEReturn => {
           return;
         }
 
+        if (eventType === 'generation_completed') {
+          disconnect();
+          return;
+        }
+
         if (eventType === 'workflow_error') {
           disconnect();
           const err = new Error(data.error || 'Generation failed');
@@ -149,6 +154,11 @@ export const useSSE = (options: UseSSEOptions = {}): UseSSEReturn => {
               boundaryIndex = buffer.indexOf('\n\n');
             }
           }
+
+          if (buffer.trim()) {
+            parseSSEChunk(buffer.trim());
+          }
+          setIsConnected(false);
         } catch (err) {
           if (controller.signal.aborted) {
             return;
@@ -159,7 +169,10 @@ export const useSSE = (options: UseSSEOptions = {}): UseSSEReturn => {
           setError(streamError);
           setIsConnected(false);
 
-          if (reconnectAttemptsRef.current < maxReconnectAttempts && activeRequestRef.current) {
+          const allowReconnect =
+            typeof activeRequestRef.current === 'string' ||
+            activeRequestRef.current?.allowReconnect !== false;
+          if (allowReconnect && reconnectAttemptsRef.current < maxReconnectAttempts && activeRequestRef.current) {
             reconnectAttemptsRef.current++;
             message.warning(
               `Connection lost. Retrying... (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`
