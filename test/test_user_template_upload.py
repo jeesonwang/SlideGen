@@ -1,4 +1,13 @@
 import uuid
+from io import BytesIO
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+from fastapi import UploadFile
+from pptx import Presentation
+from pptx.util import Inches
 
 from slidegen.models.presentation_template import PresentationTemplateModel
 from slidegen.schemas.template import (
@@ -7,6 +16,13 @@ from slidegen.schemas.template import (
     TemplateRoleAssignmentResponse,
     TemplateSource,
     UserTemplateUploadResponse,
+)
+from slidegen.services.presentation.user_templates import (
+    USER_TEMPLATE_KEY_PREFIX,
+    UploadedTemplateService,
+    UserTemplateStorage,
+    parse_user_template_key,
+    template_key_for_id,
 )
 
 
@@ -78,3 +94,89 @@ def test_user_template_upload_response_contains_template_key() -> None:
     )
 
     assert response.template_key == f"user_{template_id.hex}"
+
+
+def _pptx_upload_bytes() -> bytes:
+    prs = Presentation()
+    for lines in (
+        ["Quarterly Business Review", "2026 Strategy Update"],
+        ["Agenda", "1. Market", "2. Product", "3. Finance"],
+        ["Chapter 1", "Market"],
+        ["Market", "Revenue grew 18 percent.", "Enterprise demand increased.", "Retention is stable."],
+        ["Thank You", "Questions"],
+    ):
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        textbox = slide.shapes.add_textbox(Inches(0.8), Inches(0.8), Inches(8.0), Inches(4.5))
+        frame = textbox.text_frame
+        frame.text = lines[0]
+        for line in lines[1:]:
+            paragraph = frame.add_paragraph()
+            paragraph.text = line
+
+    stream = BytesIO()
+    prs.save(stream)
+    return stream.getvalue()
+
+
+def _upload_file(filename: str, content: bytes) -> UploadFile:
+    return UploadFile(
+        filename=filename,
+        file=BytesIO(content),
+        headers={"content-type": "application/vnd.openxmlformats-officedocument.presentationml.presentation"},
+    )
+
+
+class _FakeDbSession:
+    def __init__(self) -> None:
+        self.added = None
+        self.add = Mock(side_effect=self._add)
+        self.commit = AsyncMock()
+        self.refresh = AsyncMock()
+
+    def _add(self, obj) -> None:
+        self.added = obj
+
+
+def test_template_key_round_trips_uuid() -> None:
+    template_id = uuid.uuid4()
+
+    key = template_key_for_id(template_id)
+
+    assert key == f"{USER_TEMPLATE_KEY_PREFIX}{template_id.hex}"
+    assert parse_user_template_key(key) == template_id
+    assert parse_user_template_key("general") is None
+
+
+def test_storage_rejects_non_pptx_extension(tmp_path: Path) -> None:
+    storage = UserTemplateStorage(tmp_path, max_file_size=10_000_000)
+
+    with pytest.raises(ValueError, match="Only .pptx template files are supported"):
+        storage.validate_upload("template.pdf", b"fake")
+
+
+@pytest.mark.anyio
+async def test_upload_service_saves_pptx_profiles_and_persists_model(tmp_path: Path) -> None:
+    user_id = uuid.uuid4()
+    db_session = _FakeDbSession()
+    service = UploadedTemplateService(
+        storage=UserTemplateStorage(tmp_path, max_file_size=10_000_000),
+    )
+    upload = _upload_file("board template.pptx", _pptx_upload_bytes())
+
+    response = await service.upload_template(
+        db_session=db_session,
+        user_id=user_id,
+        upload_file=upload,
+        display_name="Board Template",
+    )
+
+    assert response.template_key.startswith(USER_TEMPLATE_KEY_PREFIX)
+    assert response.name == "Board Template"
+    assert response.profile.status == "ready"
+    assert db_session.added is not None
+    assert db_session.added.user_id == user_id
+    assert db_session.added.template_key == response.template_key
+    assert Path(db_session.added.file_path).exists()
+    db_session.add.assert_called_once()
+    db_session.commit.assert_awaited_once()
+    db_session.refresh.assert_awaited_once()
