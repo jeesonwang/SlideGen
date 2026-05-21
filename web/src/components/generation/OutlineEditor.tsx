@@ -211,7 +211,6 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
     position: 'before' | 'after';
   } | null>(null);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
-  const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const previousOutlineRef = useRef<OutlineDocument | null>(null);
   const localIdCounterRef = useRef(0);
@@ -251,27 +250,22 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
       : sectionEntries[0]?.section.id ?? null;
   const currentMarkdown = serializeOutlineToMarkdown(outline);
   const canRefresh = !!onRefresh && !refreshDisabled;
-  const isFullscreen = isBrowserFullscreen || isPseudoFullscreen;
+  const isFullscreen = isPseudoFullscreen;
 
   useEffect(() => {
     previousOutlineRef.current = outline;
   }, [outline]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      if (typeof document === 'undefined') {
-        return;
-      }
-
-      setIsBrowserFullscreen(document.fullscreenElement === rootRef.current);
-      if (document.fullscreenElement !== rootRef.current) {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isPseudoFullscreen) {
         setIsPseudoFullscreen(false);
       }
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
+    document.addEventListener('keydown', handleEscKey);
+    return () => document.removeEventListener('keydown', handleEscKey);
+  }, [isPseudoFullscreen]);
 
   const syncMarkdown = (nextOutline: OutlineDocument) => {
     previousOutlineRef.current = nextOutline;
@@ -337,24 +331,9 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
     window.URL.revokeObjectURL(url);
   };
 
-  const handleFullscreenToggle = async () => {
-    if (!allowFullscreen || !rootRef.current) {
+  const handleFullscreenToggle = () => {
+    if (!allowFullscreen) {
       return;
-    }
-
-    if (typeof document !== 'undefined' && document.fullscreenElement === rootRef.current) {
-      await document.exitFullscreen?.();
-      return;
-    }
-
-    if (rootRef.current.requestFullscreen) {
-      try {
-        await rootRef.current.requestFullscreen();
-        return;
-      } catch {
-        setIsPseudoFullscreen((current) => !current);
-        return;
-      }
     }
 
     setIsPseudoFullscreen((current) => !current);
@@ -782,7 +761,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
           {toolbarActions}
           <Tooltip title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}>
             <ActionIconButton
-              onClick={() => void handleFullscreenToggle()}
+              onClick={handleFullscreenToggle}
               className="!w-auto gap-2 whitespace-nowrap px-3"
               disabled={!allowFullscreen}
               aria-label="Full Screen"
