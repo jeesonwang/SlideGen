@@ -6,6 +6,14 @@ from pptx.util import Inches
 
 from slidegen.exceptions import PPTTemplateError
 from slidegen.services.document import MarkdownDocument
+from slidegen.services.document.markdown.elements import Heading
+from slidegen.services.presentation.native_pages import (
+    NativeCatalogPage,
+    NativeChapterContentPage,
+    NativeChapterHomePage,
+    NativeCoverPage,
+    NativeEndPage,
+)
 from slidegen.services.presentation.template_profile import (
     TemplateRole,
     _has_keyword_match,
@@ -109,3 +117,31 @@ def test_profile_uses_global_assignment_when_cover_and_catalog_compete():
     assert profile.role_index(TemplateRole.CATALOG) == 0
     assert profile.role_index(TemplateRole.COVER) == 1
     assert profile.status == "ready"
+
+
+@pytest.mark.anyio
+async def test_native_pages_generate_without_placeholders():
+    presentation = Presentation()
+    presentation.slides.add_slide(presentation.slide_layouts[6])
+    title = Heading(level=1, text="Board Update")
+    chapter = Heading(level=2, text="Revenue")
+    content = Heading(level=2, text="Revenue")
+    content.append(Heading(level=3, text="Growth"))
+
+    await NativeCoverPage.generate_slide(presentation, title, slide_index=0)
+    await NativeCatalogPage.generate_slide(presentation, [chapter], slide_index=1)
+    await NativeChapterHomePage.generate_slide(presentation, chapter, chapter_number=1, slide_index=2)
+    await NativeChapterContentPage.generate_slide(presentation, content, slide_index=3)
+    await NativeEndPage.generate_slide(presentation, slide_index=4)
+
+    slide_texts = [
+        shape.text.strip()
+        for slide in presentation.slides
+        for shape in slide.shapes
+        if shape.has_text_frame and shape.text.strip()
+    ]
+    assert "Board Update" in slide_texts
+    assert "01. Revenue" in slide_texts
+    assert "PART 01" in slide_texts
+    assert "Growth" in slide_texts
+    assert "Thank you!" in slide_texts
