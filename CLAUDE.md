@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-SlideGen is a slide generation service that produces PPTX/PDF from Markdown. The backend is a FastAPI application; the frontend is a React SPA.
+SlideGen is an **AI agent-driven** slide generation service. It uses agents to plan, design, and compose presentations, producing PPTX/PDF from input. The backend is a FastAPI application; the frontend is a React SPA.
 
 ## Layered Architecture
 
