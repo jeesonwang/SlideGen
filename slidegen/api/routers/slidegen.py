@@ -745,7 +745,9 @@ async def download_presentation(filename: str) -> FileResponse:
     response_model=TemplateProfileResponse,
     description="get template role profile",
 )
-async def get_template_profile(template_id: str, current_user: CurrentUser, db_session: SessionDep) -> TemplateProfileResponse:
+async def get_template_profile(
+    template_id: str, current_user: CurrentUser, db_session: SessionDep
+) -> TemplateProfileResponse:
     try:
         if parse_user_template_key(template_id) is not None:
             model = await uploaded_template_service.get_template(db_session, current_user.id, template_id)

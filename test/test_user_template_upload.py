@@ -5,10 +5,14 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from fastapi import UploadFile
+from fastapi import FastAPI, UploadFile
+from fastapi.testclient import TestClient
 from pptx import Presentation
 from pptx.util import Inches
 
+from slidegen.api.deps import get_current_user
+from slidegen.api.routers.slidegen import router as slidegen_router
+from slidegen.core.database import get_db_session
 from slidegen.models.presentation_template import PresentationTemplateModel
 from slidegen.schemas.template import (
     Template,
@@ -17,12 +21,6 @@ from slidegen.schemas.template import (
     TemplateSource,
     UserTemplateUploadResponse,
 )
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-from slidegen.api.deps import get_current_user
-from slidegen.api.routers.slidegen import router as slidegen_router
-from slidegen.core.database import get_db_session
 from slidegen.services.presentation.generator import PresentationGenerator
 from slidegen.services.presentation.user_templates import (
     USER_TEMPLATE_KEY_PREFIX,
@@ -199,7 +197,7 @@ def test_upload_template_endpoint_returns_profile(monkeypatch: pytest.MonkeyPatc
     async def override_get_db_session() -> SimpleNamespace:
         return SimpleNamespace()
 
-    async def fake_upload_template(db_session, user_id, upload_file, display_name):
+    async def fake_upload_template(db_session=None, user_id=None, upload_file=None, display_name=None):  # noqa: ARG001
         return UserTemplateUploadResponse(
             id=uploaded_id,
             template_key=f"user_{uploaded_id.hex}",
@@ -261,7 +259,7 @@ def test_templates_endpoint_merges_builtin_and_uploaded(monkeypatch: pytest.Monk
     async def override_get_db_session() -> SimpleNamespace:
         return SimpleNamespace()
 
-    async def fake_list_templates(db_session, user_id):
+    async def fake_list_templates(db_session=None, user_id=None):  # noqa: ARG001
         return [
             Template(
                 id=f"user_{uploaded_id.hex}",

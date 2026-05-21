@@ -46,9 +46,7 @@ def _profile_response(profile: TemplateProfile) -> TemplateProfileResponse:
     return TemplateProfileResponse(
         slide_count=profile.slide_count,
         status=profile.status,
-        assignments=[
-            TemplateRoleAssignmentResponse(**assignment.to_dict()) for assignment in profile.assignments
-        ],
+        assignments=[TemplateRoleAssignmentResponse(**assignment.to_dict()) for assignment in profile.assignments],
         warnings=profile.warnings,
         missing_roles=profile.missing_roles,
     )
@@ -85,7 +83,9 @@ class UserTemplateStorage:
     def template_path(self, user_id: uuid.UUID, template_id: uuid.UUID) -> Path:
         return self.template_dir(user_id, template_id) / "template.pptx"
 
-    def save(self, user_id: uuid.UUID, template_id: uuid.UUID, filename: str, content: bytes) -> tuple[Path, Presentation]:
+    def save(
+        self, user_id: uuid.UUID, template_id: uuid.UUID, filename: str, content: bytes
+    ) -> tuple[Path, Presentation]:
         self.validate_upload(filename, content)
         try:
             presentation = Presentation(BytesIO(content))
@@ -170,7 +170,9 @@ class UploadedTemplateService:
         models = result.scalars().all()
         return [self.to_template_response(model) for model in models]
 
-    async def get_template(self, db_session: AsyncSession, user_id: uuid.UUID, template_key: str) -> PresentationTemplateModel | None:
+    async def get_template(
+        self, db_session: AsyncSession, user_id: uuid.UUID, template_key: str
+    ) -> PresentationTemplateModel | None:
         template_id = parse_user_template_key(template_key)
         if template_id is None:
             return None
@@ -183,7 +185,9 @@ class UploadedTemplateService:
         result = await db_session.execute(statement)
         return result.scalar_one_or_none()
 
-    async def delete_template(self, db_session: AsyncSession, user_id: uuid.UUID, template_key: str) -> UserTemplateDeleteResponse:
+    async def delete_template(
+        self, db_session: AsyncSession, user_id: uuid.UUID, template_key: str
+    ) -> UserTemplateDeleteResponse:
         model = await self.get_template(db_session, user_id, template_key)
         if model is None:
             raise FileNotFoundError("Uploaded template not found")
