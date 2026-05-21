@@ -7,9 +7,9 @@ class BaseFactory:
     """Shared helpers for provider-backed factories."""
 
     @staticmethod
-    async def _request_json(url: str, headers: dict[str, str]) -> dict[str, Any]:
+    async def _request_json(url: str, headers: dict[str, str], timeout: int = 20.0) -> dict[str, Any]:
         try:
-            async with httpx.AsyncClient(timeout=20.0) as client:
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.get(url, headers=headers)
                 response.raise_for_status()
                 return cast(dict[str, Any], response.json())
