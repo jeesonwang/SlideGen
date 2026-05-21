@@ -22,6 +22,7 @@ from slidegen.services.presentation.template_profile import (
 )
 from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
 from slidegen.services.presentation.converter import MarkdownToPresentation
+from slidegen.services.presentation.semantic import BlockKind, SlideKind, build_content_slide_spec
 
 
 def _template_path() -> str:
@@ -227,3 +228,24 @@ async def test_converter_preserves_curated_template_generation_path():
     result = await converter.generate(presentation, markdown_document)
 
     assert len(result.slides) >= 5
+
+
+def test_build_content_slide_spec_maps_heading_children_to_point_blocks():
+    document = _markdown_document(
+        "# Deck\n"
+        "## Chapter A\n"
+        "### Point 1\n"
+        "Body 1\n"
+        "### Point 2\n"
+        "Body 2\n"
+    )
+    assert document.main is not None
+    group = next(iter_chapter_slide_groups(document.main))
+
+    spec = build_content_slide_spec(group.slides[0])
+
+    assert spec.kind is SlideKind.CONTENT_POINTS
+    assert spec.title == "Chapter A"
+    assert [block.kind for block in spec.blocks] == [BlockKind.POINT, BlockKind.POINT]
+    assert [block.title for block in spec.blocks] == ["Point 1", "Point 2"]
+    assert [block.text for block in spec.blocks] == ["Body 1", "Body 2"]
