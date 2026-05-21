@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 from slidegen.api.deps import get_current_user
 from slidegen.api.routers.slidegen import router as slidegen_router
 from slidegen.core.database import get_db_session
+from slidegen.services.presentation.generator import PresentationGenerator
 from slidegen.services.presentation.user_templates import (
     USER_TEMPLATE_KEY_PREFIX,
     UploadedTemplateService,
@@ -294,3 +295,29 @@ def test_templates_endpoint_merges_builtin_and_uploaded(monkeypatch: pytest.Monk
     assert body[0]["source"] == "builtin"
     assert body[1]["id"] == f"user_{uploaded_id.hex}"
     assert body[1]["source"] == "user"
+
+
+def test_generator_resolves_uploaded_template_path(tmp_path: Path) -> None:
+    user_id = uuid.uuid4()
+    template_id = uuid.uuid4()
+    storage = UserTemplateStorage(tmp_path, max_file_size=10_000_000)
+    template_dir = storage.template_dir(user_id, template_id)
+    template_dir.mkdir(parents=True)
+    template_path = storage.template_path(user_id, template_id)
+    template_path.write_bytes(_pptx_upload_bytes())
+
+    generator = PresentationGenerator(templates_dir=str(tmp_path / "builtins"))
+    generator.user_template_storage = storage
+
+    resolved = generator.get_template_path(template_key_for_id(template_id), user_id=user_id)
+
+    assert resolved == str(template_path)
+
+
+def test_generator_rejects_uploaded_template_without_user_id(tmp_path: Path) -> None:
+    template_id = uuid.uuid4()
+    generator = PresentationGenerator(templates_dir=str(tmp_path / "builtins"))
+    generator.user_template_storage = UserTemplateStorage(tmp_path, max_file_size=10_000_000)
+
+    with pytest.raises(FileNotFoundError, match="requires user_id"):
+        generator.get_template_path(template_key_for_id(template_id), user_id=None)

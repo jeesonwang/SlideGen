@@ -28,6 +28,10 @@ from slidegen.schemas.theme import PresentationTheme, ThemePresets
 from slidegen.services.document.markdown import MarkdownDocument
 from slidegen.services.presentation.converter import MarkdownToPresentation
 from slidegen.services.presentation.pdf_exporter import pdf_exporter
+from slidegen.services.presentation.user_templates import (
+    UserTemplateStorage,
+    parse_user_template_key,
+)
 from slidegen.services.slidegen.workflow import get_llm_instance, run_slidegen_workflow, run_slidegen_workflow_stream
 
 AUTO_THEME_PRESETS = {"auto", "auto_theme", "__auto_theme__"}
@@ -48,10 +52,20 @@ class PresentationGenerator:
             templates_dir = str(project_root / "components" / "templates")
 
         self.templates_dir = Path(templates_dir)
+        self.user_template_storage = UserTemplateStorage()
         self.converter = MarkdownToPresentation()
 
-    def get_template_path(self, template_name: str) -> str:
-        """Get the full path for a template by name."""
+    def get_template_path(self, template_name: str, user_id: uuid.UUID | None = None) -> str:
+        """Get the full path for a built-in or uploaded template."""
+        uploaded_template_id = parse_user_template_key(template_name)
+        if uploaded_template_id is not None:
+            if user_id is None:
+                raise FileNotFoundError("Uploaded template resolution requires user_id")
+            template_file = self.user_template_storage.template_path(user_id, uploaded_template_id)
+            if not template_file.exists():
+                raise FileNotFoundError(f"Uploaded template '{template_name}' not found at: {template_file}")
+            return str(template_file)
+
         template_file = self.templates_dir / f"template_{template_name}.pptx"
         if not template_file.exists():
             raise FileNotFoundError(f"Template '{template_name}' not found at: {template_file}")
@@ -262,7 +276,7 @@ class PresentationGenerator:
         output_path: str,
     ) -> str:
         """Generate a PowerPoint presentation from a request."""
-        template = self.get_template_path(request.template)
+        template = self.get_template_path(request.template, user_id=request.user_id)
         logger.info(f"Starting presentation generation with template: {template}")
 
         logger.info("Running slide generation workflow...")
@@ -328,7 +342,7 @@ class PresentationGenerator:
             The output path of the generated presentation
         """
         started_at = perf_counter()
-        template = self.get_template_path(template_name)
+        template = self.get_template_path(template_name, user_id=user_id)
         logger.info(
             "Starting presentation generation from markdown: template={}, export_as={}, markdown_chars={}, output_path={}",
             template,
@@ -430,7 +444,7 @@ class PresentationGenerator:
         """
         try:
             started_at = perf_counter()
-            template = self.get_template_path(template_name)
+            template = self.get_template_path(template_name, user_id=user_id)
             logger.info(
                 "Starting streaming presentation generation from markdown: template={}, export_as={}, "
                 "markdown_chars={}, output_path={}",
@@ -569,7 +583,7 @@ class PresentationGenerator:
     ) -> AsyncGenerator[StreamEventT, None]:
         """Generate a PowerPoint presentation with streaming progress events."""
         try:
-            template = self.get_template_path(request.template)
+            template = self.get_template_path(request.template, user_id=request.user_id)
             logger.info(f"Starting streaming presentation generation with template: {template}")
 
             final_content: str | None = None
