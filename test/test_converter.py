@@ -21,6 +21,7 @@ from slidegen.services.presentation.template_profile import (
     profile_presentation_template,
 )
 from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
+from slidegen.services.presentation.converter import MarkdownToPresentation
 
 
 def _template_path() -> str:
@@ -186,3 +187,43 @@ def test_render_plan_preserves_legacy_template_indexes_for_curated_template():
     assert plan.chapter_content_template_index == 3
     assert plan.end_template_index == 4
     assert plan.cleanup_template_indexes == [4, 3, 2]
+
+
+def test_markdown_to_presentation_is_stateless():
+    converter = MarkdownToPresentation()
+
+    assert not hasattr(converter, "slide_index")
+    assert not hasattr(converter, "chapter_index")
+
+
+@pytest.mark.anyio
+async def test_converter_generates_from_one_slide_template_with_native_fallbacks():
+    converter = MarkdownToPresentation()
+    presentation = Presentation()
+    presentation.slides.add_slide(presentation.slide_layouts[0])
+    markdown_document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
+
+    result = await converter.generate(presentation, markdown_document)
+
+    slide_texts = [
+        shape.text.strip()
+        for slide in result.slides
+        for shape in slide.shapes
+        if shape.has_text_frame and shape.text.strip()
+    ]
+    assert "Deck" in slide_texts
+    assert "Agenda" in slide_texts
+    assert "PART 01" in slide_texts
+    assert "Point" in slide_texts
+    assert "Thank you!" in slide_texts
+
+
+@pytest.mark.anyio
+async def test_converter_preserves_curated_template_generation_path():
+    converter = MarkdownToPresentation()
+    presentation = Presentation(_template_path())
+    markdown_document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
+
+    result = await converter.generate(presentation, markdown_document)
+
+    assert len(result.slides) >= 5
