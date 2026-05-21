@@ -23,6 +23,7 @@ from slidegen.services.presentation.template_profile import (
     profile_presentation_template,
 )
 from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
+from test.helpers import add_catalog_slide
 
 
 def _template_path() -> str:
@@ -66,6 +67,30 @@ def test_profile_curated_template_detects_legacy_roles():
     assert profile.warnings == []
 
 
+def test_profile_does_not_mark_textbox_only_template_ready_for_legacy_renderer():
+    presentation = Presentation()
+    for lines in (
+        ["Quarterly Business Review", "2026 Strategy Update"],
+        ["Agenda", "1. Market", "2. Product", "3. Finance"],
+        ["Chapter 1", "Market Landscape"],
+        [
+            "Market analysis",
+            "Revenue grew 18 percent year over year.",
+            "Enterprise demand remains strongest in regulated industries.",
+            "Retention stays above target.",
+        ],
+        ["Thank You", "Questions"],
+    ):
+        _add_text_slide(presentation, lines)
+
+    profile = profile_presentation_template(presentation)
+
+    assert profile.status == "review_required"
+    assert profile.role_index(TemplateRole.COVER) is None
+    assert TemplateRole.COVER.value in profile.missing_roles
+    assert "cover role not detected" in " ".join(profile.warnings)
+
+
 def test_profile_one_slide_template_warns_missing_roles_without_rejecting():
     presentation = Presentation()
     presentation.slides.add_slide(presentation.slide_layouts[0])
@@ -102,9 +127,9 @@ def test_keyword_matching_avoids_english_substring_false_positives():
 
 def test_profile_uses_global_assignment_when_cover_and_catalog_compete():
     presentation = Presentation()
-    _add_text_slide(presentation, ["Agenda", "1. Market", "2. Product", "3. Finance"])
+    add_catalog_slide(presentation)
     _add_text_slide(presentation, ["Title", "Annual Business Review"], layout_index=0)
-    _add_text_slide(presentation, ["Chapter 1", "Market Landscape"])
+    _add_text_slide(presentation, ["Chapter 1", "Market Landscape"], layout_index=1)
     _add_text_slide(
         presentation,
         [
@@ -113,8 +138,9 @@ def test_profile_uses_global_assignment_when_cover_and_catalog_compete():
             "Enterprise demand remains strongest in regulated industries.",
             "Retention stays above target.",
         ],
+        layout_index=1,
     )
-    _add_text_slide(presentation, ["Thank You", "Questions"])
+    _add_text_slide(presentation, ["Thank You", "Questions"], layout_index=1)
 
     profile = profile_presentation_template(presentation)
 
@@ -217,6 +243,76 @@ async def test_converter_generates_from_one_slide_template_with_native_fallbacks
     assert "PART 01" in slide_texts
     assert "Point" in slide_texts
     assert "Thank you!" in slide_texts
+
+
+@pytest.mark.anyio
+async def test_converter_uses_native_fallback_for_textbox_only_uploaded_template():
+    converter = MarkdownToPresentation()
+    presentation = Presentation()
+    for lines in (
+        ["Quarterly Business Review", "2026 Strategy Update"],
+        ["Agenda", "1. Market", "2. Product", "3. Finance"],
+        ["Chapter 1", "Market Landscape"],
+        [
+            "Market analysis",
+            "Revenue grew 18 percent year over year.",
+            "Enterprise demand remains strongest in regulated industries.",
+            "Retention stays above target.",
+        ],
+        ["Thank You", "Questions"],
+    ):
+        _add_text_slide(presentation, lines)
+    markdown_document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
+
+    result = await converter.generate(presentation, markdown_document)
+
+    slide_texts = [
+        shape.text.strip()
+        for slide in result.slides
+        for shape in slide.shapes
+        if shape.has_text_frame and shape.text.strip()
+    ]
+    assert "Deck" in slide_texts
+    assert "Agenda" in slide_texts
+    assert "PART 01" in slide_texts
+    assert "Point" in slide_texts
+    assert "Thank you!" in slide_texts
+    assert "Quarterly Business Review" not in slide_texts
+
+
+@pytest.mark.anyio
+async def test_converter_keeps_template_role_indexes_stable_after_native_insertions():
+    converter = MarkdownToPresentation()
+    presentation = Presentation()
+    _add_text_slide(presentation, ["Decorative cover", "No placeholder contract"])
+    _add_text_slide(presentation, ["Intro page", "No catalog number shapes"])
+    _add_text_slide(presentation, ["Chapter 1", "Market Landscape"], layout_index=1)
+    _add_text_slide(
+        presentation,
+        [
+            "Market analysis",
+            "Revenue grew 18 percent year over year.",
+            "Enterprise demand remains strongest in regulated industries.",
+            "Retention stays above target.",
+        ],
+        layout_index=1,
+    )
+    _add_text_slide(presentation, ["Thank You", "Questions"], layout_index=1)
+    markdown_document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
+
+    result = await converter.generate(presentation, markdown_document)
+
+    slide_texts = [
+        shape.text.strip()
+        for slide in result.slides
+        for shape in slide.shapes
+        if shape.has_text_frame and shape.text.strip()
+    ]
+    assert "Deck" in slide_texts
+    assert "Agenda" in slide_texts
+    assert "Chapter A" in slide_texts
+    assert "Thank you!" in slide_texts
+    assert "Decorative cover" not in slide_texts
 
 
 @pytest.mark.anyio

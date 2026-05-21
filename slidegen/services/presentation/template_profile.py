@@ -5,10 +5,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.presentation import Presentation
 from pptx.slide import Slide
 
 from slidegen.exceptions import PPTTemplateError
+from slidegen.services.presentation.pages import CatalogPage
 
 READY_THRESHOLD = 0.45
 MAX_CANDIDATES_PER_ROLE = 8
@@ -46,9 +48,9 @@ class TemplateProfile:
     status: str
     missing_roles: list[str]
 
-    def role_index(self, role: TemplateRole) -> int | None:
+    def role_index(self, role: TemplateRole, min_confidence: float = 0.0) -> int | None:
         for assignment in self.assignments:
-            if assignment.role is role:
+            if assignment.role is role and assignment.confidence >= min_confidence:
                 return assignment.slide_index
         return None
 
@@ -76,9 +78,11 @@ class SlideFeatures:
     text_shape_count: int
     placeholder_count: int
     title_placeholder_count: int
+    plain_title_placeholder_count: int
     subtitle_placeholder_count: int
     body_placeholder_count: int
     has_numbered_lines: bool
+    text_shape_texts: tuple[str, ...]
 
     @property
     def normalized_text(self) -> str:
@@ -161,21 +165,26 @@ def profile_presentation_template(presentation: Presentation) -> TemplateProfile
 
 def _extract_slide_features(index: int, slide: Slide) -> SlideFeatures:
     texts: list[str] = []
+    text_shape_texts: list[str] = []
     text_shape_count = 0
     placeholder_count = 0
     title_placeholder_count = 0
+    plain_title_placeholder_count = 0
     subtitle_placeholder_count = 0
     body_placeholder_count = 0
 
     for shape in slide.shapes:
         if getattr(shape, "is_placeholder", False):
             placeholder_count += 1
-            placeholder_type = str(shape.placeholder_format.type).casefold()
-            if "subtitle" in placeholder_type:
+            placeholder_type = shape.placeholder_format.type
+            placeholder_type_text = str(placeholder_type).casefold()
+            if placeholder_type == PP_PLACEHOLDER.SUBTITLE:
                 subtitle_placeholder_count += 1
-            elif "title" in placeholder_type:
+            elif placeholder_type in {PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE}:
                 title_placeholder_count += 1
-            elif any(name in placeholder_type for name in ("body", "object", "content")):
+                if placeholder_type == PP_PLACEHOLDER.TITLE:
+                    plain_title_placeholder_count += 1
+            elif any(name in placeholder_type_text for name in ("body", "object", "content")):
                 body_placeholder_count += 1
         if not getattr(shape, "has_text_frame", False):
             continue
@@ -184,6 +193,7 @@ def _extract_slide_features(index: int, slide: Slide) -> SlideFeatures:
             continue
         text_shape_count += 1
         texts.append(text)
+        text_shape_texts.append(text)
 
     lines = [line.strip() for text in texts for line in text.splitlines() if line.strip()]
     has_numbered_lines = any(re.match(r"^(\d+[.)]|[一二三四五六七八九十]+[、.])", line) for line in lines)
@@ -195,9 +205,11 @@ def _extract_slide_features(index: int, slide: Slide) -> SlideFeatures:
         text_shape_count=text_shape_count,
         placeholder_count=placeholder_count,
         title_placeholder_count=title_placeholder_count,
+        plain_title_placeholder_count=plain_title_placeholder_count,
         subtitle_placeholder_count=subtitle_placeholder_count,
         body_placeholder_count=body_placeholder_count,
         has_numbered_lines=has_numbered_lines,
+        text_shape_texts=tuple(text_shape_texts),
     )
 
 
@@ -208,7 +220,15 @@ def _assign_roles(features: list[SlideFeatures], slide_count: int) -> list[Templ
     scores: dict[tuple[TemplateRole, int], TemplateRoleAssignment] = {}
     for role in roles:
         for f in features:
-            scores[(role, f.index)] = _score_slide_for_role(f, role, slide_count)
+            if _supports_legacy_renderer(f, role):
+                scores[(role, f.index)] = _score_slide_for_role(f, role, slide_count)
+            else:
+                scores[(role, f.index)] = TemplateRoleAssignment(
+                    role=role,
+                    slide_index=f.index,
+                    confidence=0.0,
+                    reason="missing legacy renderer structure",
+                )
 
     candidates_by_role: dict[TemplateRole, list[TemplateRoleAssignment]] = {
         role: sorted(
@@ -248,6 +268,26 @@ def _assign_roles(features: list[SlideFeatures], slide_count: int) -> list[Templ
 
     search(0, set(), [], 0.0)
     return sorted(best_selected, key=lambda a: a.slide_index)
+
+
+def _is_catalog_number_text(text: str) -> bool:
+    normalized = text.strip().upper()
+    if not normalized or len(normalized) > 5:
+        return False
+    if normalized.endswith("."):
+        normalized = normalized[:-1]
+    return normalized.isdigit() or normalized in CatalogPage._ROMAN_NUMERALS
+
+
+def _supports_legacy_renderer(feature: SlideFeatures, role: TemplateRole) -> bool:
+    if role is TemplateRole.COVER:
+        return feature.title_placeholder_count > 0
+    if role in {TemplateRole.CHAPTER, TemplateRole.CONTENT, TemplateRole.END}:
+        return feature.plain_title_placeholder_count > 0
+    if role is TemplateRole.CATALOG:
+        number_shape_count = sum(1 for text in feature.text_shape_texts if _is_catalog_number_text(text))
+        return number_shape_count > 0 and feature.text_shape_count > number_shape_count
+    return False
 
 
 def _score_slide_for_role(

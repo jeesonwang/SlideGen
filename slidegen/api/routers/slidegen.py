@@ -83,7 +83,7 @@ class SlideGenResult(BaseModel):
 
 
 @router.post("/generate", response_model=SlideGenResult)
-async def generate_slides(task: SlideGenTask, current_user: CurrentUser) -> Any:
+async def generate_slides(task: SlideGenTask, current_user: CurrentUser, db_session: SessionDep) -> Any:
     """Slide generation"""
     try:
         # Generate unique output file name
@@ -117,6 +117,7 @@ async def generate_slides(task: SlideGenTask, current_user: CurrentUser) -> Any:
         result_path = await presentation_generator.generate_presentation(
             request=request,
             output_path=output_path,
+            db_session=db_session,
         )
 
         logger.info(f"Presentation generated successfully: {result_path}")
@@ -335,7 +336,11 @@ async def generate_markdown_stream(request: GenerateMarkdownRequest, current_use
     description="Stream full presentation generation with SSE",
     dependencies=[Depends(sse_rate_limiter)],
 )
-async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentUser) -> StreamingResponse:
+async def generate_slides_stream_full(
+    task: SlideGenTask,
+    current_user: CurrentUser,
+    db_session: SessionDep,
+) -> StreamingResponse:
     """Stream full presentation generation progress via Server-Sent Events (SSE)
 
     This endpoint streams the complete generation progress including:
@@ -391,7 +396,11 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
     async def event_generator() -> AsyncGenerator[str, None]:
         """Generate SSE events from full presentation generation stream"""
         try:
-            async for event in presentation_generator.generate_presentation_stream(request, output_path):
+            async for event in presentation_generator.generate_presentation_stream(
+                request,
+                output_path,
+                db_session=db_session,
+            ):
                 # Convert Pydantic model to dict and then to JSON
                 event_data = event.model_dump()
                 event_type = event_data.get("event", "message")
@@ -440,7 +449,11 @@ async def generate_slides_stream_full(task: SlideGenTask, current_user: CurrentU
 
 
 @router.post("/generate-pptx-from-markdown", response_model=SlideGenResult)
-async def generate_pptx_from_markdown(request: MarkdownToPPTRequest, current_user: CurrentUser) -> SlideGenResult:
+async def generate_pptx_from_markdown(
+    request: MarkdownToPPTRequest,
+    current_user: CurrentUser,
+    db_session: SessionDep,
+) -> SlideGenResult:
     """Generate PPT directly from user-provided markdown content.
 
     This endpoint allows users to:
@@ -468,6 +481,7 @@ async def generate_pptx_from_markdown(request: MarkdownToPPTRequest, current_use
             export_as=request.export_as,
             theme_preset=request.theme_preset,
             user_id=current_user.id,
+            db_session=db_session,
         )
 
         logger.info(f"Presentation generated successfully: {result_path}")
@@ -499,7 +513,9 @@ async def generate_pptx_from_markdown(request: MarkdownToPPTRequest, current_use
     dependencies=[Depends(sse_rate_limiter)],
 )
 async def generate_pptx_from_markdown_stream(
-    request: MarkdownToPPTRequest, current_user: CurrentUser
+    request: MarkdownToPPTRequest,
+    current_user: CurrentUser,
+    db_session: SessionDep,
 ) -> StreamingResponse:
     """Generate PPT from user-provided markdown content with streaming progress.
 
@@ -535,6 +551,7 @@ async def generate_pptx_from_markdown_stream(
                 export_as=request.export_as,
                 theme_preset=request.theme_preset,
                 user_id=current_user.id,
+                db_session=db_session,
             ):
                 # Convert Pydantic model to dict and then to JSON
                 event_data = event.model_dump()

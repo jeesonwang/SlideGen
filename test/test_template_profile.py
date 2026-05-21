@@ -10,10 +10,11 @@ from slidegen.services.presentation.template_profile import (
     _has_keyword_match,
     profile_presentation_template,
 )
+from test.helpers import add_catalog_slide
 
 
-def _add_text_slide(prs: Presentation, lines: list[str]) -> None:
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
+def _add_text_slide(prs: Presentation, lines: list[str], *, layout_index: int = 6) -> None:
+    slide = prs.slides.add_slide(prs.slide_layouts[layout_index])
     textbox = slide.shapes.add_textbox(Inches(0.8), Inches(0.8), Inches(8.0), Inches(4.5))
     frame = textbox.text_frame
     frame.text = lines[0]
@@ -30,9 +31,9 @@ def _add_title_slide(prs: Presentation, title: str, subtitle: str) -> None:
 
 def _ordinary_template() -> Presentation:
     prs = Presentation()
-    _add_text_slide(prs, ["Quarterly Business Review", "2026 Strategy Update"])
-    _add_text_slide(prs, ["Agenda", "1. Market landscape", "2. Product strategy", "3. Financial outlook"])
-    _add_text_slide(prs, ["Chapter 1", "Market Landscape"])
+    _add_title_slide(prs, "Quarterly Business Review", "2026 Strategy Update")
+    add_catalog_slide(prs, titles=("Market landscape", "Product strategy", "Financial outlook"))
+    _add_text_slide(prs, ["Chapter 1", "Market Landscape"], layout_index=1)
     _add_text_slide(
         prs,
         [
@@ -41,8 +42,9 @@ def _ordinary_template() -> Presentation:
             "Enterprise demand is strongest in regulated industries.",
             "Customer retention remains above the target range.",
         ],
+        layout_index=1,
     )
-    _add_text_slide(prs, ["Thank You", "Questions and discussion"])
+    _add_text_slide(prs, ["Thank You", "Questions and discussion"], layout_index=1)
     return prs
 
 
@@ -66,7 +68,8 @@ def test_profile_marks_missing_roles_as_review_required() -> None:
     profile = profile_presentation_template(prs)
 
     assert profile.status == "review_required"
-    assert profile.role_index(TemplateRole.COVER) == 0
+    assert profile.role_index(TemplateRole.COVER) is None
+    assert TemplateRole.COVER.value in profile.missing_roles
     assert TemplateRole.CATALOG.value in profile.missing_roles
     assert TemplateRole.CONTENT.value in profile.missing_roles
     assert "catalog role not detected" in " ".join(profile.warnings)
@@ -89,9 +92,9 @@ def test_keyword_matching_avoids_english_substring_false_positives() -> None:
 
 def test_profile_uses_global_assignment_when_cover_and_catalog_compete() -> None:
     prs = Presentation()
-    _add_text_slide(prs, ["Agenda", "1. Market", "2. Product", "3. Finance"])
+    add_catalog_slide(prs, titles=("Market landscape", "Product strategy", "Financial outlook"))
     _add_title_slide(prs, "Title", "Annual Business Review")
-    _add_text_slide(prs, ["Chapter 1", "Market Landscape"])
+    _add_text_slide(prs, ["Chapter 1", "Market Landscape"], layout_index=1)
     _add_text_slide(
         prs,
         [
@@ -100,8 +103,9 @@ def test_profile_uses_global_assignment_when_cover_and_catalog_compete() -> None
             "Enterprise demand remains strongest in regulated industries.",
             "Retention stays above target.",
         ],
+        layout_index=1,
     )
-    _add_text_slide(prs, ["Thank You", "Questions"])
+    _add_text_slide(prs, ["Thank You", "Questions"], layout_index=1)
 
     profile = profile_presentation_template(prs)
 

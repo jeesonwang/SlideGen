@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from slidegen.services.document.markdown import Heading
-from slidegen.services.presentation.template_profile import TemplateProfile, TemplateRole
+from slidegen.services.presentation.template_profile import READY_THRESHOLD, TemplateProfile, TemplateRole
 from slidegen.services.slidegen.outline_structure import ChapterSlideGroup
 
 
@@ -72,14 +72,14 @@ def build_presentation_render_plan(
     profile: TemplateProfile,
     catalog_last_index: int,
 ) -> PresentationRenderPlan:
-    chapter_home_template_index = profile.role_index(TemplateRole.CHAPTER)
-    chapter_content_template_index = profile.role_index(TemplateRole.CONTENT)
-    end_template_index = profile.role_index(TemplateRole.END)
+    chapter_home_template_index = profile.role_index(TemplateRole.CHAPTER, min_confidence=READY_THRESHOLD)
+    chapter_content_template_index = profile.role_index(TemplateRole.CONTENT, min_confidence=READY_THRESHOLD)
+    end_template_index = profile.role_index(TemplateRole.END, min_confidence=READY_THRESHOLD)
 
     use_native_chapter = chapter_home_template_index is None
     use_native_content = chapter_content_template_index is None
     use_native_end = end_template_index is None
-    use_native_catalog = profile.role_index(TemplateRole.CATALOG) is None
+    use_native_catalog = profile.role_index(TemplateRole.CATALOG, min_confidence=READY_THRESHOLD) is None
 
     current_slide_index = catalog_last_index + 1
     total_content_slides = sum(len(group.slides) for group in chapter_slide_groups)

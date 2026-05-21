@@ -23,7 +23,7 @@ from slidegen.services.presentation.render_plan import (
     ConversionSummary,
     build_presentation_render_plan,
 )
-from slidegen.services.presentation.template_profile import TemplateRole, profile_presentation_template
+from slidegen.services.presentation.template_profile import READY_THRESHOLD, TemplateRole, profile_presentation_template
 from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
 
 
@@ -40,6 +40,19 @@ class MarkdownToPresentation:
         profile = profile_presentation_template(template_prs)
         for warning in profile.warnings:
             logger.warning("PPT template profile: {}", warning)
+        original_template_slide_ids = [slide.slide_id for slide in template_prs.slides]
+        template_slide_id_by_role = {
+            role: template_prs.slides[index].slide_id
+            for role in TemplateRole
+            if (index := profile.role_index(role, min_confidence=READY_THRESHOLD)) is not None
+        }
+        reused_template_slide_ids: set[int] = set()
+
+        def current_template_index(role: TemplateRole) -> int | None:
+            slide_id = template_slide_id_by_role.get(role)
+            if slide_id is None:
+                return None
+            return self._slide_index_by_id(template_prs, slide_id)
 
         headings = [h for h in markdown_document.descendants if hasattr(h, "level") and h.level == 1]
         if not headings:
@@ -49,13 +62,14 @@ class MarkdownToPresentation:
         if main_heading is None:
             raise MarkdownDocumentError("Markdown document must have a main heading")
 
-        cover_index = profile.role_index(TemplateRole.COVER)
+        cover_index = current_template_index(TemplateRole.COVER)
         if cover_index is None:
             logger.info("PPT conversion: generating native cover slide for '{}'", main_heading.element_text)
             await NativeCoverPage.generate_slide(template_prs, main_heading, slide_index=0)
         else:
             logger.info("PPT conversion: generating cover slide for '{}'", main_heading.element_text)
             await CoverPage.generate_slide(template_prs, main_heading, cover_page_index=cover_index)
+            reused_template_slide_ids.add(template_slide_id_by_role[TemplateRole.COVER])
 
         chapter_slide_groups = list(iter_chapter_slide_groups(main_heading))
         chapters: list[Heading] = [group.chapter for group in chapter_slide_groups]
@@ -69,15 +83,18 @@ class MarkdownToPresentation:
             total_content_slides,
         )
 
-        catalog_index = profile.role_index(TemplateRole.CATALOG)
+        catalog_index = current_template_index(TemplateRole.CATALOG)
         if catalog_index is None:
             logger.info("PPT conversion: generating native catalog slide")
+            catalog_first_index = 1
             catalog_last_index = await NativeCatalogPage.generate_slide(template_prs, chapters, slide_index=1)
         else:
             logger.info("PPT conversion: generating catalog slides")
+            catalog_first_index = catalog_index
             catalog_last_index = await CatalogPage.generate_slide(
                 template_prs, chapters, catalog_page_index=catalog_index
             )
+            reused_template_slide_ids.add(template_slide_id_by_role[TemplateRole.CATALOG])
 
         render_plan = build_presentation_render_plan(
             chapter_slide_groups,
@@ -100,11 +117,12 @@ class MarkdownToPresentation:
                     slide_index=planned_chapter.home_slide_index,
                 )
             else:
-                assert render_plan.chapter_home_template_index is not None
+                chapter_home_template_index = current_template_index(TemplateRole.CHAPTER)
+                assert chapter_home_template_index is not None
                 await ChapterHomePage.generate_slide(
                     template_prs,
                     planned_chapter.heading,
-                    chapter_home_page_index=render_plan.chapter_home_template_index,
+                    chapter_home_page_index=chapter_home_template_index,
                     chapter_number=planned_chapter.chapter_number,
                     slide_index=planned_chapter.home_slide_index,
                 )
@@ -123,11 +141,12 @@ class MarkdownToPresentation:
                         slide_index=planned_slide.slide_index,
                     )
                 else:
-                    assert render_plan.chapter_content_template_index is not None
+                    chapter_content_template_index = current_template_index(TemplateRole.CONTENT)
+                    assert chapter_content_template_index is not None
                     await ChapterContentPage.generate_slide(
                         template_prs,
                         planned_slide.heading,
-                        chapter_page_index=render_plan.chapter_content_template_index,
+                        chapter_page_index=chapter_content_template_index,
                         slide_index=planned_slide.slide_index,
                     )
 
@@ -135,14 +154,18 @@ class MarkdownToPresentation:
         if render_plan.use_native_end:
             await NativeEndPage.generate_slide(template_prs, slide_index=render_plan.end_slide_index)
         else:
-            assert render_plan.end_template_index is not None
+            end_template_index = current_template_index(TemplateRole.END)
+            assert end_template_index is not None
             await EndPage.generate_slide(
                 template_prs,
-                end_page_index=render_plan.end_template_index,
+                end_page_index=end_template_index,
                 slide_index=render_plan.end_slide_index,
             )
 
-        self._cleanup_template_slides(template_prs, render_plan.cleanup_template_indexes)
+        cleanup_template_slide_ids = [
+            slide_id for slide_id in original_template_slide_ids if slide_id not in reused_template_slide_ids
+        ]
+        self._cleanup_template_slides(template_prs, cleanup_template_slide_ids)
         native_fallback_roles = tuple(
             role
             for role, used in {
@@ -159,7 +182,7 @@ class MarkdownToPresentation:
             total_slides=len(template_prs.slides),
             total_chapters=render_plan.total_chapters,
             total_content_slides=render_plan.total_content_slides,
-            catalog_slide_count=catalog_last_index - (catalog_index or 1) + 1,
+            catalog_slide_count=catalog_last_index - catalog_first_index + 1,
             native_fallback_roles=native_fallback_roles,
             elapsed_seconds=elapsed_seconds,
         )
@@ -175,7 +198,19 @@ class MarkdownToPresentation:
 
         return template_prs
 
-    def _cleanup_template_slides(self, template_prs: Presentation, template_slide_indexes: list[int]) -> None:
+    def _slide_index_by_id(self, template_prs: Presentation, slide_id: int) -> int:
+        for index, slide in enumerate(template_prs.slides):
+            if slide.slide_id == slide_id:
+                return index
+        raise ValueError(f"Slide id {slide_id} no longer exists in presentation")
+
+    def _cleanup_template_slides(self, template_prs: Presentation, template_slide_ids: list[int]) -> None:
+        template_slide_indexes = []
+        for slide_id in template_slide_ids:
+            try:
+                template_slide_indexes.append(self._slide_index_by_id(template_prs, slide_id))
+            except ValueError:
+                continue
         # Delete slides from back to front so earlier indexes remain stable.
         for index in sorted(template_slide_indexes, reverse=True):
             CoverPage.remove_slide(template_prs, index)

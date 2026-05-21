@@ -177,7 +177,8 @@ async def test_upload_service_saves_pptx_profiles_and_persists_model(tmp_path: P
 
     assert response.template_key.startswith(USER_TEMPLATE_KEY_PREFIX)
     assert response.name == "Board Template"
-    assert response.profile.status == "ready"
+    assert response.profile.status == "review_required"
+    assert "cover" in response.profile.missing_roles
     assert db_session.added is not None
     assert db_session.added.user_id == user_id
     assert db_session.added.template_key == response.template_key
@@ -319,3 +320,25 @@ def test_generator_rejects_uploaded_template_without_user_id(tmp_path: Path) -> 
 
     with pytest.raises(FileNotFoundError, match="requires user_id"):
         generator.get_template_path(template_key_for_id(template_id), user_id=None)
+
+
+@pytest.mark.anyio
+async def test_generator_rejects_deleted_uploaded_template_record(tmp_path: Path) -> None:
+    user_id = uuid.uuid4()
+    template_id = uuid.uuid4()
+    template_path = tmp_path / "template.pptx"
+    template_path.write_bytes(_pptx_upload_bytes())
+
+    class FakeUploadedTemplateService:
+        async def get_template(self, db_session=None, user_id=None, template_key=None):  # noqa: ARG002
+            return None
+
+    generator = PresentationGenerator(templates_dir=str(tmp_path / "builtins"))
+    generator.uploaded_template_service = FakeUploadedTemplateService()
+
+    with pytest.raises(FileNotFoundError, match="Uploaded template .* not found"):
+        await generator.resolve_template_path(
+            template_key_for_id(template_id),
+            user_id=user_id,
+            db_session=SimpleNamespace(),
+        )

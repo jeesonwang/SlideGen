@@ -14,7 +14,9 @@ from lxml.etree import Element, fromstring, tostring
 from pptx import Presentation
 from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 from pptx.presentation import Presentation as PresentationType
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from slidegen.core.database import AsyncSessionLocal
 from slidegen.schemas.gen_request import ExportFormat, GeneratePresentationRequest
 from slidegen.schemas.stream_event import (
     ProgressEvent,
@@ -31,6 +33,7 @@ from slidegen.services.presentation.pdf_exporter import pdf_exporter
 from slidegen.services.presentation.user_templates import (
     UserTemplateStorage,
     parse_user_template_key,
+    uploaded_template_service,
 )
 from slidegen.services.slidegen.workflow import get_llm_instance, run_slidegen_workflow, run_slidegen_workflow_stream
 
@@ -53,6 +56,7 @@ class PresentationGenerator:
 
         self.templates_dir = Path(templates_dir)
         self.user_template_storage = UserTemplateStorage()
+        self.uploaded_template_service = uploaded_template_service
         self.converter = MarkdownToPresentation()
 
     def get_template_path(self, template_name: str, user_id: uuid.UUID | None = None) -> str:
@@ -69,6 +73,40 @@ class PresentationGenerator:
         template_file = self.templates_dir / f"template_{template_name}.pptx"
         if not template_file.exists():
             raise FileNotFoundError(f"Template '{template_name}' not found at: {template_file}")
+        return str(template_file)
+
+    async def resolve_template_path(
+        self,
+        template_name: str,
+        user_id: uuid.UUID | None = None,
+        db_session: AsyncSession | None = None,
+    ) -> str:
+        """Resolve template path and validate uploaded-template ownership/deletion state."""
+        if parse_user_template_key(template_name) is None:
+            return self.get_template_path(template_name, user_id=user_id)
+
+        if user_id is None:
+            raise FileNotFoundError("Uploaded template resolution requires user_id")
+
+        if db_session is not None:
+            return await self._resolve_uploaded_template_path(template_name, user_id, db_session)
+
+        async with AsyncSessionLocal() as session:
+            return await self._resolve_uploaded_template_path(template_name, user_id, session)
+
+    async def _resolve_uploaded_template_path(
+        self,
+        template_name: str,
+        user_id: uuid.UUID,
+        db_session: AsyncSession,
+    ) -> str:
+        model = await self.uploaded_template_service.get_template(db_session, user_id, template_name)
+        if model is None:
+            raise FileNotFoundError(f"Uploaded template '{template_name}' not found")
+
+        template_file = Path(model.file_path)
+        if not template_file.exists():
+            raise FileNotFoundError(f"Uploaded template '{template_name}' not found at: {template_file}")
         return str(template_file)
 
     def list_templates(self) -> list[str]:
@@ -274,9 +312,10 @@ class PresentationGenerator:
         self,
         request: GeneratePresentationRequest,
         output_path: str,
+        db_session: AsyncSession | None = None,
     ) -> str:
         """Generate a PowerPoint presentation from a request."""
-        template = self.get_template_path(request.template, user_id=request.user_id)
+        template = await self.resolve_template_path(request.template, user_id=request.user_id, db_session=db_session)
         logger.info(f"Starting presentation generation with template: {template}")
 
         logger.info("Running slide generation workflow...")
@@ -326,6 +365,7 @@ class PresentationGenerator:
         theme: PresentationTheme | None = None,
         theme_preset: str | None = None,
         user_id: uuid.UUID | None = None,
+        db_session: AsyncSession | None = None,
     ) -> str:
         """Generate a presentation directly from markdown content.
 
@@ -342,7 +382,7 @@ class PresentationGenerator:
             The output path of the generated presentation
         """
         started_at = perf_counter()
-        template = self.get_template_path(template_name, user_id=user_id)
+        template = await self.resolve_template_path(template_name, user_id=user_id, db_session=db_session)
         logger.info(
             "Starting presentation generation from markdown: template={}, export_as={}, markdown_chars={}, output_path={}",
             template,
@@ -427,6 +467,7 @@ class PresentationGenerator:
         theme: PresentationTheme | None = None,
         theme_preset: str | None = None,
         user_id: uuid.UUID | None = None,
+        db_session: AsyncSession | None = None,
     ) -> AsyncGenerator[StreamEventT, None]:
         """Generate a presentation from markdown with streaming progress events.
 
@@ -444,7 +485,7 @@ class PresentationGenerator:
         """
         try:
             started_at = perf_counter()
-            template = self.get_template_path(template_name, user_id=user_id)
+            template = await self.resolve_template_path(template_name, user_id=user_id, db_session=db_session)
             logger.info(
                 "Starting streaming presentation generation from markdown: template={}, export_as={}, "
                 "markdown_chars={}, output_path={}",
@@ -580,10 +621,15 @@ class PresentationGenerator:
         self,
         request: GeneratePresentationRequest,
         output_path: str,
+        db_session: AsyncSession | None = None,
     ) -> AsyncGenerator[StreamEventT, None]:
         """Generate a PowerPoint presentation with streaming progress events."""
         try:
-            template = self.get_template_path(request.template, user_id=request.user_id)
+            template = await self.resolve_template_path(
+                request.template,
+                user_id=request.user_id,
+                db_session=db_session,
+            )
             logger.info(f"Starting streaming presentation generation with template: {template}")
 
             final_content: str | None = None
