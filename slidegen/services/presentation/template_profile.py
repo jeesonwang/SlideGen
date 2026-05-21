@@ -93,7 +93,19 @@ KEYWORDS: dict[TemplateRole, tuple[str, ...]] = {
     TemplateRole.COVER: ("cover", "title", "overview", "review", "报告", "汇报", "封面"),
     TemplateRole.CATALOG: ("catalog", "contents", "agenda", "outline", "目录", "大纲", "议程"),
     TemplateRole.CHAPTER: ("chapter", "section", "part", "章节", "篇章", "第一章", "第二章"),
-    TemplateRole.CONTENT: ("analysis", "summary", "detail", "data", "result", "market", "strategy", "growth", "分析", "策略", "增长"),
+    TemplateRole.CONTENT: (
+        "analysis",
+        "summary",
+        "detail",
+        "data",
+        "result",
+        "market",
+        "strategy",
+        "growth",
+        "分析",
+        "策略",
+        "增长",
+    ),
     TemplateRole.END: ("thank", "thanks", "q&a", "question", "questions", "谢谢", "感谢", "答疑"),
 }
 
@@ -101,11 +113,11 @@ KEYWORDS: dict[TemplateRole, tuple[str, ...]] = {
 def _has_keyword_match(text: str, keywords: tuple[str, ...]) -> bool:
     """Match English keywords with token boundaries and Chinese keywords by substring."""
     for keyword in keywords:
-        if re.search(r'[一-鿿]', keyword):
+        if re.search(r"[一-鿿]", keyword):
             if keyword in text:
                 return True
         else:
-            pattern = rf'(?<![a-z0-9_]){re.escape(keyword.casefold())}(?![a-z0-9_])'
+            pattern = rf"(?<![a-z0-9_]){re.escape(keyword.casefold())}(?![a-z0-9_])"
             if re.search(pattern, text.casefold()):
                 return True
     return False
@@ -130,15 +142,8 @@ def profile_presentation_template(presentation: Presentation) -> TemplateProfile
     assigned_roles = {assignment.role for assignment in assignments}
     missing_roles = [role.value for role in TemplateRole if role not in assigned_roles]
 
-    warnings: list[str] = [
-        f"{role} role not detected; native fallback will be used"
-        for role in missing_roles
-    ]
-    low_confidence = [
-        assignment
-        for assignment in assignments
-        if assignment.confidence < READY_THRESHOLD
-    ]
+    warnings: list[str] = [f"{role} role not detected; native fallback will be used" for role in missing_roles]
+    low_confidence = [assignment for assignment in assignments if assignment.confidence < READY_THRESHOLD]
     warnings.extend(
         f"{assignment.role.value} role confidence is {assignment.confidence:.2f}; native fallback may be used"
         for assignment in low_confidence
@@ -180,12 +185,7 @@ def _extract_slide_features(index: int, slide: Slide) -> SlideFeatures:
         text_shape_count += 1
         texts.append(text)
 
-    lines = [
-        line.strip()
-        for text in texts
-        for line in text.splitlines()
-        if line.strip()
-    ]
+    lines = [line.strip() for text in texts for line in text.splitlines() if line.strip()]
     has_numbered_lines = any(re.match(r"^(\d+[.)]|[一二三四五六七八九十]+[、.])", line) for line in lines)
     return SlideFeatures(
         index=index,
@@ -294,7 +294,9 @@ def _score_slide_for_role(
         if feature.text_length <= 160 and feature.line_count <= 3:
             score += 0.25
             reasons.append("section-divider density")
-        if re.search(r"(?<![a-z0-9_])(chapter|section|part)\s+\d+(?![a-z0-9_])", text) or re.search(r"第[一二三四五六七八九十\d]+章", text):
+        if re.search(r"(?<![a-z0-9_])(chapter|section|part)\s+\d+(?![a-z0-9_])", text) or re.search(
+            r"第[一二三四五六七八九十\d]+章", text
+        ):
             score += 0.30
             reasons.append("chapter pattern")
     elif role is TemplateRole.CONTENT:

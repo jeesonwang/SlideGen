@@ -39,9 +39,13 @@ def build_content_slide_spec(content: Heading) -> SlideSpec:
         if isinstance(child, Heading):
             blocks.append(BlockSpec(kind=BlockKind.POINT, title=child.element_text, text=child.text.strip()))
         elif isinstance(child, Table):
-            blocks.append(BlockSpec(kind=BlockKind.TABLE, title=", ".join(child.headers), text=child.element_text_source))
+            blocks.append(
+                BlockSpec(kind=BlockKind.TABLE, title=", ".join(child.headers), text=child.element_text_source)
+            )
         elif isinstance(child, Element) and child.element_text.strip():
             blocks.append(BlockSpec(kind=BlockKind.PARAGRAPH, title="", text=child.element_text.strip()))
 
-    slide_kind = SlideKind.DATA_TABLE if any(block.kind is BlockKind.TABLE for block in blocks) else SlideKind.CONTENT_POINTS
+    slide_kind = (
+        SlideKind.DATA_TABLE if any(block.kind is BlockKind.TABLE for block in blocks) else SlideKind.CONTENT_POINTS
+    )
     return SlideSpec(kind=slide_kind, title=content.element_text, source_level=content.level, blocks=tuple(blocks))

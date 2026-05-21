@@ -41,7 +41,9 @@ class NativeCatalogPage(NativePage):
         slide = NativeCatalogPage._blank_slide(prs, slide_index)
         NativeCatalogPage._add_text(slide, "Agenda", 0.8, 0.5, 8.6, 0.6, 28)
         for index, chapter in enumerate(chapters, start=1):
-            NativeCatalogPage._add_text(slide, f"{index:02d}. {chapter.element_text}", 1.0, 1.1 + index * 0.45, 8.0, 0.35, 18)
+            NativeCatalogPage._add_text(
+                slide, f"{index:02d}. {chapter.element_text}", 1.0, 1.1 + index * 0.45, 8.0, 0.35, 18
+            )
         return slide_index
 
 

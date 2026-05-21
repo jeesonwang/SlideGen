@@ -7,6 +7,7 @@ from pptx.util import Inches
 from slidegen.exceptions import PPTTemplateError
 from slidegen.services.document import MarkdownDocument
 from slidegen.services.document.markdown.elements import Heading
+from slidegen.services.presentation.converter import MarkdownToPresentation
 from slidegen.services.presentation.native_pages import (
     NativeCatalogPage,
     NativeChapterContentPage,
@@ -15,14 +16,13 @@ from slidegen.services.presentation.native_pages import (
     NativeEndPage,
 )
 from slidegen.services.presentation.render_plan import build_presentation_render_plan
+from slidegen.services.presentation.semantic import BlockKind, SlideKind, build_content_slide_spec
 from slidegen.services.presentation.template_profile import (
     TemplateRole,
     _has_keyword_match,
     profile_presentation_template,
 )
 from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
-from slidegen.services.presentation.converter import MarkdownToPresentation
-from slidegen.services.presentation.semantic import BlockKind, SlideKind, build_content_slide_spec
 
 
 def _template_path() -> str:
@@ -231,14 +231,7 @@ async def test_converter_preserves_curated_template_generation_path():
 
 
 def test_build_content_slide_spec_maps_heading_children_to_point_blocks():
-    document = _markdown_document(
-        "# Deck\n"
-        "## Chapter A\n"
-        "### Point 1\n"
-        "Body 1\n"
-        "### Point 2\n"
-        "Body 2\n"
-    )
+    document = _markdown_document("# Deck\n## Chapter A\n### Point 1\nBody 1\n### Point 2\nBody 2\n")
     assert document.main is not None
     group = next(iter_chapter_slide_groups(document.main))
 
