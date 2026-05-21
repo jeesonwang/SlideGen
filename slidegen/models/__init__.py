@@ -4,6 +4,7 @@ from .embedding_config import EmbeddingConfigModel, EmbeddingProvider
 from .file_metadata import FileMetadataModel
 from .image_asset import ImageAsset
 from .llm_config import LLMConfigModel, LLMProvider
+from .presentation_template import PresentationTemplateModel
 from .session import SessionModel, SessionStatus
 from .task import CeleryTask, CeleryTaskSet
 from .task_ownership import TaskOwnership
@@ -21,6 +22,7 @@ __all__ = [
     "LLMConfigModel",
     "LLMProvider",
     "MessageRole",
+    "PresentationTemplateModel",
     "SessionModel",
     "SessionStatus",
     "TaskOwnership",
