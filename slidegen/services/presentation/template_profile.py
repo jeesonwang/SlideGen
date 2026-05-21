@@ -271,6 +271,9 @@ def _score_slide_for_role(
         if feature.index == 0:
             score += 0.25
             reasons.append("first slide")
+        if feature.index == slide_count - 1 and slide_count == 1:
+            score += 0.25
+            reasons.append("sole slide")
         if feature.title_placeholder_count and feature.subtitle_placeholder_count:
             score += 0.25
             reasons.append("title and subtitle placeholders")
