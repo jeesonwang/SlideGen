@@ -5,9 +5,10 @@ from datetime import datetime
 from typing import Any
 
 from celery.result import AsyncResult
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from loguru import logger
+from pptx import Presentation
 from pydantic import BaseModel, Field
 from sqlmodel import select
 
@@ -25,13 +26,24 @@ from slidegen.schemas.gen_request import (
     Tone,
     Verbosity,
 )
-from slidegen.schemas.template import Template
+from slidegen.schemas.template import (
+    Template,
+    TemplateProfileResponse,
+    TemplateSource,
+    UserTemplateDeleteResponse,
+    UserTemplateUploadResponse,
+)
 from slidegen.schemas.theme import ThemePresets
 from slidegen.services import presentation_generator
+from slidegen.services.presentation.template_profile import profile_presentation_template
 from slidegen.services.presentation.thumbnail import (
     LibreOfficeNotFoundError,
     ThumbnailGenerationError,
     thumbnail_generator,
+)
+from slidegen.services.presentation.user_templates import (
+    parse_user_template_key,
+    uploaded_template_service,
 )
 from slidegen.services.slidegen import run_slidegen_workflow_stream
 from slidegen.tasks import celery_app
@@ -637,23 +649,52 @@ async def get_task_status(task_id: str, current_user: CurrentUser, db_session: S
         )
 
 
+@router.post(
+    "/templates/upload",
+    response_model=UserTemplateUploadResponse,
+    description="upload a user-owned PPTX template and detect slide roles",
+)
+async def upload_ppt_template(
+    current_user: CurrentUser,
+    db_session: SessionDep,
+    file: UploadFile = File(...),
+    display_name: str | None = Form(default=None),
+) -> UserTemplateUploadResponse:
+    try:
+        logger.info("User {} uploading PPT template: {}", current_user.id, file.filename)
+        return await uploaded_template_service.upload_template(
+            db_session=db_session,
+            user_id=current_user.id,
+            upload_file=file,
+            display_name=display_name,
+        )
+    except ValueError as e:
+        logger.warning("Invalid PPT template upload for user {}: {}", current_user.id, e)
+        raise PPTTemplateError(message=str(e))
+    except Exception as e:
+        logger.exception("Failed to upload PPT template for user {}: {}", current_user.id, e)
+        raise InsideServerError(message=f"failed to upload PPT template: {str(e)}")
+
+
 @router.get("/templates", response_model=list[Template], description="get available templates")
-async def get_available_templates() -> list[Template]:
+async def get_available_templates(current_user: CurrentUser, db_session: SessionDep) -> list[Template]:
     try:
         template_names = presentation_generator.list_templates()
-        templates = [
+        builtin_templates = [
             Template(
                 id=name,
                 name=name.replace("_", " ").title(),
                 thumbnail=f"/api/v1/slidegen/templates/{name}/thumbnail",
+                source=TemplateSource.BUILTIN,
             )
             for name in template_names
         ]
-        logger.info(f"Found {len(templates)} templates")
+        uploaded_templates = await uploaded_template_service.list_templates(db_session, current_user.id)
+        templates = [*builtin_templates, *uploaded_templates]
+        logger.info("Found {} templates for user {}", len(templates), current_user.id)
         return templates
-
     except Exception as e:
-        logger.exception(f"Failed to list templates: {e}")
+        logger.exception("Failed to list templates: {}", e)
         raise PPTTemplateError(message=f"failed to list templates: {str(e)}")
 
 
@@ -697,6 +738,52 @@ async def download_presentation(filename: str) -> FileResponse:
     except Exception as e:
         logger.exception(f"Failed to download file {filename}: {e}")
         raise InsideServerError(message=f"failed to download file: {str(e)}")
+
+
+@router.get(
+    "/templates/{template_id}/profile",
+    response_model=TemplateProfileResponse,
+    description="get template role profile",
+)
+async def get_template_profile(template_id: str, current_user: CurrentUser, db_session: SessionDep) -> TemplateProfileResponse:
+    try:
+        if parse_user_template_key(template_id) is not None:
+            model = await uploaded_template_service.get_template(db_session, current_user.id, template_id)
+            if model is None:
+                raise NotFoundError(message="template not found")
+            return TemplateProfileResponse(**model.role_profile)
+
+        template_path = presentation_generator.get_template_path(template_id)
+        profile = profile_presentation_template(Presentation(template_path))
+        return TemplateProfileResponse(**profile.to_dict())
+    except NotFoundError:
+        raise
+    except FileNotFoundError:
+        raise NotFoundError(message="template not found")
+    except Exception as e:
+        logger.exception("Failed to get template profile for {}: {}", template_id, e)
+        raise InsideServerError(message=f"failed to get template profile: {str(e)}")
+
+
+@router.delete(
+    "/templates/{template_id}",
+    response_model=UserTemplateDeleteResponse,
+    description="delete an uploaded template",
+)
+async def delete_uploaded_template(
+    template_id: str,
+    current_user: CurrentUser,
+    db_session: SessionDep,
+) -> UserTemplateDeleteResponse:
+    if parse_user_template_key(template_id) is None:
+        raise PPTTemplateError(message="built-in templates cannot be deleted")
+    try:
+        return await uploaded_template_service.delete_template(db_session, current_user.id, template_id)
+    except FileNotFoundError:
+        raise NotFoundError(message="template not found")
+    except Exception as e:
+        logger.exception("Failed to delete uploaded template {}: {}", template_id, e)
+        raise InsideServerError(message=f"failed to delete template: {str(e)}")
 
 
 @router.get("/templates/{template_name}/thumbnail", description="get template thumbnail")

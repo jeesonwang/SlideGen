@@ -17,6 +17,12 @@ from slidegen.schemas.template import (
     TemplateSource,
     UserTemplateUploadResponse,
 )
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from slidegen.api.deps import get_current_user
+from slidegen.api.routers.slidegen import router as slidegen_router
+from slidegen.core.database import get_db_session
 from slidegen.services.presentation.user_templates import (
     USER_TEMPLATE_KEY_PREFIX,
     UploadedTemplateService,
@@ -180,3 +186,111 @@ async def test_upload_service_saves_pptx_profiles_and_persists_model(tmp_path: P
     db_session.add.assert_called_once()
     db_session.commit.assert_awaited_once()
     db_session.refresh.assert_awaited_once()
+
+
+def test_upload_template_endpoint_returns_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+    user_id = uuid.uuid4()
+    uploaded_id = uuid.uuid4()
+
+    async def override_get_current_user() -> SimpleNamespace:
+        return SimpleNamespace(id=user_id)
+
+    async def override_get_db_session() -> SimpleNamespace:
+        return SimpleNamespace()
+
+    async def fake_upload_template(db_session, user_id, upload_file, display_name):
+        return UserTemplateUploadResponse(
+            id=uploaded_id,
+            template_key=f"user_{uploaded_id.hex}",
+            name=display_name,
+            original_filename=upload_file.filename,
+            file_size=1234,
+            profile=TemplateProfileResponse(
+                slide_count=5,
+                status="ready",
+                assignments=[
+                    TemplateRoleAssignmentResponse(
+                        role="cover",
+                        slide_index=0,
+                        confidence=0.9,
+                        reason="first slide",
+                    )
+                ],
+                warnings=[],
+                missing_roles=[],
+            ),
+        )
+
+    monkeypatch.setattr(
+        "slidegen.api.routers.slidegen.uploaded_template_service.upload_template",
+        fake_upload_template,
+    )
+
+    app = FastAPI()
+    app.include_router(slidegen_router, prefix="/slidegen")
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_db_session] = override_get_db_session
+    client = TestClient(app)
+
+    response = client.post(
+        "/slidegen/templates/upload",
+        data={"display_name": "Board Template"},
+        files={
+            "file": (
+                "board.pptx",
+                _pptx_upload_bytes(),
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["template_key"] == f"user_{uploaded_id.hex}"
+    assert body["profile"]["status"] == "ready"
+
+
+def test_templates_endpoint_merges_builtin_and_uploaded(monkeypatch: pytest.MonkeyPatch) -> None:
+    user_id = uuid.uuid4()
+    uploaded_id = uuid.uuid4()
+
+    async def override_get_current_user() -> SimpleNamespace:
+        return SimpleNamespace(id=user_id)
+
+    async def override_get_db_session() -> SimpleNamespace:
+        return SimpleNamespace()
+
+    async def fake_list_templates(db_session, user_id):
+        return [
+            Template(
+                id=f"user_{uploaded_id.hex}",
+                name="Board Template",
+                thumbnail=None,
+                source=TemplateSource.USER,
+                profile_status="ready",
+            )
+        ]
+
+    monkeypatch.setattr(
+        "slidegen.api.routers.slidegen.presentation_generator.list_templates",
+        lambda: ["general"],
+    )
+    monkeypatch.setattr(
+        "slidegen.api.routers.slidegen.uploaded_template_service.list_templates",
+        fake_list_templates,
+    )
+
+    app = FastAPI()
+    app.include_router(slidegen_router, prefix="/slidegen")
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_db_session] = override_get_db_session
+    client = TestClient(app)
+
+    response = client.get("/slidegen/templates")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body[0]["id"] == "general"
+    assert body[0]["source"] == "builtin"
+    assert body[1]["id"] == f"user_{uploaded_id.hex}"
+    assert body[1]["source"] == "user"
