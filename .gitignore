@@ -127,3 +127,5 @@ components/**/*.png
 
 # agent settings
 .codex/environments
+.mcp.json
+opencode.jsonc
