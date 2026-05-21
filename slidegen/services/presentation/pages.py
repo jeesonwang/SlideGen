@@ -4,7 +4,7 @@ import os
 import random
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from loguru import logger
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
@@ -13,6 +13,7 @@ from pptx.oxml.shapes.groupshape import CT_GroupShape
 from pptx.presentation import Presentation
 from pptx.shapes.autoshape import Shape
 from pptx.shapes.base import BaseShape
+from pptx.shapes.picture import Picture
 from pptx.slide import Slide
 
 from slidegen.exceptions import PPTGenError, PPTTemplateError
@@ -107,7 +108,7 @@ class Page:
             Copied slide
         """
         template = pres.slides[index]
-        copied_slide = pres.slides.add_slide(template.slide_layout)
+        copied_slide: Slide = pres.slides.add_slide(template.slide_layout)
         # Delete the existing shapes that are part of the layout
         for shp in copied_slide.shapes:
             copied_slide.shapes.element.remove(shp.element)
@@ -115,7 +116,7 @@ class Page:
         # Perform a deep copy of the shapes from the template
         for shp in template.shapes:
             if shp.shape_type == MSO_SHAPE_TYPE.PICTURE:
-                img = io.BytesIO(shp.image.blob)
+                img = io.BytesIO(cast(Picture, shp).image.blob)
                 copied_slide.shapes.add_picture(
                     image_file=img,
                     left=shp.left,
@@ -217,7 +218,9 @@ class CatalogPage(Page):
     @staticmethod
     def _calculate_distance(shape1: dict[str, Any], shape2: dict[str, Any]) -> float:
         """Calculate the distance between two shapes"""
-        return ((shape1["left"] - shape2["left"]) ** 2 + (shape1["top"] - shape2["top"]) ** 2) ** 0.5
+        return float(
+            ((shape1["left"] - shape2["left"]) ** 2 + (shape1["top"] - shape2["top"]) ** 2) ** 0.5
+        )
 
     # Roman numerals 1-20
     _ROMAN_NUMERALS: set[str] = {

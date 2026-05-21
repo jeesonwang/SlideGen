@@ -33,11 +33,13 @@ def remove_custDataLst(xml_str: str) -> str:
         if parent is not None:
             parent.remove(cust_data_list)
 
-    return etree.tostring(
-        root,
-        encoding="unicode",
-        pretty_print=True,
-        xml_declaration=False,
+    return str(
+        etree.tostring(
+            root,
+            encoding="unicode",
+            pretty_print=True,
+            xml_declaration=False,
+        )
     )
 
 
@@ -49,7 +51,7 @@ class ContentType(Enum):
     ICON = "icon"
     NONE = None
 
-    def __eq__(self, other: str | object) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, str):
             return self.value == other
         return super().__eq__(other)
@@ -316,8 +318,8 @@ class ComponentsManager:
             for t_elem in t_elements2:
                 t_elem.text = "placeholder_text"
 
-            xml_str1 = etree.tostring(root1, encoding="unicode")
-            xml_str2 = etree.tostring(root2, encoding="unicode")
+            xml_str1 = str(etree.tostring(root1, encoding="unicode"))
+            xml_str2 = str(etree.tostring(root2, encoding="unicode"))
 
             return xml_str1 == xml_str2
 

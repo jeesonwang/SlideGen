@@ -3,10 +3,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.presentation import Presentation
+from pptx.shapes.autoshape import Shape
 from pptx.slide import Slide
 
 from slidegen.exceptions import PPTTemplateError
@@ -188,7 +189,7 @@ def _extract_slide_features(index: int, slide: Slide) -> SlideFeatures:
                 body_placeholder_count += 1
         if not getattr(shape, "has_text_frame", False):
             continue
-        text = shape.text.strip()
+        text = cast(Shape, shape).text.strip()
         if not text:
             continue
         text_shape_count += 1

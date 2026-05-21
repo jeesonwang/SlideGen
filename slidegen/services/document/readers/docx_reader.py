@@ -28,11 +28,10 @@ class DocxReader(HtmlReader):
         if extension not in supported_extensions:
             return None
 
-        result = None
         with open(local_path, "rb") as docx_file:
             style_map = kwargs.get("style_map", None)
-            result = mammoth.convert_to_html(docx_file, style_map=style_map)
-            html_content = result.value
-            result = self._convert(html_content)
+            mammoth_result = mammoth.convert_to_html(docx_file, style_map=style_map)
+            html_content = mammoth_result.value
+            converted: DocumentReadResult = self._convert(html_content)
 
-        return result
+        return converted

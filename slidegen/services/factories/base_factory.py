@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -12,7 +12,7 @@ class BaseFactory:
             async with httpx.AsyncClient(timeout=20.0) as client:
                 response = await client.get(url, headers=headers)
                 response.raise_for_status()
-                return response.json()
+                return cast(dict[str, Any], response.json())
         except httpx.HTTPStatusError as exc:
             detail = exc.response.text.strip()
             raise ValueError(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pptx.presentation import Presentation
+from pptx.slide import Slide
 from pptx.util import Inches, Pt
 
 from slidegen.services.document.markdown import Heading
@@ -8,9 +9,9 @@ from slidegen.services.document.markdown import Heading
 
 class NativePage:
     @staticmethod
-    def _blank_slide(prs: Presentation, slide_index: int):
+    def _blank_slide(prs: Presentation, slide_index: int) -> Slide:
         blank_layout = prs.slide_layouts[6]
-        slide = prs.slides.add_slide(blank_layout)
+        slide: Slide = prs.slides.add_slide(blank_layout)
         xml_slides = prs.slides._sldIdLst
         slides = list(xml_slides)
         old_index = len(slides) - 1
@@ -19,7 +20,9 @@ class NativePage:
         return slide
 
     @staticmethod
-    def _add_text(slide, text: str, left: float, top: float, width: float, height: float, font_size: int) -> None:
+    def _add_text(
+        slide: Slide, text: str, left: float, top: float, width: float, height: float, font_size: int
+    ) -> None:
         box = slide.shapes.add_textbox(Inches(left), Inches(top), Inches(width), Inches(height))
         frame = box.text_frame
         frame.clear()

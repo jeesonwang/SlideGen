@@ -10,6 +10,8 @@ from slidegen.services.slidegen.outline_structure import ChapterSlideGroup
 
 @dataclass(frozen=True)
 class PlannedContentSlide:
+    """Metadata for a single content slide within a chapter."""
+
     heading: Heading
     slide_index: int
     sequence_number: int
@@ -18,6 +20,8 @@ class PlannedContentSlide:
 
 @dataclass(frozen=True)
 class PlannedChapter:
+    """A chapter with its home slide and all associated content slides."""
+
     heading: Heading
     chapter_number: int
     home_slide_index: int
@@ -26,6 +30,8 @@ class PlannedChapter:
 
 @dataclass(frozen=True)
 class PresentationRenderPlan:
+    """Complete render plan encompassing catalog, chapter homes, content slides, and end slide layout."""
+
     catalog_last_index: int
     chapter_home_template_index: int | None
     chapter_content_template_index: int | None
@@ -57,6 +63,8 @@ class PresentationRenderPlan:
 
 @dataclass(frozen=True)
 class ConversionSummary:
+    """Summary of a completed presentation conversion for reporting."""
+
     title: str
     total_slides: int
     total_chapters: int
@@ -72,6 +80,7 @@ def build_presentation_render_plan(
     profile: TemplateProfile,
     catalog_last_index: int,
 ) -> PresentationRenderPlan:
+    """Build a render plan from chapter slide groups and a template profile."""
     chapter_home_template_index = profile.role_index(TemplateRole.CHAPTER, min_confidence=READY_THRESHOLD)
     chapter_content_template_index = profile.role_index(TemplateRole.CONTENT, min_confidence=READY_THRESHOLD)
     end_template_index = profile.role_index(TemplateRole.END, min_confidence=READY_THRESHOLD)

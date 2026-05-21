@@ -47,7 +47,7 @@ class MarkdownDocument(Element):
         return f"<MarkdownDocument>{self.text}</MarkdownDocument>"
 
     def __repr__(self) -> str:
-        return self.text
+        return str(self.text)
 
 
 class MarkdownParser:

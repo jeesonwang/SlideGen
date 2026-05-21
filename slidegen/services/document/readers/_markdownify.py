@@ -30,9 +30,9 @@ class CustomMarkdownify(markdownify.MarkdownConverter):  # type: ignore
         """Same as usual, but be sure to start with a new line"""
         if not convert_as_inline:
             if not re.search(r"^\n", text):
-                return "\n" + super().convert_hn(n, el, text, convert_as_inline)
+                return "\n" + str(super().convert_hn(n, el, text, convert_as_inline))
 
-        return super().convert_hn(n, el, text, convert_as_inline)
+        return str(super().convert_hn(n, el, text, convert_as_inline))
 
     def convert_a(self, el: Any, text: str, convert_as_inline: bool) -> str:
         """Same as usual converter, but removes Javascript links and escapes URIs.

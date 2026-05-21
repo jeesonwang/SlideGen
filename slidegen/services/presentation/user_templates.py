@@ -9,8 +9,9 @@ from typing import Any
 
 from fastapi import UploadFile
 from pptx import Presentation
+from pptx.presentation import Presentation as PresentationType
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from slidegen.core.config import settings
 from slidegen.models.presentation_template import PresentationTemplateModel
@@ -85,10 +86,10 @@ class UserTemplateStorage:
 
     def save(
         self, user_id: uuid.UUID, template_id: uuid.UUID, filename: str, content: bytes
-    ) -> tuple[Path, Presentation]:
+    ) -> tuple[Path, PresentationType]:
         self.validate_upload(filename, content)
         try:
-            presentation = Presentation(BytesIO(content))
+            presentation: PresentationType = Presentation(BytesIO(content))
         except Exception as exc:
             raise ValueError("Uploaded file is not a valid PPTX presentation") from exc
 
@@ -163,8 +164,8 @@ class UploadedTemplateService:
         statement = (
             select(PresentationTemplateModel)
             .where(PresentationTemplateModel.user_id == user_id)
-            .where(PresentationTemplateModel.is_deleted.is_(False))
-            .order_by(PresentationTemplateModel.create_time.desc())
+            .where(PresentationTemplateModel.is_deleted.is_(False))  # type: ignore[attr-defined]
+            .order_by(PresentationTemplateModel.create_time.desc())  # type: ignore[attr-defined]
         )
         result = await db_session.execute(statement)
         models = result.scalars().all()
@@ -180,7 +181,7 @@ class UploadedTemplateService:
             select(PresentationTemplateModel)
             .where(PresentationTemplateModel.id == template_id)
             .where(PresentationTemplateModel.user_id == user_id)
-            .where(PresentationTemplateModel.is_deleted.is_(False))
+            .where(PresentationTemplateModel.is_deleted.is_(False))  # type: ignore[attr-defined]
         )
         result = await db_session.execute(statement)
         return result.scalar_one_or_none()

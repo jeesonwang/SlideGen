@@ -212,7 +212,7 @@ def modify_shape_xml(xml_str: str, shape_id: int | str, shape_name: str, text_co
 
                 p_element = r_element.getparent()
                 p_element.replace(r_element, new_r)
-    return etree.tostring(root, encoding="unicode", pretty_print=True)
+    return str(etree.tostring(root, encoding="unicode", pretty_print=True))
 
 
 def add_shape_by_xml(
@@ -278,7 +278,7 @@ def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
     else:
         p_element = root.find(".//a:p", namespaces=root.nsmap)
     if p_element is None:
-        return etree.tostring(root, encoding="unicode", pretty_print=True)
+        return str(etree.tostring(root, encoding="unicode", pretty_print=True))
 
     end_para_rpr = p_element.find(".//a:endParaRPr", namespaces=root.nsmap)
     if end_para_rpr is not None:
@@ -300,4 +300,4 @@ def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
         else:
             p_element.insert(0, r_element)
 
-    return etree.tostring(root, encoding="unicode", pretty_print=True)
+    return str(etree.tostring(root, encoding="unicode", pretty_print=True))
