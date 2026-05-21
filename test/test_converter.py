@@ -14,11 +14,13 @@ from slidegen.services.presentation.native_pages import (
     NativeCoverPage,
     NativeEndPage,
 )
+from slidegen.services.presentation.render_plan import build_presentation_render_plan
 from slidegen.services.presentation.template_profile import (
     TemplateRole,
     _has_keyword_match,
     profile_presentation_template,
 )
+from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
 
 
 def _template_path() -> str:
@@ -145,3 +147,42 @@ async def test_native_pages_generate_without_placeholders():
     assert "PART 01" in slide_texts
     assert "Growth" in slide_texts
     assert "Thank you!" in slide_texts
+
+
+def test_render_plan_marks_missing_roles_as_native_fallbacks():
+    presentation = Presentation()
+    presentation.slides.add_slide(presentation.slide_layouts[0])
+    profile = profile_presentation_template(presentation)
+    document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
+    assert document.main is not None
+    groups = list(iter_chapter_slide_groups(document.main))
+
+    plan = build_presentation_render_plan(groups, profile=profile, catalog_last_index=1)
+
+    assert plan.use_native_catalog
+    assert plan.use_native_chapter
+    assert plan.use_native_content
+    assert plan.use_native_end
+    assert plan.cleanup_template_indexes == []
+    assert plan.chapters[0].home_slide_index == 2
+    assert plan.chapters[0].content_slides[0].slide_index == 3
+    assert plan.end_slide_index == 4
+
+
+def test_render_plan_preserves_legacy_template_indexes_for_curated_template():
+    presentation = Presentation(_template_path())
+    profile = profile_presentation_template(presentation)
+    document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
+    assert document.main is not None
+    groups = list(iter_chapter_slide_groups(document.main))
+
+    plan = build_presentation_render_plan(groups, profile=profile, catalog_last_index=1)
+
+    assert not plan.use_native_catalog
+    assert not plan.use_native_chapter
+    assert not plan.use_native_content
+    assert not plan.use_native_end
+    assert plan.chapter_home_template_index == 2
+    assert plan.chapter_content_template_index == 3
+    assert plan.end_template_index == 4
+    assert plan.cleanup_template_indexes == [4, 3, 2]
