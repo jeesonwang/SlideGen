@@ -89,3 +89,30 @@ async def test_agent_recipe_output_rejects_overflow():
     """Pydantic auto-validation: w_frac must be in [0,1] range."""
     with pytest.raises(Exception):
         AgentRegionOutput(region_id="bad", x_frac=0.1, y_frac=0.1, w_frac=1.5, h_frac=0.5, z_layer=10)
+
+
+from slidegen.services.presentation.recipe_agent import resolve_recipe
+
+
+@pytest.mark.anyio
+async def test_resolve_recipe_falls_back_on_agent_error():
+    agent = RecipeAgent()
+    async def _fail(_prompt: str):
+        raise RecipeAgentError("mock failure")
+    agent._run_agent = _fail
+    spec = _make_spec()
+    recipe = await resolve_recipe(spec, DEFAULT_TOKENS, agent=agent, enable_agent=True)
+    assert isinstance(recipe, LayoutRecipe)
+    assert recipe.name in ("TitleBodyRecipe", "GridCardsRecipe", "TwoColumnRecipe",
+                           "CoverRecipe", "AgendaRecipe", "ClosingRecipe")
+
+
+@pytest.mark.anyio
+async def test_resolve_recipe_uses_fallback_when_agent_disabled():
+    agent = RecipeAgent()
+    agent._run_agent = _mock_arun(_valid_output())
+    spec = _make_spec()
+    recipe = await resolve_recipe(spec, DEFAULT_TOKENS, agent=agent, enable_agent=False)
+    assert isinstance(recipe, LayoutRecipe)
+    assert recipe.name in ("TitleBodyRecipe", "GridCardsRecipe", "TwoColumnRecipe",
+                           "CoverRecipe", "AgendaRecipe", "ClosingRecipe")

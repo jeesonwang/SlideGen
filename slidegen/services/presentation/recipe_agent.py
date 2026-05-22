@@ -216,3 +216,30 @@ class RecipeAgent:
                 raise RecipeAgentError(f"Region {region.region_id}: right edge out of canvas")
             if region.y_frac + region.h_frac > 1.01:
                 raise RecipeAgentError(f"Region {region.region_id}: bottom edge out of canvas")
+
+
+from slidegen.services.presentation.preset_recipes import PresetRecipeFallback
+
+
+async def resolve_recipe(
+    spec: SlideSpec,
+    tokens: DesignTokens,
+    *,
+    agent: RecipeAgent | None = None,
+    fallback: PresetRecipeFallback | None = None,
+    enable_agent: bool = True,
+    agent_timeout: float = 5.0,
+) -> LayoutRecipe:
+    fallback = fallback or PresetRecipeFallback()
+
+    if not enable_agent or agent is None:
+        logger.info("RecipeAgent disabled — using PresetRecipeFallback for '%s'", spec.title)
+        return fallback.select(spec, tokens)
+
+    try:
+        recipe = await agent.generate(spec, tokens, timeout=agent_timeout)
+        logger.info("RecipeAgent generated recipe '%s' for '%s'", recipe.name, spec.title)
+        return recipe
+    except RecipeAgentError as e:
+        logger.warning("RecipeAgent failed for '%s': %s — falling back to preset", spec.title, e)
+        return fallback.select(spec, tokens)
