@@ -201,6 +201,10 @@ class Settings(BaseSettings):
     # Maximum number of sections to generate
     MAX_ITERATIONS: int = 35
 
+    # [RENDERER]
+    ENABLE_RECIPE_RENDERER: bool = False
+    ENABLE_RECIPE_AGENT: bool = True
+
     # [USER]
     EMAIL_TEST_USER: EmailStr = "test@example.com"
     FIRST_SUPERUSER: EmailStr
