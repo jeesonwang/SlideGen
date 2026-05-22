@@ -147,7 +147,8 @@ def agenda_recipe(tokens: DesignTokens, n_blocks: int) -> LayoutRecipe:
     margin_y = tokens.page_margin_y / tokens.slide_height
     gap_frac = tokens.card_gap / tokens.slide_width
 
-    card_h = 0.35
+    available_h = 1.0 - 2 * margin_y - 0.18
+    card_h = min(0.35, (available_h - (n_blocks - 1) * gap_frac / 2) / n_blocks)
     regions = [
         Region(region_id="title", x_frac=margin_x, y_frac=margin_y,
                w_frac=1.0 - 2 * margin_x, h_frac=0.12, z_layer=10),

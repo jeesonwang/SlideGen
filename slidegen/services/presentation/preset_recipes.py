@@ -2,45 +2,37 @@ from __future__ import annotations
 
 import logging
 
-from slidegen.services.presentation.semantic import SlideSpec, SlideKind, BlockKind
+from slidegen.services.presentation.design_tokens import DesignTokens
+from slidegen.services.presentation.recipes import LayoutRecipe
+from slidegen.services.presentation.default_recipes import RECIPE_FACTORIES, title_body_recipe
+from slidegen.services.presentation.semantic import SlideSpec, SlideKind
 
 logger = logging.getLogger(__name__)
 
 
 class PresetRecipeFallback:
-    """Deterministic fallback when RecipeAgent is unavailable.
-
-    Phase 1a: 返回 recipe name (string)，不依赖 LayoutRecipe 实现。
-    Phase 1b: 升级为返回 LayoutRecipe 实例。
-    """
-
-    def select_name(self, spec: SlideSpec) -> str:
-        """根据 slide_kind + block 数量和密度返回预设 recipe name。
-
-        Returns a recipe name string that Phase 1b factories will resolve.
-        """
+    def select(self, spec: SlideSpec, tokens: DesignTokens) -> LayoutRecipe:
         n = len(spec.blocks)
         short_blocks = all(b.estimated_text_length < 200 for b in spec.blocks)
-
         kind = spec.kind
 
-        if kind in (SlideKind.COVER, SlideKind.SECTION_COVER):
-            return "CoverRecipe"
+        if kind == SlideKind.COVER:
+            return RECIPE_FACTORIES["CoverRecipe"](tokens)
         elif kind == SlideKind.AGENDA:
-            return "AgendaRecipe"
+            return RECIPE_FACTORIES["AgendaRecipe"](tokens, n_blocks=n)
         elif kind == SlideKind.CLOSING:
-            return "ClosingRecipe"
+            return RECIPE_FACTORIES["ClosingRecipe"](tokens)
         elif kind == SlideKind.COMPARISON:
-            return "TwoColumnRecipe"
-        elif kind == SlideKind.CONTENT_POINTS or kind == SlideKind.PROCESS or kind == SlideKind.TIMELINE:
+            return RECIPE_FACTORIES["TwoColumnRecipe"](tokens, n_blocks=n)
+        elif kind in (SlideKind.CONTENT_POINTS, SlideKind.PROCESS, SlideKind.TIMELINE):
             if n <= 2 and not short_blocks:
-                return "TitleBodyRecipe"
+                return RECIPE_FACTORIES["TitleBodyRecipe"](tokens, n_blocks=n)
             elif n <= 6 and short_blocks:
-                return "GridCardsRecipe"
+                return RECIPE_FACTORIES["GridCardsRecipe"](tokens, n_blocks=n)
             else:
-                return "TitleBodyRecipe"
+                return RECIPE_FACTORIES["TitleBodyRecipe"](tokens, n_blocks=n)
         elif kind == SlideKind.DATA_TABLE:
-            return "TitleBodyRecipe"
+            return RECIPE_FACTORIES["TitleBodyRecipe"](tokens, n_blocks=n)
         else:
-            logger.warning("No preset recipe for slide kind %s, falling back to TitleBodyRecipe", kind)
-            return "TitleBodyRecipe"
+            logger.warning("No preset recipe for slide kind %s, falling back", kind)
+            return RECIPE_FACTORIES["TitleBodyRecipe"](tokens, n_blocks=n)
