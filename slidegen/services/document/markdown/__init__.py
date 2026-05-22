@@ -181,7 +181,7 @@ class MarkdownParser:
             return False
         parts = separator.split("|")[1:-1]
         for part in parts:
-            if not re.match(r"^\s*:?-+:\s*$", part.strip()):
+            if not re.match(r"^\s*:?-+:?\s*$", part.strip()):
                 return False
         return True
 
@@ -216,7 +216,7 @@ class MarkdownParser:
 
         table = Table(headers=headers)
         table.table_type = "markdown"
-        table.text = "\n".join(lines)
+        table.element_text_source = "\n".join(lines)
         table.row_number = row_number
         table.col_number = col_number
         self.previous_heading.append(table)
