@@ -48,7 +48,7 @@ Markdown → MarkdownToPresentation → ChapterContentPage
 - 将现有 `shapes.json` 的可复用样式经验迁移为代码内置的默认 `LayoutRecipe` 库（装饰元素以 `DECORATION` region 形式存储）
 - 增加 **导出前几何 QA** 层（重叠检测、越界检测、可读性检测）
 - 增强 `SlideSpec`/`BlockSpec` 语义模型，支持更多 slide kind
-- 实现 `LayoutSelector`，基于内容语义而非子节点数量选择版式
+- 实现 `RecipeAgent`，由 LLM 根据内容语义生成 LayoutRecipe（Region 坐标、z_layer、RepeatRule），预设 recipe 作为 fallback
 - 让 `NativePage` 从"占位符 fallback"升级为"有设计令牌支持的完整视觉方案"
 - 保留模板 PPTX 的配色/字体提取能力（作为 Design Token 的来源之一），但不再依赖模板 shape 的结构
 - 删除旧的 XML-copy 渲染链路，避免新旧两套路由长期并存
@@ -83,13 +83,15 @@ Markdown → MarkdownToPresentation → ChapterContentPage
 
 | 保留项 | 角色变化 |
 |---|---|
-| `MarkdownToPresentation` (converter.py) | 保留为 orchestrator，但内部调用链从 `ChapterContentPage` 切换到 `LayoutSelector → SlideRenderer`；移除 `_cleanup_template_slides` 等旧方法 |
+| `MarkdownToPresentation` (converter.py) | 保留为 orchestrator，但内部调用链从 `ChapterContentPage` 切换到 `RecipeAgent → SlideRenderer`（fallback 走 `PresetRecipeFallback`）；移除 `_cleanup_template_slides` 等旧方法 |
 | `render_plan.py` — `PresentationRenderPlan`, `build_presentation_render_plan` | 保留 slide 编排职责，剔除 `use_native_*` flag 和 template index 相关字段，只做 slide index 计算 |
 | `semantic.py` — `SlideSpec`, `BlockSpec`, `build_content_slide_spec` | **增强**：增加更多 slide/block kind，增加内容密度估算 |
 | `template_profile.py` — `TemplateProfile`, `profile_presentation_template`, role 检测 | 保留 role 检测逻辑；移除 `_supports_legacy_renderer`；role assignment 不再等同于 legacy renderer 可用性 |
 | `design_tokens.py`（新增） | DesignTokens 数据类 + 默认 token set + PPTX theme 提取 + shape 采样提取 |
-| `recipes.py`（新增） | `LayoutRecipe` 数据类定义 + Recipe factory 函数 |
-| `default_recipes.py`（新增） | 承接从 `shapes.json` 迁移来的默认布局和装饰 region；6 个核心 Recipe 的具体实现 |
+| `recipes.py`（新增） | `LayoutRecipe` 数据类定义（含 `repeats: tuple[RepeatRule, ...]`） |
+| `default_recipes.py`（新增） | 承接从 `shapes.json` 迁移来的默认布局和装饰 region；6 个核心预设 Recipe 的具体实现 |
+| `preset_recipes.py`（新增） | `PresetRecipeFallback`：确定性规则选择，Agent 失败时的 fallback 路径 |
+| `recipe_agent.py`（新增） | `RecipeAgent`：LLM 生成 LayoutRecipe 的主路径，含 prompt template 和 JSON schema 校验 |
 | `slide_renderer.py`（新增） | 基于 python-pptx 原生 API 的 SlideRenderer + AssetProvider 接口 |
 | `native_pages.py` | **保留至 Phase 2 结束**：Phase 1 期间继续作为 fallback 渲染路径；Phase 2 被 `SlideRenderer` 完全取代后，在 Phase 3 删除 |
 | `post_render_validator.py`（新增） | 越界检测 + 字体检测（Phase 1），重叠检测（experimental/warn-only） |
@@ -103,9 +105,10 @@ Markdown → MarkdownToPresentation → ChapterContentPage
 ```
 MarkdownDocument
   → SlideSpec / BlockSpec (增强版语义模型)
-  → LayoutSelector (确定性版式选择)
   → DesignTokens (配色/字体/间距)
-  → LayoutRecipe (参数化公式计算的完整版式描述，含确定性默认 z_layer)
+  → RecipeAgent (LLM 生成 LayoutRecipe，含 Region 坐标、z_layer、RepeatRule)
+      ├─ 成功 → LayoutRecipe
+      └─ 失败/超时 → 预设 recipe fallback (确定性默认版式)
   → SlideRenderer (python-pptx 原生 API)
   → PostRenderValidator (重叠/越界/可读性 QA)
   → PPTX
@@ -242,8 +245,8 @@ class BlockSpec:
     icon_query: str | None = None     # 非空表示该 block 需要图标，值为搜索 query
 
     # NOTE: 行数估算（estimated_line_count）不放在 BlockSpec 中。
-    # 行数依赖 region 宽度和字号，这些参数在 LayoutSelector 阶段尚未确定（鸡生蛋问题）。
-    # LayoutSelector 的 variant 选择只基于 estimated_text_length 阈值：
+    # 行数依赖 region 宽度和字号，这些参数在 RecipeAgent/PresetRecipeFallback 阶段尚未确定（鸡生蛋问题）。
+    # PresetRecipeFallback 的 variant 选择只基于 estimated_text_length 阈值：
     #   短内容（< 200 字符/block）→ grid cards，长内容（>= 200 字符/block）→ stacked
     # 行数估算推迟到 SlideRenderer 阶段，在已知 region 宽度和字号后按需计算。
 
@@ -254,7 +257,7 @@ class SlideSpec:
     source_level: int
     blocks: tuple[BlockSpec, ...]
 
-    # 新增：供 LayoutSelector 使用的聚合指标
+    # 新增：供 RecipeAgent / PresetRecipeFallback 使用的聚合指标
     @property
     def total_text_length(self) -> int: ...
     @property
@@ -275,31 +278,83 @@ class SlideSpec:
 - `IMAGE_TEXT` 不通过 Markdown 自动推断，仅由显式 Markdown hint（如 `<!-- slide: image_text -->`）触发
 - 默认 → `CONTENT_POINTS`
 
-### 3. LayoutSelector（新增）
+### 3. RecipeAgent + 预设 Recipe Fallback（新增）
+
+每张 slide 的布局（Region 坐标、z_layer、排列方式）默认由 **LLM Agent 生成**，预设 recipe 作为 fallback：
+
+```
+BlockSpec[] + DesignTokens
+        ↓
+   RecipeAgent (默认路径)  ──失败/超时──→  PresetRecipeFallback (确定性 fallback)
+        ↓                                       ↓
+    LayoutRecipe                            LayoutRecipe
+        ↓                                       ↓
+                    SlideRenderer (统一)
+```
 
 ```python
-class LayoutSelector:
-    """Deterministic layout selection based on content semantics.
+class RecipeAgent:
+    """LLM-driven recipe generation — the default layout path.
 
-    Selection is purely semantic — no DesignTokens dependency.
-    Tokens belong in the Renderer, not the Selector.
+    Agent receives content semantics (BlockSpec) and visual constraints
+    (DesignTokens), returns a complete LayoutRecipe with Region coordinates,
+    z_layer values, and optional RepeatRules for homogeneous layouts.
     """
 
-    def select(self, spec: SlideSpec) -> LayoutRecipe:
-        """Choose a recipe based on slide kind, block kinds, and content density."""
-        # 按优先级匹配：
-        # 1. slide kind → recipe family
-        # 2. block count + estimated text length → recipe variant
-        # 3. has_data → special data recipe
+    async def generate(
+        self,
+        spec: SlideSpec,
+        tokens: DesignTokens,
+        timeout: float = 5.0,
+    ) -> LayoutRecipe:
+        """Generate a LayoutRecipe via LLM.
+
+        Raises RecipeAgentError on failure/timeout.
+        """
+        ...
+
+
+class PresetRecipeFallback:
+    """Deterministic fallback when RecipeAgent fails or is disabled.
+
+    Uses rule-based selection: slide_kind + block count → preset recipe.
+    """
+
+    def select(self, spec: SlideSpec, tokens: DesignTokens) -> LayoutRecipe:
         ...
 ```
 
-**选择逻辑的关键规则：**
+**Agent 输入（prompt 中提供的上下文）：**
+
+| 字段 | 来源 | 用途 |
+|---|---|---|
+| `slide_kind` | SlideSpec | 页面类型（AGENDA / COMPARISON / ...） |
+| `blocks` 摘要 | SlideSpec.blocks | 每个 block 的 kind、title、estimated_text_length |
+| `slide_width`, `slide_height` | DesignTokens | canvas 尺寸（用于 fraction 坐标参照） |
+| `page_margin_x`, `page_margin_y` | DesignTokens | 页边距约束 |
+| `card_gap`, `section_gap` | DesignTokens | 间距约束 |
+
+**Agent 输出（结构化 JSON → 解析为 LayoutRecipe）：**
+
+Agent 返回 JSON，包含 `regions`（逐个指定的 Region）和可选的 `repeats`（RepeatRule，用于同构重复布局）。输出经过 schema 校验 + PostRenderValidator 二次验证。
+
+**Fallback 触发条件：**
+
+- Agent 超时（默认 5s）
+- Agent 返回的 JSON 不符合 schema
+- PostRenderValidator 对 Agent 输出报告 error 级别问题（如 region 越界）
+- 配置中显式禁用 Agent（`enable_recipe_agent=False`）
+
+**PresetRecipeFallback 的选择规则（仅在 fallback 时使用）：**
 
 - **同 slide kind + 同 recipe family**：保证视觉一致性
 - **内容密度决定 variant**：4 个短 point → 2x2 卡片网格；2 个长 point → 上下堆叠
-- **确定性优先**：默认不随机。随机变体仅在 `style_variant: "random"` 时用于装饰层（颜色变体、图标风格）
+- **确定性**：不随机，相同输入始终产出相同 recipe
 - **不支持的组合** → fallback 到 `TitleBodyRecipe` + warning 日志
+
+**并发策略：**
+
+一个 presentation 包含多张 slide，所有 slide 的 RecipeAgent 调用可**并发执行**（各 slide 的布局相互独立）。单个 slide 的 Agent 调用失败不影响其他 slide —— 失败的 slide 单独 fallback 到预设 recipe。
 
 ### 4. LayoutRecipe（新增）
 
@@ -352,10 +407,45 @@ class Region:
                 self.w_frac * slide_w, self.h_frac * slide_h)
 
 @dataclass(frozen=True)
+class RepeatRule:
+    """Generates N regions from a seed region + step vector.
+
+    Used for homogeneous repeating layouts (AGENDA items, TIMELINE nodes,
+    PROCESS steps, bullet lists) where blocks share identical dimensions
+    and are arranged in a regular pattern.
+
+    Agent outputs one RepeatRule instead of N individual Regions — saves
+    tokens and guarantees uniform spacing.
+    """
+    seed: Region                # 第一个 block 的位置和尺寸
+    step_x: float               # 每次 x 方向偏移 (fraction)；0 = 纯垂直排列
+    step_y: float               # 每次 y 方向偏移 (fraction)；0 = 纯水平排列
+    role: RegionRole = RegionRole.CARD  # 展开后每个 region 的 role
+
+    def expand(self, count: int) -> tuple[Region, ...]:
+        """Expand the seed into `count` regions along the step vector."""
+        return tuple(
+            Region(
+                region_id=f"{self.seed.region_id}_{i}",
+                x_frac=self.seed.x_frac + self.step_x * i,
+                y_frac=self.seed.y_frac + self.step_y * i,
+                w_frac=self.seed.w_frac,
+                h_frac=self.seed.h_frac,
+                z_layer=self.seed.z_layer,
+                decoration_shape=self.seed.decoration_shape,
+                fill_role=self.seed.fill_role,
+                line_role=self.seed.line_role,
+                opacity=self.seed.opacity,
+            )
+            for i in range(count)
+        )
+
+@dataclass(frozen=True)
 class LayoutRecipe:
     """Describes regions, typography, spacing, and rendering rules for one slide."""
     name: str
-    regions: tuple[Region, ...]
+    regions: tuple[Region, ...]           # 逐个指定的 region（异构布局）
+    repeats: tuple[RepeatRule, ...] = ()   # 种子+向量展开的 region（同构重复布局）
     region_roles: dict[str, RegionRole]    # region_id → RegionRole
     supported_block_kinds: frozenset[BlockKind]
 
@@ -366,7 +456,48 @@ class LayoutRecipe:
     @property
     def region_ids(self) -> frozenset[str]:
         return frozenset(r.region_id for r in self.regions)
+
+    @property
+    def all_regions(self) -> tuple[Region, ...]:
+        """All regions including those expanded from RepeatRules.
+        count comes from len(SlideSpec.blocks) at render time."""
+        ...
 ```
+
+**RepeatRule 使用场景与排列模式：**
+
+RepeatRule 适用于同构重复布局 —— 多个 block 尺寸相同、按规律排列。Agent 只需输出 seed + step 向量，代码根据实际 block 数量自动展开。
+
+| 排列方式 | step_x | step_y | 适用场景 |
+|---|---|---|---|
+| 纯垂直 | 0 | h + gap | 垂直列表、纵向 AGENDA |
+| 纯水平 | w + gap | 0 | 横向卡片、水平 AGENDA |
+| 斜向/阶梯 | 0.05 | 0.12 | 阶梯式 AGENDA、递进式 TIMELINE |
+| 反向阶梯 | -0.05 | 0.12 | 右向左递进布局 |
+| 网格（行优先） | w + gap | 0（换行时重置 x，step_y = h + gap） | 2x2 / 2x3 卡片网格（需 GridRepeatRule 扩展） |
+
+**Agent 输出 RepeatRule 的示例（AGENDA，5 个 item，阶梯排列）：**
+
+```json
+{
+  "repeats": [{
+    "seed": {"region_id": "agenda_item", "x_frac": 0.08, "y_frac": 0.22, "w_frac": 0.30, "h_frac": 0.10, "z_layer": 10},
+    "step_x": 0.05,
+    "step_y": 0.13,
+    "role": "card"
+  }],
+  "regions": [
+    {"region_id": "title", "x_frac": 0.08, "y_frac": 0.05, "w_frac": 0.84, "h_frac": 0.12, "z_layer": 10}
+  ]
+}
+```
+
+展开后第 N 个 item 的位置：`x_n = 0.08 + 0.05 * n`，`y_n = 0.22 + 0.13 * n`。
+
+**何时用 RepeatRule vs 逐个指定 Region：**
+
+- **RepeatRule**：AGENDA、TIMELINE、PROCESS、纯 bullet CONTENT_POINTS —— 各 block 尺寸相同、排列有规律
+- **逐个指定 regions**：COMPARISON（左右 panel 不等）、COVER（异构布局）、混合图文页
 
 **装饰和内容用统一的 Region 表达。**
 
@@ -443,9 +574,9 @@ Recipe 的关键设计原则（来自 JS 代码分析的启发）：
 
 ### 4.5 z-layer 编排策略
 
-z-layer 决定 shape 的前后遮挡关系，采用**固定分层 + Recipe 内置默认值**的确定性方案：
+z-layer 决定 shape 的前后遮挡关系。**RecipeAgent 在生成 LayoutRecipe 时同时决定每个 Region 的 z_layer**；预设 recipe fallback 使用固定分层默认值。
 
-**宏观分层（固定规则）：**
+**宏观分层（Agent 和 fallback 共用的约束）：**
 
 | z_layer 范围 | 用途 | 示例 |
 |---|---|---|
@@ -454,31 +585,26 @@ z-layer 决定 shape 的前后遮挡关系，采用**固定分层 + Recipe 内�
 | 20 | 装饰 | 色条、分割线、边框 |
 | 30 | 前景/页脚 | 页码、来源注释 |
 
-**同层内排序规则（确定性）：**
+Agent prompt 中包含上述分层约束，Agent 输出的 z_layer 值必须在 {0, 10, 20, 30} 范围内（schema 校验）。
 
-同一 z_layer 内多个 region 的渲染顺序由其在 `LayoutRecipe.regions` 元组中的索引决定（先定义的先渲染，后定义的覆盖在上方）。这意味着：
+**同层内排序规则：**
 
-- Recipe 作者通过 region 定义顺序显式控制同层遮挡关系
-- 不需要运行时动态决策
-- 对于 6 个核心 Recipe 的简单布局（title + body / grid cards / two columns），同层内的 region 不存在有意义的遮挡，顺序影响可忽略
+同一 z_layer 内多个 region 的渲染顺序由其在 `LayoutRecipe.regions` 元组中的索引决定（先定义的先渲染，后定义的覆盖在上方）。Agent 通过 region 输出顺序隐式控制同层遮挡关系。
 
-**每个 Recipe 的 DECORATION region 带有内置的默认 z_layer 值**（在 Recipe factory 函数中硬编码）。例如 `CoverRecipe` 的装饰色条固定在 z_layer=20，确保覆盖在背景之上、文本之下。
-
-### 4.6 Future Phase: AI Visual Composer（z-layer 编排与视觉微调）
+### 4.6 Future Phase: 全局视觉一致性优化
 
 > **此节描述的是 Phase 3 之后的增强方向，不在当前迁移范围内。**
 
-当基础管线稳定后（Phase 1-3 完成），可引入 AI Agent 对复杂 slide 做 z-layer 编排和装饰层微调：
+当前 RecipeAgent 逐 slide 独立生成 LayoutRecipe。Future Phase 可引入 **Presentation-Level Visual Agent**，在全部 slide 的 recipe 生成后做全局视觉一致性优化：
 
-- **触发条件：** 复杂 slide（多 card 叠加、带 hero image 的封面）中，确定性默认 z_layer 无法满足视觉需求
-- **Agent 输入：** SlideSpec + DesignTokens + LayoutRecipe skeleton
-- **Agent 输出：** 调整后的 LayoutRecipe（z_layer 微调 + 可选的额外 DECORATION region）
-- **Fallback：** Agent 超时或失败时，使用 Recipe 的确定性默认值
+- **跨 slide 布局协调：** 同类型 slide（如多张 CONTENT_POINTS）使用一致的 region 位置和尺寸，避免翻页时内容"跳动"
+- **配色节奏规划：** 在整个 deck 中合理分配 primary/accent/light_bg 的使用频率，避免连续 5 张 slide 都是同一背景色
+- **装饰元素变奏：** 在保持品牌一致性的前提下，为连续 slide 的 DECORATION region 引入有节制的变化
 
 **前置条件（进入此 Phase 前必须满足）：**
-1. 6 个核心 Recipe 用确定性默认值产出的 PPTX 通过 PostRenderValidator 检查
-2. 在 >= 10 个真实 Markdown 输入上验证基础管线的视觉质量可接受
-3. 定义 Agent 的 prompt schema、输出 JSON schema、延迟/成本预算
+1. RecipeAgent 在 >= 20 个真实 Markdown 输入上稳定运行，fallback 率 < 10%
+2. 单 slide 级别的 Agent 生成质量已通过 PostRenderValidator + 人工抽检验证
+3. 定义 Presentation-Level Agent 的输入/输出 schema 和延迟预算
 
 当前 `NativePage` 是白底黑字。升级后它变成一个完整的 Renderer：
 
@@ -688,8 +814,8 @@ hint 是 **block 级别**的，不是 slide 级别。每个 `###` 子标题下�
 2. 新增 `extract_design_tokens_from_presentation(prs)`（两层提取：theme.xml + shape 采样）
 3. 增强 `SlideSpec` / `BlockSpec`（新 SlideKind/BlockKind 值 + `estimated_text_length`）
 4. 扩展 `build_content_slide_spec()` 的 slide kind 推断逻辑（COMPARISON / PROCESS / TIMELINE / DATA_TABLE / CONTENT_POINTS）
-5. 实现 `LayoutSelector` skeleton（纯语义选择，不依赖 DesignTokens）
-6. 测试：semantic model 测试、slide kind 推断测试、LayoutSelector 确定性测试
+5. 实现 `PresetRecipeFallback` skeleton（确定性规则选择，作为 Agent 不可用时的兜底）
+6. 测试：semantic model 测试、slide kind 推断测试、PresetRecipeFallback 确定性测试
 
 **Phase 1a 完成标志：**
 - 所有新 `SlideKind` / `BlockKind` 值已定义
@@ -699,28 +825,44 @@ hint 是 **block 级别**的，不是 slide 级别。每个 `###` 子标题下�
 
 ### Phase 1b: 建立最小渲染闭环 + 样式迁移工具
 
-1. 实现 `Region`、`RegionRole`、`LayoutRecipe` 数据类（`Region` 含 `decoration_shape` 等装饰字段）
-2. 实现 `TitleBodyRecipe` + `GridCardsRecipe` + `TwoColumnRecipe`（首批核心 recipe）
-3. 实现 `SlideRenderer`（基于 `python-pptx` 原生 API 渲染 title/body/card/primitive）
+1. 实现 `Region`、`RegionRole`、`RepeatRule`、`LayoutRecipe` 数据类（`Region` 含 `decoration_shape` 等装饰字段，`RepeatRule` 含 step_x/step_y 向量）
+2. 实现首批预设 recipe（`TitleBodyRecipe` + `GridCardsRecipe` + `TwoColumnRecipe`），供 fallback 使用
+3. 实现 `SlideRenderer`（基于 `python-pptx` 原生 API 渲染 title/body/card/primitive；支持 RepeatRule 展开）
 4. 新增一次性 `shapes.json → default_recipes.py` 迁移脚本（只处理可稳定解析的形状：纯色填充矩形、纯色线条→`DECORATION` region；复杂形状在迁移报告中标记为 skipped）
 5. 实现 `PostRenderValidator`，越界检测 + 字体检测，重叠检测 experimental/warn-only，默认 `warn` 模式
 6. 保留 feature flag `enable_recipe_renderer`（环境变量或 config），默认 `False`，用于切换新主路径验证
-7. 测试：Recipe 快照测试、SlideRenderer 输出验证、PostRenderValidator 单元测试
+7. 测试：Recipe 快照测试、SlideRenderer 输出验证、PostRenderValidator 单元测试、RepeatRule 展开测试
 
 **Phase 1b 完成标志：**
 - 新 renderer 能独立生成包含 title + body + cards 的可读 PPTX
-- **提供独立的集成测试**：直接走 `SlideSpec → LayoutSelector → SlideRenderer → PPTX 文件` 全链路（跳过 `MarkdownToPresentation`），验证产出的 PPTX 通过 `PostRenderValidator` 检查且可被 python-pptx 正常读取
+- **提供独立的集成测试**：直接走 `SlideSpec → PresetRecipeFallback → SlideRenderer → PPTX 文件` 全链路（跳过 `MarkdownToPresentation`），验证产出的 PPTX 通过 `PostRenderValidator` 检查且可被 python-pptx 正常读取
 - `PostRenderValidator` 可以对产出做越界和字体检查
 - `shapes.json` 中可解析的样式已经转换成 `DECORATION` region
 - 新路径通过 feature flag 隔离，默认不启用
 - feature flag `enable_recipe_renderer` 的接入点已在 `converter.py` 中预埋（至少对 content page 可切换），但默认 `False`
 
+### Phase 1c: 接入 RecipeAgent（LLM 生成 recipe 主路径）
+
+1. 实现 `RecipeAgent`：定义 prompt template、输出 JSON schema、schema 校验逻辑
+2. Agent prompt 包含：z_layer 约束（{0,10,20,30}）、DesignTokens 中的间距约束、RepeatRule 语法说明
+3. Agent 输出校验链：JSON schema → Region 越界检测（fraction ∈ [0.0, 1.0]）→ PostRenderValidator
+4. 实现 fallback 触发逻辑：超时 / schema 失败 / validator error → 自动切换到 PresetRecipeFallback
+5. 并发调度：一个 presentation 中所有 slide 的 RecipeAgent 调用并发执行
+6. 配置项 `enable_recipe_agent`（默认 `True`），可降级为纯 fallback 模式
+7. 测试：Agent mock 测试（验证 JSON schema 解析）、fallback 触发测试、并发调度测试、端到端集成测试
+
+**Phase 1c 完成标志：**
+- RecipeAgent 能对 >= 5 种 SlideKind 生成合法 LayoutRecipe
+- fallback 率 < 20%（在测试 Markdown 样本上）
+- Agent 超时/失败时无感降级到预设 recipe
+- 生成时间增量可接受（单 slide Agent 调用 < 5s，并发后总增量 < 8s）
+
 ### Phase 2: 切换到新主渲染管线并删除旧内容页 renderer
 
-1. 实现 `CoverRecipe` / `AgendaRecipe` / `ClosingRecipe`（补齐所有页面类型的 recipe 覆盖）
+1. 补齐预设 recipe：`CoverRecipe` / `AgendaRecipe` / `ClosingRecipe`（确保所有页面类型都有 fallback 覆盖）
 2. 实现 `AssetProvider` 接口，将 `ImageGenerator` 和 `IconSearcher` 从 `ChapterContentPage` 迁移为注入依赖
-3. 将 `NativeCoverPage`、`NativeChapterContentPage` 等全部替换为基于 `LayoutSelector → SlideRenderer` 的实现
-4. `MarkdownToPresentation.generate()` 统一走新路径：`profile template → extract tokens → build SlideSpecs → LayoutSelector → SlideRenderer → PostRenderValidator`
+3. 将 `NativeCoverPage`、`NativeChapterContentPage` 等全部替换为基于 `RecipeAgent → SlideRenderer` 的实现
+4. `MarkdownToPresentation.generate()` 统一走新路径：`profile template → extract tokens → build SlideSpecs → RecipeAgent (并发) → SlideRenderer → PostRenderValidator`
 5. `PresentationRenderPlan` 移除 `use_native_*` flag，只做 slide index 计算
 6. 删除 `ChapterContentPage` 的 XML-copy 调用链
 7. 模板 PPTX 不再被 clone slide，只用于提取 DesignTokens；所有 slide 基于 blank layout 全新生成
@@ -729,7 +871,8 @@ hint 是 **block 级别**的，不是 slide 级别。每个 `###` 子标题下�
 **Phase 2 完成标志：**
 - 无模板 PPTX 时（纯 native 路径），产出视觉统一、配色合理的 PPT
 - 有模板 PPTX 时，Design Token 从模板提取，产出继承品牌风格的 PPT
-- 所有 6 个核心 Recipe 通过 `PostRenderValidator` 检查
+- 所有 6 个核心预设 Recipe 通过 `PostRenderValidator` 检查
+- RecipeAgent fallback 率 < 10%（在 >= 20 个真实 Markdown 输入上）
 - `PresentationRenderPlan` 不再有 `use_native_*` flag
 - 运行时不再读取 `components/shapes/shapes.json`
 
@@ -759,7 +902,7 @@ hint 是 **block 级别**的，不是 slide 级别。每个 `###` 子标题下�
 - 用户上传的模板 PPTX 仍可被读取和利用（配色/字体提取）
 - 运行时不再依赖 `shapes.json` 的存在
 - 旧 `shapes.json` 只能作为迁移输入、fixture 或历史归档，不参与生产渲染
-- **性能基线：** 端到端生成时间（无图片/图标生成）不超过当前基线的 2x。Phase 2 集成测试中加入耗时断言，基线值从 Phase 1a 开始前测量并记录
+- **性能基线：** 端到端生成时间（无图片/图标生成）：RecipeAgent 关闭时不超过当前基线的 2x；RecipeAgent 开启时不超过当前基线 + 8s（Agent 并发调度，单 slide < 5s，不串行累加）。Phase 2 集成测试中加入耗时断言，基线值从 Phase 1a 开始前测量并记录
 
 ## Risks
 
@@ -767,7 +910,9 @@ hint 是 **block 级别**的，不是 slide 级别。每个 `###` 子标题下�
 - **`post_render_validator` 的重叠检测可能产生大量 false positive。** python-pptx shape 包围盒包含不可见的 padding/边距。Phase 1 只做越界和字体检测，重叠检测保持 experimental/warn-only，在真实 PPTX 上验证后再决定是否提升级别。
 - **从 `shapes.json` 迁移出的装饰元素可能丢失复杂视觉细节。** 对复杂 XML 先降级为简单 `DECORATION` region 或跳过，用迁移报告列出差异，避免为了追求还原度把 XML-copy 带回主路径。
 - **删除运行时 `shapes.json` 依赖可能影响内部测试或脚本。** Phase 3 前需要 codebase 搜索确认无运行时引用，并把必要样例转入 fixture。
-- **LayoutSelector 的推断规则可能不完美。** 初期保持保守（大部分 Markdown → `CONTENT_POINTS`），逐步增加推断规则，并给用户提供 Markdown hint 语法（如 `<!-- slide: comparison -->`）来显式指定 slide kind。
+- **Slide kind 推断规则可能不完美。** 初期保持保守（大部分 Markdown → `CONTENT_POINTS`），逐步增加推断规则，并给用户提供 Markdown hint 语法（如 `<!-- slide: comparison -->`）来显式指定 slide kind。
+- **RecipeAgent 引入 LLM 延迟和成本。** 单 slide Agent 调用 < 5s，所有 slide 并发执行，总增量可控。通过 `enable_recipe_agent` 配置可随时降级为纯 fallback 模式。Agent 输出 < 200 tokens/slide，prompt 轻量（只含 BlockSpec 摘要 + DesignTokens 子集）。
+- **RecipeAgent 输出非确定性。** 相同输入可能产生不同布局。PostRenderValidator 兜底质量，预设 recipe fallback 保证最差情况下仍有合理输出。对于需要严格一致性的场景，可禁用 Agent 走纯 fallback。
 - **相对坐标系统可能引入浮点精度问题。** `x_frac` 等 0.0~1.0 的小数在转换为 inches 时可能产生亚像素偏差。`SlideRenderer` 在渲染时对坐标做 `round(x, 2)` 英寸精度处理。
 - **Shape 采样提取 token 可能被模板中的 outlier shape 误导。** 采样时按面积加权，过滤面积 < 1 平方英寸的 shape（图标、装饰点）。模板 slide 数量 < 3 时跳过 shape 采样，完全依赖 theme.xml + 默认值。颜色 → token 角色映射使用 HSL lightness 启发式规则（详见 §1 Token 提取策略）。
 
@@ -781,7 +926,15 @@ hint 是 **block 级别**的，不是 slide 级别。每个 `###` 子标题下�
 - 验证 `BlockSpec.estimated_text_length` 正确估算
 - 验证未知模式 → `CONTENT_POINTS` fallback
 
-### LayoutSelector 测试
+### RecipeAgent 测试
+
+- 验证 Agent 输出 JSON 通过 schema 校验（Region 坐标 ∈ [0.0, 1.0]、z_layer ∈ {0, 10, 20, 30}）
+- 验证 Agent 超时时自动 fallback 到 PresetRecipeFallback
+- 验证 Agent 输出越界 Region 时触发 fallback
+- 验证 RepeatRule 展开：seed + step_x/step_y → 正确的 N 个 Region 坐标
+- 验证并发调度：多 slide 并发调用，单个失败不影响其他 slide
+
+### PresetRecipeFallback 测试
 
 - 验证相同 SlideSpec 产生相同 Recipe（确定性）
 - 验证 4 个短 point → grid variant，2 个长 point → stacked variant
@@ -820,7 +973,7 @@ hint 是 **block 级别**的，不是 slide 级别。每个 `###` 子标题下�
 - 完整 Markdown → PPTX 生成（无模板）→ 产出合法 PPTX，通过 validator
 - 完整 Markdown → PPTX 生成（有模板）→ 产出继承品牌风格的 PPTX
 - 新主渲染路径开启时 → 运行时不读取 `components/shapes/shapes.json`
-- 旧 renderer 删除后 → Markdown → PPTX 仍通过 `LayoutSelector → SlideRenderer` 成功生成
+- 旧 renderer 删除后 → Markdown → PPTX 仍通过 `RecipeAgent → SlideRenderer` 成功生成（Agent 失败时走 PresetRecipeFallback）
 
 ## Recommended First Implementation Scope
 
@@ -829,22 +982,33 @@ hint 是 **block 级别**的，不是 slide 级别。每个 `###` 子标题下�
 建立新管线的数据基础，不改变任何渲染行为：
 
 1. `slidegen/services/presentation/design_tokens.py` — `DesignTokens` dataclass + 默认 token set（`DefaultTokens`、`PresetTokens`）+ `extract_design_tokens_from_presentation(prs)`（两层提取：theme.xml + shape 采样）
-2. `slidegen/services/presentation/region.py` — `Region`、`RegionRole` 数据类（含 `decoration_shape` 等装饰渲染字段）
+2. `slidegen/services/presentation/region.py` — `Region`、`RegionRole`、`RepeatRule` 数据类（含 `decoration_shape` 等装饰渲染字段，`RepeatRule` 含 step_x/step_y 向量和 expand() 方法）
 3. 增强 `semantic.py` — 新增 `SlideKind`/`BlockKind` 值 + `estimated_text_length` + slide kind 推断函数
-4. `slidegen/services/presentation/layout_selector.py` — `LayoutSelector`（纯语义选择，不含 DesignTokens），先返回 recipe name（string），不依赖 recipe 实现
-5. 测试：semantic model 测试、slide kind 推断测试、LayoutSelector 确定性测试
+4. `slidegen/services/presentation/preset_recipes.py` — `PresetRecipeFallback`（确定性规则选择，不含 DesignTokens），先返回 recipe name（string），不依赖 recipe 实现
+5. 测试：semantic model 测试、slide kind 推断测试、PresetRecipeFallback 确定性测试、RepeatRule expand() 单元测试
 
 ### 第二个 PR（Phase 1b）：最小渲染闭环
 
-6. `slidegen/services/presentation/recipes.py` / `default_recipes.py` — `LayoutRecipe` 数据类 + 首批核心 Recipe（`TitleBodyRecipe`、`GridCardsRecipe`、`TwoColumnRecipe`）+ 从 `shapes.json` 迁移来的 `DECORATION` region 样式库
-7. `slidegen/services/presentation/slide_renderer.py` — `SlideRenderer`（基于 `python-pptx` 原生 API 渲染 title/body/card/primitive）+ `AssetProvider` 接口 + `DefaultAssetProvider`
+6. `slidegen/services/presentation/recipes.py` / `default_recipes.py` — `LayoutRecipe` 数据类（含 `repeats` 字段）+ 首批核心预设 Recipe（`TitleBodyRecipe`、`GridCardsRecipe`、`TwoColumnRecipe`）+ 从 `shapes.json` 迁移来的 `DECORATION` region 样式库
+7. `slidegen/services/presentation/slide_renderer.py` — `SlideRenderer`（基于 `python-pptx` 原生 API 渲染 title/body/card/primitive；支持 RepeatRule 展开渲染）+ `AssetProvider` 接口 + `DefaultAssetProvider`
 8. `slidegen/services/presentation/post_render_validator.py` — `PostRenderValidator`（越界检测 + 字体检测，重叠检测 experimental/warn-only，默认 warn 模式）
 9. 一次性迁移脚本：`shapes.json` 的 `content_type/location/zorder`（对应 `z_layer`）映射到 recipe region（含 `DECORATION` region，只处理可稳定解析的形状）
 10. 测试：Recipe 快照测试、SlideRenderer 输出验证、PostRenderValidator 单元测试
 
-**`default_recipes.py` 和 `recipes.py` 的职责边界：**
-- `recipes.py` → `LayoutRecipe` 数据类定义 + Recipe factory 函数接口
-- `default_recipes.py` → 6 个核心 Recipe 的具体实现（工厂函数，如 `grid_cards_recipe(n_blocks, tokens)`）
-- `region.py` → `Region`、`RegionRole` 等基础数据类（含 `decoration_shape` 等装饰渲染字段）
+### 第三个 PR（Phase 1c）：RecipeAgent 接入
 
-这两个 PR 不要求切走生产路径，但 Phase 1b 完成后必须证明新 renderer 能独立生成可用 PPTX。
+11. `slidegen/services/presentation/recipe_agent.py` — `RecipeAgent`（LLM 调用 + prompt template + JSON schema 校验）
+12. Agent prompt 设计：z_layer 约束、DesignTokens 间距约束、RepeatRule 语法说明、输出 JSON 示例
+13. Fallback 调度层：`RecipeAgent` → schema 校验 → PostRenderValidator → 失败时 `PresetRecipeFallback`
+14. 并发执行：多 slide 的 Agent 调用并发，独立 fallback
+15. 配置项 `enable_recipe_agent`（默认 `True`）
+16. 测试：Agent mock 测试、fallback 触发测试、并发调度测试
+
+**`default_recipes.py`、`recipes.py` 和 `recipe_agent.py` 的职责边界：**
+- `recipes.py` → `LayoutRecipe` 数据类定义（含 `repeats: tuple[RepeatRule, ...]`）
+- `default_recipes.py` → 6 个核心预设 Recipe 的具体实现（工厂函数，供 fallback 使用）
+- `preset_recipes.py` → `PresetRecipeFallback`（确定性规则选择 + 调用 default_recipes 工厂函数）
+- `recipe_agent.py` → `RecipeAgent`（LLM 生成 LayoutRecipe 的主路径）
+- `region.py` → `Region`、`RegionRole`、`RepeatRule` 等基础数据类
+
+Phase 1a + 1b 不要求切走生产路径，但 Phase 1b 完成后必须证明新 renderer 能独立生成可用 PPTX。Phase 1c 完成后 Agent 主路径可用，具备切换生产路径的条件。
