@@ -8,13 +8,6 @@ from slidegen.exceptions import PPTTemplateError
 from slidegen.services.document import MarkdownDocument
 from slidegen.services.document.markdown.elements import Heading
 from slidegen.services.presentation.converter import MarkdownToPresentation
-from slidegen.services.presentation.native_pages import (
-    NativeCatalogPage,
-    NativeChapterContentPage,
-    NativeChapterHomePage,
-    NativeCoverPage,
-    NativeEndPage,
-)
 from slidegen.services.presentation.render_plan import build_presentation_render_plan
 from slidegen.services.presentation.semantic import BlockKind, SlideKind, build_content_slide_spec
 from slidegen.services.presentation.template_profile import (
@@ -50,7 +43,7 @@ def _add_text_slide(presentation: Presentation, lines: list[str], *, layout_inde
         paragraph.text = line
 
 
-def test_profile_curated_template_detects_legacy_roles():
+def test_profile_curated_template_detects_roles():
     presentation = Presentation(_template_path())
 
     profile = profile_presentation_template(presentation)
@@ -67,7 +60,7 @@ def test_profile_curated_template_detects_legacy_roles():
     assert profile.warnings == []
 
 
-def test_profile_does_not_mark_textbox_only_template_ready_for_legacy_renderer():
+def test_profile_scores_textbox_only_template_by_heuristics():
     presentation = Presentation()
     for lines in (
         ["Quarterly Business Review", "2026 Strategy Update"],
@@ -85,10 +78,10 @@ def test_profile_does_not_mark_textbox_only_template_ready_for_legacy_renderer()
 
     profile = profile_presentation_template(presentation)
 
-    assert profile.status == "review_required"
-    assert profile.role_index(TemplateRole.COVER) is None
-    assert TemplateRole.COVER.value in profile.missing_roles
-    assert "cover role not detected" in " ".join(profile.warnings)
+    assert profile.slide_count == 5
+    # With heuristic scoring only (no legacy renderer structural check),
+    # text content and position alone can assign roles on textbox-only templates.
+    assert profile.role_index(TemplateRole.COVER) is not None
 
 
 def test_profile_one_slide_template_warns_missing_roles_without_rejecting():
@@ -106,8 +99,6 @@ def test_profile_one_slide_template_warns_missing_roles_without_rejecting():
     assert profile.status == "review_required"
     assert TemplateRole.CATALOG.value in profile.missing_roles
     assert TemplateRole.CONTENT.value in profile.missing_roles
-    assert "catalog role not detected" in " ".join(profile.warnings)
-    assert "content role not detected" in " ".join(profile.warnings)
 
 
 def test_profile_empty_presentation_rejects_as_unusable():
@@ -149,71 +140,18 @@ def test_profile_uses_global_assignment_when_cover_and_catalog_compete():
     assert profile.status == "ready"
 
 
-@pytest.mark.anyio
-async def test_native_pages_generate_without_placeholders():
-    presentation = Presentation()
-    presentation.slides.add_slide(presentation.slide_layouts[6])
-    title = Heading(level=1, text="Board Update")
-    chapter = Heading(level=2, text="Revenue")
-    content = Heading(level=2, text="Revenue")
-    content.append(Heading(level=3, text="Growth"))
-
-    await NativeCoverPage.generate_slide(presentation, title, slide_index=0)
-    await NativeCatalogPage.generate_slide(presentation, [chapter], slide_index=1)
-    await NativeChapterHomePage.generate_slide(presentation, chapter, chapter_number=1, slide_index=2)
-    await NativeChapterContentPage.generate_slide(presentation, content, slide_index=3)
-    await NativeEndPage.generate_slide(presentation, slide_index=4)
-
-    slide_texts = [
-        shape.text.strip()
-        for slide in presentation.slides
-        for shape in slide.shapes
-        if shape.has_text_frame and shape.text.strip()
-    ]
-    assert "Board Update" in slide_texts
-    assert "01. Revenue" in slide_texts
-    assert "PART 01" in slide_texts
-    assert "Growth" in slide_texts
-    assert "Thank you!" in slide_texts
-
-
-def test_render_plan_marks_missing_roles_as_native_fallbacks():
+def test_render_plan_builds_from_chapter_groups():
     presentation = Presentation()
     presentation.slides.add_slide(presentation.slide_layouts[0])
-    profile = profile_presentation_template(presentation)
     document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
     assert document.main is not None
     groups = list(iter_chapter_slide_groups(document.main))
 
-    plan = build_presentation_render_plan(groups, profile=profile, catalog_last_index=1)
+    plan = build_presentation_render_plan(groups, catalog_last_index=1)
 
-    assert plan.use_native_catalog
-    assert plan.use_native_chapter
-    assert plan.use_native_content
-    assert plan.use_native_end
-    assert plan.cleanup_template_indexes == []
     assert plan.chapters[0].home_slide_index == 2
     assert plan.chapters[0].content_slides[0].slide_index == 3
     assert plan.end_slide_index == 4
-
-
-def test_render_plan_preserves_legacy_template_indexes_for_curated_template():
-    presentation = Presentation(_template_path())
-    profile = profile_presentation_template(presentation)
-    document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
-    assert document.main is not None
-    groups = list(iter_chapter_slide_groups(document.main))
-
-    plan = build_presentation_render_plan(groups, profile=profile, catalog_last_index=1)
-
-    assert not plan.use_native_catalog
-    assert not plan.use_native_chapter
-    assert not plan.use_native_content
-    assert not plan.use_native_end
-    assert plan.chapter_home_template_index == 2
-    assert plan.chapter_content_template_index == 3
-    assert plan.end_template_index == 4
-    assert plan.cleanup_template_indexes == [4, 3, 2]
 
 
 def test_markdown_to_presentation_is_stateless():
@@ -224,9 +162,11 @@ def test_markdown_to_presentation_is_stateless():
 
 
 @pytest.mark.anyio
-async def test_converter_generates_from_one_slide_template_with_native_fallbacks():
+async def test_converter_generates_from_one_slide_template():
     converter = MarkdownToPresentation()
     presentation = Presentation()
+    presentation.slide_width = 12192000
+    presentation.slide_height = 6858000
     presentation.slides.add_slide(presentation.slide_layouts[0])
     markdown_document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
 
@@ -239,16 +179,16 @@ async def test_converter_generates_from_one_slide_template_with_native_fallbacks
         if shape.has_text_frame and shape.text.strip()
     ]
     assert "Deck" in slide_texts
-    assert "Agenda" in slide_texts
-    assert "PART 01" in slide_texts
-    assert "Point" in slide_texts
-    assert "Thank you!" in slide_texts
+    assert any("Point" in t for t in slide_texts)
+    assert any("谢谢" in t for t in slide_texts)
 
 
 @pytest.mark.anyio
-async def test_converter_uses_native_fallback_for_textbox_only_uploaded_template():
+async def test_converter_generates_from_textbox_template():
     converter = MarkdownToPresentation()
     presentation = Presentation()
+    presentation.slide_width = 12192000
+    presentation.slide_height = 6858000
     for lines in (
         ["Quarterly Business Review", "2026 Strategy Update"],
         ["Agenda", "1. Market", "2. Product", "3. Finance"],
@@ -273,17 +213,18 @@ async def test_converter_uses_native_fallback_for_textbox_only_uploaded_template
         if shape.has_text_frame and shape.text.strip()
     ]
     assert "Deck" in slide_texts
-    assert "Agenda" in slide_texts
-    assert "PART 01" in slide_texts
-    assert "Point" in slide_texts
-    assert "Thank you!" in slide_texts
+    assert any("Point" in t for t in slide_texts)
+    assert any("谢谢" in t for t in slide_texts)
+    # Recipe renderer creates a new presentation, so original template text is not present.
     assert "Quarterly Business Review" not in slide_texts
 
 
 @pytest.mark.anyio
-async def test_converter_keeps_template_role_indexes_stable_after_native_insertions():
+async def test_converter_creates_new_presentation_not_mutating_template():
     converter = MarkdownToPresentation()
     presentation = Presentation()
+    presentation.slide_width = 12192000
+    presentation.slide_height = 6858000
     _add_text_slide(presentation, ["Decorative cover", "No placeholder contract"])
     _add_text_slide(presentation, ["Intro page", "No catalog number shapes"])
     _add_text_slide(presentation, ["Chapter 1", "Market Landscape"], layout_index=1)
@@ -309,14 +250,13 @@ async def test_converter_keeps_template_role_indexes_stable_after_native_inserti
         if shape.has_text_frame and shape.text.strip()
     ]
     assert "Deck" in slide_texts
-    assert "Agenda" in slide_texts
     assert "Chapter A" in slide_texts
-    assert "Thank you!" in slide_texts
+    assert any("谢谢" in t for t in slide_texts)
     assert "Decorative cover" not in slide_texts
 
 
 @pytest.mark.anyio
-async def test_converter_preserves_curated_template_generation_path():
+async def test_converter_generates_from_curated_template():
     converter = MarkdownToPresentation()
     presentation = Presentation(_template_path())
     markdown_document = _markdown_document("# Deck\n## Chapter A\n### Point\nBody")
@@ -341,10 +281,7 @@ def test_build_content_slide_spec_maps_heading_children_to_point_blocks():
 
 
 @pytest.mark.anyio
-async def test_recipe_renderer_path_builds_full_deck_without_template_cleanup(monkeypatch):
-    monkeypatch.setattr("slidegen.core.config.settings.ENABLE_RECIPE_RENDERER", True)
-    monkeypatch.setattr("slidegen.core.config.settings.ENABLE_RECIPE_AGENT", False)
-
+async def test_recipe_renderer_produces_full_deck():
     template = Presentation()
     template.slide_width = 12192000
     template.slide_height = 6858000

@@ -11,7 +11,6 @@ from pptx.shapes.autoshape import Shape
 from pptx.slide import Slide
 
 from slidegen.exceptions import PPTTemplateError
-from slidegen.services.presentation.pages import CatalogPage
 
 READY_THRESHOLD = 0.45
 MAX_CANDIDATES_PER_ROLE = 8
@@ -221,15 +220,7 @@ def _assign_roles(features: list[SlideFeatures], slide_count: int) -> list[Templ
     scores: dict[tuple[TemplateRole, int], TemplateRoleAssignment] = {}
     for role in roles:
         for f in features:
-            if _supports_legacy_renderer(f, role):
-                scores[(role, f.index)] = _score_slide_for_role(f, role, slide_count)
-            else:
-                scores[(role, f.index)] = TemplateRoleAssignment(
-                    role=role,
-                    slide_index=f.index,
-                    confidence=0.0,
-                    reason="missing legacy renderer structure",
-                )
+            scores[(role, f.index)] = _score_slide_for_role(f, role, slide_count)
 
     candidates_by_role: dict[TemplateRole, list[TemplateRoleAssignment]] = {
         role: sorted(
@@ -269,26 +260,6 @@ def _assign_roles(features: list[SlideFeatures], slide_count: int) -> list[Templ
 
     search(0, set(), [], 0.0)
     return sorted(best_selected, key=lambda a: a.slide_index)
-
-
-def _is_catalog_number_text(text: str) -> bool:
-    normalized = text.strip().upper()
-    if not normalized or len(normalized) > 5:
-        return False
-    if normalized.endswith("."):
-        normalized = normalized[:-1]
-    return normalized.isdigit() or normalized in CatalogPage._ROMAN_NUMERALS
-
-
-def _supports_legacy_renderer(feature: SlideFeatures, role: TemplateRole) -> bool:
-    if role is TemplateRole.COVER:
-        return feature.title_placeholder_count > 0
-    if role in {TemplateRole.CHAPTER, TemplateRole.CONTENT, TemplateRole.END}:
-        return feature.plain_title_placeholder_count > 0
-    if role is TemplateRole.CATALOG:
-        number_shape_count = sum(1 for text in feature.text_shape_texts if _is_catalog_number_text(text))
-        return number_shape_count > 0 and feature.text_shape_count > number_shape_count
-    return False
 
 
 def _score_slide_for_role(

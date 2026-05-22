@@ -68,10 +68,12 @@ def test_profile_marks_missing_roles_as_review_required() -> None:
     profile = profile_presentation_template(prs)
 
     assert profile.status == "review_required"
-    assert profile.role_index(TemplateRole.COVER) is None
-    assert TemplateRole.COVER.value in profile.missing_roles
+    # With heuristic scoring only (no legacy structural check), COVER can be
+    # detected on a single textbox slide via position and density heuristics.
+    assert profile.role_index(TemplateRole.COVER) is not None
     assert TemplateRole.CATALOG.value in profile.missing_roles
     assert TemplateRole.CONTENT.value in profile.missing_roles
+    assert TemplateRole.CHAPTER.value in profile.missing_roles
     assert "catalog role not detected" in " ".join(profile.warnings)
 
 

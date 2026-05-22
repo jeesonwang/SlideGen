@@ -177,8 +177,10 @@ async def test_upload_service_saves_pptx_profiles_and_persists_model(tmp_path: P
 
     assert response.template_key.startswith(USER_TEMPLATE_KEY_PREFIX)
     assert response.name == "Board Template"
-    assert response.profile.status == "review_required"
-    assert "cover" in response.profile.missing_roles
+    # With heuristic scoring only (no legacy structural check), all five roles
+    # can be detected on a 5-slide textbox template.
+    assert response.profile.status == "ready"
+    assert response.profile.missing_roles == []
     assert db_session.added is not None
     assert db_session.added.user_id == user_id
     assert db_session.added.template_key == response.template_key
