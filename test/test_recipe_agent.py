@@ -116,3 +116,48 @@ async def test_resolve_recipe_uses_fallback_when_agent_disabled():
     assert isinstance(recipe, LayoutRecipe)
     assert recipe.name in ("TitleBodyRecipe", "GridCardsRecipe", "TwoColumnRecipe",
                            "CoverRecipe", "AgendaRecipe", "ClosingRecipe")
+
+
+from slidegen.services.presentation.recipe_agent import resolve_all_recipes
+
+
+@pytest.mark.anyio
+async def test_resolve_all_recipes_concurrent():
+    agent = RecipeAgent()
+    call_count = 0
+    async def slow_agent(_prompt: str):
+        nonlocal call_count
+        call_count += 1
+        await asyncio.sleep(0.05)
+        return _valid_output()
+    agent._run_agent = slow_agent
+
+    specs = [_make_spec() for _ in range(5)]
+    recipes = await resolve_all_recipes(specs, DEFAULT_TOKENS, agent=agent, enable_agent=True)
+
+    assert len(recipes) == 5
+    assert call_count == 5
+    for r in recipes:
+        assert isinstance(r, LayoutRecipe)
+
+
+@pytest.mark.anyio
+async def test_resolve_all_recipes_one_failure_doesnt_block_others():
+    agent = RecipeAgent()
+    call_count = 0
+    async def flaky_agent(_prompt: str):
+        nonlocal call_count
+        call_count += 1
+        call_index = call_count
+        await asyncio.sleep(0.01)
+        if call_index == 2:
+            raise RecipeAgentError("injected failure")
+        return _valid_output()
+    agent._run_agent = flaky_agent
+
+    specs = [_make_spec() for _ in range(4)]
+    recipes = await resolve_all_recipes(specs, DEFAULT_TOKENS, agent=agent, enable_agent=True)
+
+    assert len(recipes) == 4
+    assert call_count == 4
+    assert recipes[1].name != "TestRecipe"

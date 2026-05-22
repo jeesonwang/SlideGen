@@ -243,3 +243,24 @@ async def resolve_recipe(
     except RecipeAgentError as e:
         logger.warning("RecipeAgent failed for '%s': %s — falling back to preset", spec.title, e)
         return fallback.select(spec, tokens)
+
+
+async def resolve_all_recipes(
+    specs: list[SlideSpec],
+    tokens: DesignTokens,
+    *,
+    agent: RecipeAgent | None = None,
+    fallback: PresetRecipeFallback | None = None,
+    enable_agent: bool = True,
+    agent_timeout: float = 5.0,
+) -> list[LayoutRecipe]:
+    """并发解析所有 slide 的 LayoutRecipe。单个失败不影响其他 slide。"""
+    async def resolve_one(spec: SlideSpec) -> LayoutRecipe:
+        return await resolve_recipe(
+            spec, tokens,
+            agent=agent, fallback=fallback,
+            enable_agent=enable_agent, agent_timeout=agent_timeout,
+        )
+
+    tasks = [resolve_one(spec) for spec in specs]
+    return list(await asyncio.gather(*tasks))
