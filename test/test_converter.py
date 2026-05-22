@@ -338,3 +338,36 @@ def test_build_content_slide_spec_maps_heading_children_to_point_blocks():
     assert [block.kind for block in spec.blocks] == [BlockKind.POINT, BlockKind.POINT]
     assert [block.title for block in spec.blocks] == ["Point 1", "Point 2"]
     assert [block.text for block in spec.blocks] == ["Body 1", "Body 2"]
+
+
+@pytest.mark.anyio
+async def test_recipe_renderer_path_builds_full_deck_without_template_cleanup(monkeypatch):
+    monkeypatch.setattr("slidegen.core.config.settings.ENABLE_RECIPE_RENDERER", True)
+    monkeypatch.setattr("slidegen.core.config.settings.ENABLE_RECIPE_AGENT", False)
+
+    template = Presentation()
+    template.slide_width = 12192000
+    template.slide_height = 6858000
+    template.slides.add_slide(template.slide_layouts[6])
+    document = MarkdownDocument(
+        "# Deck\n"
+        "## Chapter A\n"
+        "### Point One\n"
+        "#### Detail\n"
+        "Body A\n"
+        "### Point Two\n"
+        "#### Detail\n"
+        "Body B\n"
+    )
+
+    prs = await MarkdownToPresentation().generate(template, document)
+
+    assert prs is not template
+    assert prs.slide_width == template.slide_width
+    assert prs.slide_height == template.slide_height
+    assert len(prs.slides) == 6  # cover, agenda, chapter home, 2 content slides, closing
+    all_text = "\n".join(shape.text for slide in prs.slides for shape in slide.shapes if shape.has_text_frame)
+    assert "Deck" in all_text
+    assert "Chapter A" in all_text
+    assert "Point One" in all_text
+    assert "Body A" in all_text
