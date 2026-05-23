@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from pptx.slide import Slide
-from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
+from pptx.slide import Slide
+from pptx.util import Inches, Pt
 
-from slidegen.services.presentation.design_tokens import DesignTokens
-from slidegen.services.presentation.recipes import LayoutRecipe
-from slidegen.services.presentation.region import Region, RegionRole, RepeatRule
-from slidegen.services.presentation.semantic import SlideSpec, BlockKind
-from slidegen.services.presentation.image_generator import ImageGenerator
-from slidegen.services.presentation.icon_searcher import IconSearcher
 from slidegen.schemas.image_prompt import ImagePrompt
+from slidegen.services.presentation.design_tokens import DesignTokens
+from slidegen.services.presentation.icon_searcher import IconSearcher
+from slidegen.services.presentation.image_generator import ImageGenerator
+from slidegen.services.presentation.recipes import LayoutRecipe
+from slidegen.services.presentation.region import Region, RegionRole
+from slidegen.services.presentation.semantic import BlockSpec, SlideSpec
 
 
 class AssetProvider:
@@ -58,13 +58,22 @@ class SlideRenderer:
 
     async def render(self, slide: Slide, recipe: LayoutRecipe, spec: SlideSpec) -> None:
         all_regions = recipe.all_regions(len(spec.blocks))
-        sorted_regions = sorted(all_regions, key=lambda r: (r.z_layer, all_regions.index(r)))
+        sorted_regions = sorted(
+            enumerate(all_regions), key=lambda item: (item[1].z_layer, item[0])
+        )
 
-        for region in sorted_regions:
-            role = recipe.region_roles.get(region.region_id)
+        for _idx, region in sorted_regions:
+            role = recipe.role_for_region(region.region_id)
             if role == RegionRole.DECORATION:
                 self._render_decoration(slide, region)
-            elif role in (RegionRole.TITLE, RegionRole.SUBTITLE, RegionRole.BODY, RegionRole.CARD_BODY, RegionRole.INDEX, RegionRole.FOOTER):
+            elif role in (
+                RegionRole.TITLE,
+                RegionRole.SUBTITLE,
+                RegionRole.BODY,
+                RegionRole.CARD_BODY,
+                RegionRole.INDEX,
+                RegionRole.FOOTER,
+            ):
                 self._render_text(slide, region, self._text_for_region(region.region_id, role, recipe, spec), role)
             elif role == RegionRole.CARD:
                 self._render_card_background(slide, region)
@@ -74,11 +83,11 @@ class SlideRenderer:
                 await self._render_image(slide, region, recipe, spec)
 
     def _text_for_region(self, region_id: str, role: RegionRole, recipe: LayoutRecipe, spec: SlideSpec) -> str:
-        source = recipe.region_text_sources.get(region_id)
+        source = recipe.text_source_for_region(region_id)
         if source == "slide_title" or (source is None and role == RegionRole.TITLE):
             return spec.title
         if source == "index":
-            block_index = recipe.region_block_indexes.get(region_id, 0)
+            block_index = recipe.block_index_for_region(region_id) or 0
             return f"{block_index + 1:02d}"
 
         block = self._block_for_region(region_id, recipe, spec)
@@ -90,8 +99,8 @@ class SlideRenderer:
             return f"{block.title}\n{block.text}".strip()
         return block.text
 
-    def _block_for_region(self, region_id: str, recipe: LayoutRecipe, spec: SlideSpec):
-        block_index = recipe.region_block_indexes.get(region_id)
+    def _block_for_region(self, region_id: str, recipe: LayoutRecipe, spec: SlideSpec) -> BlockSpec | None:
+        block_index = recipe.block_index_for_region(region_id)
         if block_index is not None and 0 <= block_index < len(spec.blocks):
             return spec.blocks[block_index]
         return spec.blocks[0] if spec.blocks else None
@@ -133,15 +142,15 @@ class SlideRenderer:
         if role == RegionRole.TITLE:
             para.font.size = Pt(self.tokens.title_size)
             para.font.name = self.tokens.title_font
-            para.font.color.rgb = RGBColor.from_string(self.tokens.text_primary.lstrip("#"))
+            para.font.color.rgb = RGBColor.from_string(self.tokens.text_primary.removeprefix("#"))  # type: ignore[no-untyped-call]
         elif role == RegionRole.SUBTITLE:
             para.font.size = Pt(self.tokens.subtitle_size)
             para.font.name = self.tokens.subtitle_font
-            para.font.color.rgb = RGBColor.from_string(self.tokens.text_secondary.lstrip("#"))
+            para.font.color.rgb = RGBColor.from_string(self.tokens.text_secondary.removeprefix("#"))  # type: ignore[no-untyped-call]
         else:
             para.font.size = Pt(self.tokens.body_size)
             para.font.name = self.tokens.body_font
-            para.font.color.rgb = RGBColor.from_string(self.tokens.text_primary.lstrip("#"))
+            para.font.color.rgb = RGBColor.from_string(self.tokens.text_primary.removeprefix("#"))  # type: ignore[no-untyped-call]
 
     def _render_decoration(self, slide: Slide, region: Region) -> None:
         shape_type = _SHAPE_MAP.get(region.decoration_shape or "rect", MSO_SHAPE.RECTANGLE)
@@ -152,11 +161,11 @@ class SlideRenderer:
             token_attr = getattr(self.tokens, region.fill_role, None)
             if token_attr:
                 shape.fill.solid()
-                shape.fill.fore_color.rgb = RGBColor.from_string(token_attr.lstrip("#"))
+                shape.fill.fore_color.rgb = RGBColor.from_string(token_attr.removeprefix("#"))  # type: ignore[no-untyped-call]
 
         if region.line_role:
             token_attr = getattr(self.tokens, region.line_role, None)
             if token_attr:
-                shape.line.color.rgb = RGBColor.from_string(token_attr.lstrip("#"))
+                shape.line.color.rgb = RGBColor.from_string(token_attr.removeprefix("#"))  # type: ignore[no-untyped-call]
         else:
             shape.line.fill.background()

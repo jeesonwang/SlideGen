@@ -34,6 +34,22 @@ def test_tiny_font_detected():
     assert len(readability) >= 1
 
 
+def test_overlapping_text_shapes_detected():
+    prs = Presentation()
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    first = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(2))
+    first.text = "First"
+    second = slide.shapes.add_textbox(Inches(2), Inches(1.5), Inches(4), Inches(2))
+    second.text = "Second"
+
+    validator = PostRenderValidator(mode="fail")
+    issues = validator.validate(prs)
+
+    overlaps = [i for i in issues if "overlap" in i.message.lower()]
+    assert len(overlaps) == 1
+    assert overlaps[0].level == "error"
+
+
 def test_mode_off_returns_empty():
     prs = Presentation()
     slide = prs.slides.add_slide(prs.slide_layouts[6])

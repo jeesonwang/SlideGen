@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import pptx
 from pptx.presentation import Presentation
 
@@ -10,11 +14,14 @@ from slidegen.services.presentation.semantic import BlockKind, BlockSpec, SlideK
 from slidegen.services.presentation.slide_renderer import AssetProvider, SlideRenderer
 from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
 
+if TYPE_CHECKING:
+    from agno.models.base import Model
+
 
 class MarkdownToPresentation:
     """Generate a PPT presentation from a markdown document."""
 
-    def __init__(self, *, recipe_model: object | None = None, asset_provider: AssetProvider | None = None) -> None:
+    def __init__(self, *, recipe_model: Model | None = None, asset_provider: AssetProvider | None = None) -> None:
         self.recipe_model = recipe_model
         self.asset_provider = asset_provider
 

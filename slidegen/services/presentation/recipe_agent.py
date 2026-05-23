@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Annotated, Literal
+from typing import Literal
 
 from agno.agent import Agent
+from agno.models.base import Model
 from pydantic import BaseModel, Field
 
 from slidegen.services.presentation.design_tokens import DesignTokens
+from slidegen.services.presentation.preset_recipes import PresetRecipeFallback
 from slidegen.services.presentation.recipes import LayoutRecipe
 from slidegen.services.presentation.region import Region, RegionRole, RepeatRule
 from slidegen.services.presentation.semantic import SlideSpec
@@ -20,6 +22,7 @@ class RecipeAgentError(Exception):
 
 
 # === Pydantic models for agno structured_output ===
+
 
 class AgentRegionOutput(BaseModel):
     region_id: str
@@ -43,6 +46,7 @@ class AgentRepeatRuleOutput(BaseModel):
 
 class AgentRecipeOutput(BaseModel):
     """agno structured output model -- directly produce LayoutRecipe JSON schema."""
+
     name: str
     regions: list[AgentRegionOutput] = Field(default_factory=list)
     repeats: list[AgentRepeatRuleOutput] = Field(default_factory=list)
@@ -90,7 +94,7 @@ class RecipeAgent:
     field types and ranges (x_frac in [0,1], z_layer in {0,10,20,30}, etc.).
     """
 
-    def __init__(self, model: "Model | None" = None):
+    def __init__(self, model: Model | None = None):
         self._model = model
 
     async def generate(
@@ -108,15 +112,16 @@ class RecipeAgent:
             recipe = self._to_layout_recipe(agent_output)
             self._validate_recipe(recipe, tokens)
             return recipe
-        except (RecipeAgentError, asyncio.TimeoutError, ValueError) as e:
+        except RecipeAgentError:
+            raise
+        except (TimeoutError, ValueError) as e:
             raise RecipeAgentError(f"RecipeAgent failed: {e}") from e
 
     def _build_prompt(self, spec: SlideSpec, tokens: DesignTokens) -> str:
         blocks_lines = []
         for i, block in enumerate(spec.blocks):
             blocks_lines.append(
-                f"  {i}. kind={block.kind.value}, title='{block.title[:60]}', "
-                f"text_length={block.estimated_text_length}"
+                f"  {i}. kind={block.kind.value}, title='{block.title[:60]}', text_length={block.estimated_text_length}"
             )
         return (
             f"## Canvas\n"
@@ -143,7 +148,7 @@ class RecipeAgent:
             model=self._model,
             # agno structured output: auto-parse LLM output into AgentRecipeOutput
             structured_outputs=True,
-            output_model=AgentRecipeOutput,
+            output_model=AgentRecipeOutput,  # type: ignore[arg-type]
         )
         response = await agent.arun(prompt)
         # When structured_outputs is enabled, response.content is directly an AgentRecipeOutput instance
@@ -192,10 +197,7 @@ class RecipeAgent:
             for rr in output.repeats
         )
 
-        region_roles = {
-            rid: RegionRole(role)
-            for rid, role in output.region_roles.items()
-        }
+        region_roles = {rid: RegionRole(role) for rid, role in output.region_roles.items()}
 
         return LayoutRecipe(
             name=output.name,
@@ -218,16 +220,13 @@ class RecipeAgent:
                 raise RecipeAgentError(f"Region {region.region_id}: bottom edge out of canvas")
 
 
-from slidegen.services.presentation.preset_recipes import PresetRecipeFallback
-
-
 async def resolve_recipe(
     spec: SlideSpec,
     tokens: DesignTokens,
     *,
     agent: RecipeAgent | None = None,
     fallback: PresetRecipeFallback | None = None,
-    enable_agent: bool = True,
+    enable_agent: bool = False,
     agent_timeout: float = 5.0,
 ) -> LayoutRecipe:
     fallback = fallback or PresetRecipeFallback()
@@ -251,15 +250,19 @@ async def resolve_all_recipes(
     *,
     agent: RecipeAgent | None = None,
     fallback: PresetRecipeFallback | None = None,
-    enable_agent: bool = True,
+    enable_agent: bool = False,
     agent_timeout: float = 5.0,
 ) -> list[LayoutRecipe]:
     """并发解析所有 slide 的 LayoutRecipe。单个失败不影响其他 slide。"""
+
     async def resolve_one(spec: SlideSpec) -> LayoutRecipe:
         return await resolve_recipe(
-            spec, tokens,
-            agent=agent, fallback=fallback,
-            enable_agent=enable_agent, agent_timeout=agent_timeout,
+            spec,
+            tokens,
+            agent=agent,
+            fallback=fallback,
+            enable_agent=enable_agent,
+            agent_timeout=agent_timeout,
         )
 
     tasks = [resolve_one(spec) for spec in specs]

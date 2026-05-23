@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from slidegen.services.presentation.design_tokens import DesignTokens
 from slidegen.services.presentation.recipes import LayoutRecipe
 from slidegen.services.presentation.region import Region, RegionRole, RepeatRule
@@ -14,20 +16,42 @@ def title_body_recipe(tokens: DesignTokens, n_blocks: int = 1) -> LayoutRecipe:
     regions = [
         Region(region_id="title", x_frac=margin_x, y_frac=margin_y,
                w_frac=1.0 - 2 * margin_x, h_frac=0.12, z_layer=10),
-        Region(region_id="body", x_frac=margin_x, y_frac=margin_y + 0.16,
-               w_frac=1.0 - 2 * margin_x, h_frac=1.0 - margin_y - 0.22, z_layer=10),
     ]
+    if n_blocks <= 0:
+        return LayoutRecipe(
+            name="TitleBodyRecipe",
+            regions=tuple(regions),
+            region_roles={"title": RegionRole.TITLE},
+            region_text_sources={"title": "slide_title"},
+            supported_block_kinds=ALL_BLOCK_KINDS,
+        )
+    body_top = margin_y + 0.16
+    body_h = (1.0 - margin_y - body_top - 0.06) / n_blocks
+    region_roles: dict[str, RegionRole] = {"title": RegionRole.TITLE}
+    region_block_indexes: dict[str, int] = {}
+    region_text_sources: dict[str, str] = {"title": "slide_title"}
+    for i in range(n_blocks):
+        rid = f"body_{i}"
+        regions.append(
+            Region(region_id=rid, x_frac=margin_x, y_frac=body_top + i * body_h,
+                   w_frac=1.0 - 2 * margin_x, h_frac=body_h, z_layer=10),
+        )
+        region_roles[rid] = RegionRole.BODY
+        region_block_indexes[rid] = i
+        region_text_sources[rid] = "block_text"
     return LayoutRecipe(
         name="TitleBodyRecipe",
         regions=tuple(regions),
-        region_roles={r.region_id: RegionRole.TITLE if "title" in r.region_id else RegionRole.BODY for r in regions},
-        region_block_indexes={"body": 0},
-        region_text_sources={"title": "slide_title", "body": "block_text"},
+        region_roles=region_roles,
+        region_block_indexes=region_block_indexes,
+        region_text_sources=region_text_sources,
         supported_block_kinds=ALL_BLOCK_KINDS,
     )
 
 
 def grid_cards_recipe(tokens: DesignTokens, n_blocks: int) -> LayoutRecipe:
+    if n_blocks <= 0:
+        return title_body_recipe(tokens, n_blocks=0)
     margin_x = tokens.page_margin_x / tokens.slide_width
     margin_y = tokens.page_margin_y / tokens.slide_height
     gap_frac = tokens.card_gap / tokens.slide_width
@@ -88,6 +112,8 @@ def grid_cards_recipe(tokens: DesignTokens, n_blocks: int) -> LayoutRecipe:
 
 
 def two_column_recipe(tokens: DesignTokens, n_blocks: int = 2) -> LayoutRecipe:
+    if n_blocks != 2:
+        return title_body_recipe(tokens, n_blocks=n_blocks)
     margin_x = tokens.page_margin_x / tokens.slide_width
     margin_y = tokens.page_margin_y / tokens.slide_height
     gap_frac = tokens.card_gap / tokens.slide_width
@@ -154,35 +180,43 @@ def agenda_recipe(tokens: DesignTokens, n_blocks: int) -> LayoutRecipe:
                w_frac=1.0 - 2 * margin_x, h_frac=0.12, z_layer=10),
     ]
     card_regions = []
+    body_regions = []
     idx_regions = []
     for i in range(min(n_blocks, 8)):
         ry = margin_y + 0.18 + i * (card_h + gap_frac / 2)
         card_id = f"agenda_card_{i}"
+        body_id = f"agenda_body_{i}"
         idx_id = f"agenda_index_{i}"
         card_regions.append(Region(
             region_id=card_id, x_frac=margin_x + 0.06, y_frac=ry,
             w_frac=1.0 - 2 * margin_x - 0.06, h_frac=card_h, z_layer=10,
+            decoration_shape="rounded_rect", fill_role="light_bg_alt",
+        ))
+        body_regions.append(Region(
+            region_id=body_id, x_frac=margin_x + 0.09, y_frac=ry + 0.02,
+            w_frac=1.0 - 2 * margin_x - 0.12, h_frac=max(card_h - 0.04, 0.01), z_layer=11,
         ))
         idx_regions.append(Region(
             region_id=idx_id, x_frac=margin_x, y_frac=ry,
             w_frac=0.06, h_frac=card_h, z_layer=10,
         ))
 
-    all_agenda_regions = regions + card_regions + idx_regions
-    region_roles = {r.region_id: RegionRole.TITLE if "title" in r.region_id else (
-        RegionRole.INDEX if "index" in r.region_id else RegionRole.CARD
-    ) for r in all_agenda_regions}
+    all_agenda_regions = regions + card_regions + body_regions + idx_regions
+    region_roles = {"title": RegionRole.TITLE}
     region_block_indexes = {}
     region_text_sources = {"title": "slide_title"}
     for i in range(min(n_blocks, 8)):
-        region_block_indexes[f"agenda_card_{i}"] = i
+        region_roles[f"agenda_card_{i}"] = RegionRole.CARD
+        region_roles[f"agenda_body_{i}"] = RegionRole.CARD_BODY
+        region_roles[f"agenda_index_{i}"] = RegionRole.INDEX
+        region_block_indexes[f"agenda_body_{i}"] = i
         region_block_indexes[f"agenda_index_{i}"] = i
-        region_text_sources[f"agenda_card_{i}"] = "block_title_text"
+        region_text_sources[f"agenda_body_{i}"] = "block_title_text"
         region_text_sources[f"agenda_index_{i}"] = "index"
 
     return LayoutRecipe(
         name="AgendaRecipe",
-        regions=tuple(regions + card_regions + idx_regions),
+        regions=tuple(all_agenda_regions),
         region_roles=region_roles,
         region_block_indexes=region_block_indexes,
         region_text_sources=region_text_sources,
@@ -215,7 +249,7 @@ def closing_recipe(tokens: DesignTokens) -> LayoutRecipe:
     )
 
 
-RECIPE_FACTORIES = {
+RECIPE_FACTORIES: dict[str, Callable[..., LayoutRecipe]] = {
     "TitleBodyRecipe": title_body_recipe,
     "GridCardsRecipe": grid_cards_recipe,
     "TwoColumnRecipe": two_column_recipe,

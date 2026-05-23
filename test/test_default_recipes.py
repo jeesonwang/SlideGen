@@ -11,7 +11,7 @@ class TestTitleBodyRecipe:
         recipe = title_body_recipe(DEFAULT_TOKENS)
         assert len(recipe.regions) == 2
         assert "title" in recipe.region_ids
-        assert "body" in recipe.region_ids
+        assert "body_0" in recipe.region_ids
 
     def test_all_regions_within_canvas(self):
         recipe = title_body_recipe(DEFAULT_TOKENS)

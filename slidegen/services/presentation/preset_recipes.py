@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 
+from slidegen.services.presentation.default_recipes import RECIPE_FACTORIES
 from slidegen.services.presentation.design_tokens import DesignTokens
 from slidegen.services.presentation.recipes import LayoutRecipe
-from slidegen.services.presentation.default_recipes import RECIPE_FACTORIES, title_body_recipe
-from slidegen.services.presentation.semantic import SlideSpec, SlideKind
+from slidegen.services.presentation.semantic import SlideKind, SlideSpec
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 class PresetRecipeFallback:
     def select(self, spec: SlideSpec, tokens: DesignTokens) -> LayoutRecipe:
         n = len(spec.blocks)
+        if n < 0:
+            n = 0
         short_blocks = all(b.estimated_text_length < 200 for b in spec.blocks)
         kind = spec.kind
 

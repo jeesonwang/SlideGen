@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -69,7 +73,7 @@ PRESET_TOKENS: dict[str, DesignTokens] = {
 }
 
 
-def _extract_theme_colors(prs) -> dict[str, str | None]:
+def _extract_theme_colors(prs: Any) -> dict[str, str | None]:
     """从 theme.xml 提取 <a:clrScheme> 颜色映射。"""
     from lxml import etree
 
@@ -95,11 +99,11 @@ def _extract_theme_colors(prs) -> dict[str, str | None]:
         result["accent2"] = accent2.get("val") if accent2 is not None else None
         result["accent3"] = accent3.get("val") if accent3 is not None else None
     except Exception:
-        pass
+        logger.debug("Failed to extract theme colors from XML", exc_info=True)
     return result
 
 
-def _extract_theme_fonts(prs) -> dict[str, str | None]:
+def _extract_theme_fonts(prs: Any) -> dict[str, str | None]:
     """从 theme.xml 提取 <a:fontScheme> 字体映射。"""
     result: dict[str, str | None] = {"major": None, "minor": None}
     try:
@@ -112,11 +116,11 @@ def _extract_theme_fonts(prs) -> dict[str, str | None]:
         if minor is not None:
             result["minor"] = minor.get("typeface")
     except Exception:
-        pass
+        logger.debug("Failed to extract theme fonts from XML", exc_info=True)
     return result
 
 
-def _sample_shape_colors(prs, max_slides: int = 10) -> dict[str, list[tuple[str, float]]]:
+def _sample_shape_colors(prs: Any, max_slides: int = 10) -> dict[str, list[tuple[str, float]]]:
     """从 shape 中采样实际使用的填充色和字体色（按面积加权）。
 
     Returns dict with 'fills' and 'fonts' keys, each a list of (hex_color, weight).
@@ -138,9 +142,9 @@ def _sample_shape_colors(prs, max_slides: int = 10) -> dict[str, list[tuple[str,
                         if rgb:
                             fills.append((str(rgb), float(area)))
                     except Exception:
-                        pass
+                        logger.debug("Failed to sample shape fill color", exc_info=True)
             except Exception:
-                pass
+                logger.debug("Failed to read shape fill", exc_info=True)
             if shape.has_text_frame:
                 for para in shape.text_frame.paragraphs:
                     for run in para.runs:
@@ -149,31 +153,25 @@ def _sample_shape_colors(prs, max_slides: int = 10) -> dict[str, list[tuple[str,
                             if font_color and font_color.rgb:
                                 fonts.append((str(font_color.rgb), float(area)))
                         except Exception:
-                            pass
+                            logger.debug("Failed to sample font color", exc_info=True)
     return {"fills": fills, "fonts": fonts}
 
 
-def _hex_to_hsl(hex_color: str) -> tuple[float, float, float]:
-    """将 hex 颜色转为 (hue, saturation, lightness)。"""
-    hex_color = hex_color.lstrip("#")
-    r, g, b = int(hex_color[0:2], 16) / 255.0, int(hex_color[2:4], 16) / 255.0, int(hex_color[4:6], 16) / 255.0
-    max_c = max(r, g, b)
-    min_c = min(r, g, b)
-    l = (max_c + min_c) / 2.0
-    if max_c == min_c:
-        return (0.0, 0.0, l)
-    d = max_c - min_c
-    s = d / (2.0 - max_c - min_c) if l > 0.5 else d / (max_c + min_c)
-    if max_c == r:
-        h = ((g - b) / d) % 6
-    elif max_c == g:
-        h = (b - r) / d + 2
-    else:
-        h = (r - g) / d + 4
-    return (h * 60, s, l)
+def _dominant_color(samples: list[tuple[str, float]]) -> str | None:
+    """返回按面积加权的最常见颜色，忽略纯白/纯黑。"""
+    if not samples:
+        return None
+    total_weight: dict[str, float] = {}
+    for color, weight in samples:
+        if color.upper() in ("FFFFFF", "000000"):
+            continue
+        total_weight[color] = total_weight.get(color, 0.0) + weight
+    if not total_weight:
+        return None
+    return max(total_weight, key=total_weight.__getitem__)
 
 
-def extract_design_tokens_from_presentation(prs, theme_name: str = "general") -> DesignTokens:
+def extract_design_tokens_from_presentation(prs: Any, theme_name: str = "general") -> DesignTokens:
     """从模板 PPTX 提取 DesignTokens。两层策略：theme.xml + shape 采样。"""
     base = PRESET_TOKENS.get(theme_name, DEFAULT_TOKENS)
 
@@ -183,7 +181,7 @@ def extract_design_tokens_from_presentation(prs, theme_name: str = "general") ->
 
     # Layer 2: shape 采样（仅在 slide 数 >= 3 时启用）
     slide_count = len(prs.slides)
-    sampled = {"fills": [], "fonts": []}
+    sampled: dict[str, list[tuple[str, float]]] = {"fills": [], "fonts": []}
     if slide_count >= 3:
         sampled = _sample_shape_colors(prs)
 
@@ -193,8 +191,15 @@ def extract_design_tokens_from_presentation(prs, theme_name: str = "general") ->
     light_bg_alt = theme_colors.get("lt2") or base.light_bg_alt
     text_primary = theme_colors.get("dk2") or base.text_primary
 
+    # 从 shape 采样中提取次要文本色
+    sampled_text_secondary = _dominant_color(sampled.get("fonts", []))
+    text_secondary = sampled_text_secondary or base.text_secondary
+
     title_font = theme_fonts.get("major") or base.title_font
     body_font = theme_fonts.get("minor") or base.body_font
+
+    slide_width = prs.slide_width / 914400.0
+    slide_height = prs.slide_height / 914400.0
 
     return DesignTokens(
         primary=primary,
@@ -202,7 +207,7 @@ def extract_design_tokens_from_presentation(prs, theme_name: str = "general") ->
         light_bg=light_bg,
         light_bg_alt=light_bg_alt,
         text_primary=text_primary,
-        text_secondary=base.text_secondary,
+        text_secondary=text_secondary,
         text_on_dark=base.text_on_dark,
         title_font=title_font,
         title_size=base.title_size,
@@ -212,4 +217,6 @@ def extract_design_tokens_from_presentation(prs, theme_name: str = "general") ->
         body_size=base.body_size,
         caption_font=base.caption_font,
         caption_size=base.caption_size,
+        slide_width=slide_width,
+        slide_height=slide_height,
     )

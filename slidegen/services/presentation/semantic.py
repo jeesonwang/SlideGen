@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import Enum
-import re
 
 from slidegen.services.document.markdown import Heading
 from slidegen.services.document.markdown.elements import Element, Table
@@ -75,10 +75,20 @@ _TIMELINE_PATTERNS = [
     re.compile(r"第[一二三四五六七八九十\d]+\s*(阶段|季度|期)"),
     re.compile(r"Q[1-4]", re.IGNORECASE),
 ]
-_PROCESS_KEYWORDS = frozenset({
-    "step", "steps", "process", "procedure", "flow", "workflow",
-    "步骤", "流程", "过程", "阶段",
-})
+_PROCESS_KEYWORDS = frozenset(
+    {
+        "step",
+        "steps",
+        "process",
+        "procedure",
+        "flow",
+        "workflow",
+        "步骤",
+        "流程",
+        "过程",
+        "阶段",
+    }
+)
 
 
 def _has_numbered_list(text: str) -> bool:
@@ -90,8 +100,7 @@ def _has_timeline_markers(text: str) -> bool:
 
 
 def _has_two_level4_headings(content: Heading) -> bool:
-    level4_children = [child for child in content.children
-                       if isinstance(child, Heading) and child.level == 4]
+    level4_children = [child for child in content.children if isinstance(child, Heading) and child.level == 4]
     return len(level4_children) == 2
 
 
@@ -148,28 +157,48 @@ def infer_slide_kind(content: Heading) -> SlideKind:
 
 def build_content_slide_spec(content: Heading) -> SlideSpec:
     blocks: list[BlockSpec] = []
+    seen_ids: set[int] = set()
     for child in content.children:
+        seen_ids.add(id(child))
         if isinstance(child, Heading):
             text = child.text.strip()
             icon_query = child.element_text if child.level >= 3 else None
-            blocks.append(BlockSpec(
-                kind=BlockKind.POINT,
-                title=child.element_text,
-                text=text,
-                icon_query=icon_query,
-            ))
+            blocks.append(
+                BlockSpec(
+                    kind=BlockKind.POINT,
+                    title=child.element_text,
+                    text=text,
+                    icon_query=icon_query,
+                )
+            )
         elif isinstance(child, Table):
-            blocks.append(BlockSpec(
-                kind=BlockKind.TABLE,
-                title=", ".join(child.headers),
-                text=child.element_text_source,
-            ))
+            blocks.append(
+                BlockSpec(
+                    kind=BlockKind.TABLE,
+                    title=", ".join(child.headers),
+                    text=child.element_text_source,
+                )
+            )
         elif isinstance(child, Element) and child.element_text.strip():
-            blocks.append(BlockSpec(
-                kind=BlockKind.PARAGRAPH,
-                title="",
-                text=child.element_text.strip(),
-            ))
+            blocks.append(
+                BlockSpec(
+                    kind=BlockKind.PARAGRAPH,
+                    title="",
+                    text=child.element_text.strip(),
+                )
+            )
+
+    # Also collect Table blocks from deeper descendants (infer_slide_kind uses
+    # recursive descendants for Table detection, so block collection must match)
+    for descendant in content.descendants:
+        if isinstance(descendant, Table) and id(descendant) not in seen_ids:
+            blocks.append(
+                BlockSpec(
+                    kind=BlockKind.TABLE,
+                    title=", ".join(descendant.headers),
+                    text=descendant.element_text_source,
+                )
+            )
 
     slide_kind = infer_slide_kind(content)
     return SlideSpec(

@@ -5,7 +5,7 @@ from slidegen.services.presentation.design_tokens import (
     DEFAULT_TOKENS,
     PRESET_TOKENS,
     extract_design_tokens_from_presentation,
-    _hex_to_hsl,
+    _dominant_color,
 )
 
 
@@ -21,19 +21,21 @@ class TestDesignTokens:
         assert PRESET_TOKENS["minimal"].primary == "#2C2C2C"
 
 
-class TestHexToHsl:
-    def test_black(self):
-        h, s, l = _hex_to_hsl("#000000")
-        assert l == 0.0
+class TestDominantColor:
+    def test_empty_returns_none(self):
+        assert _dominant_color([]) is None
 
-    def test_white(self):
-        h, s, l = _hex_to_hsl("#FFFFFF")
-        assert l == 1.0
+    def test_ignores_black_and_white(self):
+        samples = [("000000", 100.0), ("FFFFFF", 200.0)]
+        assert _dominant_color(samples) is None
 
-    def test_red(self):
-        h, s, l = _hex_to_hsl("#FF0000")
-        assert abs(h - 0) < 1 or abs(h - 360) < 1
-        assert s > 0.9
+    def test_returns_weight_dominant(self):
+        samples = [("FF0000", 100.0), ("00FF00", 300.0)]
+        assert _dominant_color(samples) == "00FF00"
+
+    def test_skips_black_white_and_returns_colored(self):
+        samples = [("000000", 100.0), ("FFFFFF", 200.0), ("123456", 50.0)]
+        assert _dominant_color(samples) == "123456"
 
 
 class TestExtractDesignTokens:
@@ -49,3 +51,10 @@ class TestExtractDesignTokens:
         prs.slides.add_slide(prs.slide_layouts[0])
         tokens = extract_design_tokens_from_presentation(prs, "academic")
         assert tokens.title_font == "Times New Roman"
+
+    def test_extract_slide_dimensions(self):
+        prs = Presentation()
+        prs.slides.add_slide(prs.slide_layouts[0])
+        tokens = extract_design_tokens_from_presentation(prs, "general")
+        assert tokens.slide_width == prs.slide_width / 914400.0
+        assert tokens.slide_height == prs.slide_height / 914400.0

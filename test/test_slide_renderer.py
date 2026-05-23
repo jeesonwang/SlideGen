@@ -10,6 +10,8 @@ from slidegen.services.presentation.default_recipes import (
     title_body_recipe,
     two_column_recipe,
 )
+from slidegen.services.presentation.recipes import LayoutRecipe
+from slidegen.services.presentation.region import Region, RegionRole, RepeatRule
 from slidegen.services.presentation.semantic import SlideSpec, SlideKind, BlockSpec, BlockKind
 
 
@@ -94,6 +96,39 @@ async def test_renderer_maps_text_for_cover_two_column_and_agenda():
     assert "01" in agenda_text
     assert "02" in agenda_text
     assert "Agenda" in agenda_text
+    assert "Market\x0bTrends" in agenda_text
+    assert "Plan\x0bNext steps" in agenda_text
+
+
+@pytest.mark.anyio
+async def test_renderer_applies_repeat_rule_bindings_to_expanded_regions():
+    prs = Presentation()
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    spec = _make_spec(["First body", "Second body"])
+    recipe = LayoutRecipe(
+        name="RepeatedBodyRecipe",
+        regions=(
+            Region(region_id="title", x_frac=0.08, y_frac=0.05, w_frac=0.84, h_frac=0.10),
+        ),
+        repeats=(
+            RepeatRule(
+                seed=Region(region_id="item", x_frac=0.08, y_frac=0.22, w_frac=0.84, h_frac=0.12),
+                step_x=0.0,
+                step_y=0.15,
+                role=RegionRole.BODY,
+            ),
+        ),
+        region_roles={"title": RegionRole.TITLE},
+        region_block_indexes={"item": 0},
+        region_text_sources={"title": "slide_title", "item": "block_text"},
+    )
+
+    await SlideRenderer(DEFAULT_TOKENS).render(slide, recipe, spec)
+
+    texts = [s.text for s in slide.shapes if s.has_text_frame]
+    assert "Test Slide" in texts
+    assert "First body" in texts
+    assert "Second body" in texts
 
 
 @pytest.mark.anyio
