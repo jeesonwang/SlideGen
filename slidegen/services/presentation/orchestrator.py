@@ -15,7 +15,7 @@ from slidegen.services.presentation.pages import (
 from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
 
 
-class MarkdownToPresentation:
+class PresentationOrchestrator:
     """
     Generate a PPT presentation from a markdown document
 

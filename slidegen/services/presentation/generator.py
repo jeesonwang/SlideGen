@@ -26,7 +26,7 @@ from slidegen.schemas.stream_event import (
 )
 from slidegen.schemas.theme import PresentationTheme, ThemePresets
 from slidegen.services.document.markdown import MarkdownDocument
-from slidegen.services.presentation.converter import MarkdownToPresentation
+from slidegen.services.presentation.orchestrator import PresentationOrchestrator
 from slidegen.services.presentation.pdf_exporter import pdf_exporter
 from slidegen.services.slidegen.workflow import get_llm_instance, run_slidegen_workflow, run_slidegen_workflow_stream
 
@@ -48,7 +48,7 @@ class PresentationGenerator:
             templates_dir = str(project_root / "components" / "templates")
 
         self.templates_dir = Path(templates_dir)
-        self.converter = MarkdownToPresentation()
+        self.converter = PresentationOrchestrator()
 
     def get_template_path(self, template_name: str) -> str:
         """Get the full path for a template by name."""

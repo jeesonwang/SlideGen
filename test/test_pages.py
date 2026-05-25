@@ -11,7 +11,7 @@ from pptx import Presentation
 
 from slidegen.services.document import MarkdownDocument
 from slidegen.services.document.markdown.elements import Heading
-from slidegen.services.presentation.converter import MarkdownToPresentation
+from slidegen.services.presentation.orchestrator import PresentationOrchestrator
 from slidegen.services.presentation.pages import CatalogPage, ChapterContentPage, ChapterHomePage, CoverPage, Page
 
 
@@ -139,8 +139,8 @@ class TestPages:
         assert os.path.exists(temp_output)
 
     async def test_ppt_generation(self, presentation, markdown_document):
-        """test MarkdownToPresentation"""
-        ppt_gen = MarkdownToPresentation()
+        """test PresentationOrchestrator"""
+        ppt_gen = PresentationOrchestrator()
         template_prs = Presentation(os.path.join(os.path.dirname(__file__), "data", "template_0.pptx"))
         await ppt_gen.generate(template_prs, markdown_document)
         temp_output = os.path.join(os.path.dirname(__file__), "test_ppt.pptx")
@@ -148,7 +148,7 @@ class TestPages:
         assert os.path.exists(temp_output)
 
     async def test_nested_ppt_generation(self):
-        """test MarkdownToPresentation with chapter/section/topic markdown"""
+        """test PresentationOrchestrator with chapter/section/topic markdown"""
         markdown_document = MarkdownDocument(
             "# Product Strategy\n"
             "## Market Context\n"
@@ -168,7 +168,7 @@ class TestPages:
             "#### Delivery\n"
             "Scope needs tight sequencing.\n"
         )
-        ppt_gen = MarkdownToPresentation()
+        ppt_gen = PresentationOrchestrator()
         template_prs = Presentation(os.path.join(os.path.dirname(__file__), "data", "template_0.pptx"))
 
         await ppt_gen.generate(template_prs, markdown_document)
