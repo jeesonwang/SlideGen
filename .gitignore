@@ -120,6 +120,7 @@ chroma/
 test/data
 test/*.pptx
 uploads/
+outputs/
 
 # images
 generated_images/
@@ -127,3 +128,5 @@ components/**/*.png
 
 # agent settings
 .codex/environments
+.mcp.json
+opencode.jsonc
