@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from types import MappingProxyType
+from typing import TypeVar
 
 from slidegen.services.presentation.region import Region, RegionRole, RepeatRule
 from slidegen.services.presentation.semantic import BlockKind
 
+_K = TypeVar("_K")
+_V = TypeVar("_V")
 
-def _freeze_dict(d: dict) -> MappingProxyType:
+
+def _freeze_dict(d: dict[_K, _V]) -> MappingProxyType[_K, _V]:
     return MappingProxyType(d)
 
 
@@ -22,9 +26,9 @@ class LayoutRecipe:
     region_text_sources: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, 'region_roles', _freeze_dict(self.region_roles))
-        object.__setattr__(self, 'region_block_indexes', _freeze_dict(self.region_block_indexes))
-        object.__setattr__(self, 'region_text_sources', _freeze_dict(self.region_text_sources))
+        object.__setattr__(self, "region_roles", _freeze_dict(self.region_roles))
+        object.__setattr__(self, "region_block_indexes", _freeze_dict(self.region_block_indexes))
+        object.__setattr__(self, "region_text_sources", _freeze_dict(self.region_text_sources))
 
     @property
     def region_ids(self) -> frozenset[str]:
@@ -74,7 +78,7 @@ class LayoutRecipe:
             prefix = f"{repeat_rule.seed.region_id}_"
             if not region_id.startswith(prefix):
                 continue
-            suffix = region_id[len(prefix):]
+            suffix = region_id[len(prefix) :]
             if suffix.isdecimal():
                 return repeat_rule, int(suffix)
         return None

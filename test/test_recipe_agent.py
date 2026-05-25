@@ -1,13 +1,20 @@
 import asyncio
 
 import pytest
+from pydantic import ValidationError
 
-from slidegen.services.presentation.recipe_agent import (
-    RecipeAgent, RecipeAgentError, AgentRecipeOutput, AgentRegionOutput,
-)
 from slidegen.services.presentation.design_tokens import DEFAULT_TOKENS
+from slidegen.services.presentation.preset_recipes import PresetRecipeFallback
+from slidegen.services.presentation.recipe_agent import (
+    AgentRecipeOutput,
+    AgentRegionOutput,
+    RecipeAgent,
+    RecipeAgentError,
+    resolve_all_recipes,
+    resolve_recipe,
+)
 from slidegen.services.presentation.recipes import LayoutRecipe
-from slidegen.services.presentation.semantic import SlideSpec, SlideKind, BlockSpec, BlockKind
+from slidegen.services.presentation.semantic import BlockKind, BlockSpec, SlideKind, SlideSpec
 
 
 def _valid_output() -> AgentRecipeOutput:
@@ -25,7 +32,9 @@ def _valid_output() -> AgentRecipeOutput:
 
 def _make_spec() -> SlideSpec:
     return SlideSpec(
-        kind=SlideKind.CONTENT_POINTS, title="Test", source_level=2,
+        kind=SlideKind.CONTENT_POINTS,
+        title="Test",
+        source_level=2,
         blocks=(
             BlockSpec(kind=BlockKind.POINT, title="A", text="Content A"),
             BlockSpec(kind=BlockKind.POINT, title="B", text="Content B"),
@@ -35,8 +44,10 @@ def _make_spec() -> SlideSpec:
 
 def _mock_arun(return_value: AgentRecipeOutput):
     """Create a mock coroutine that simulates RecipeAgent._run_agent structured output."""
+
     async def _mock(_prompt: str):
         return return_value
+
     return _mock
 
 
@@ -64,6 +75,7 @@ async def test_agent_raises_on_empty_regions():
 async def test_agent_raises_on_timeout():
     async def _slow(_prompt: str):
         await asyncio.sleep(1.0)
+
     agent = RecipeAgent()
     agent._run_agent = _slow
     with pytest.raises(RecipeAgentError):
@@ -73,38 +85,36 @@ async def test_agent_raises_on_timeout():
 @pytest.mark.anyio
 async def test_agent_recipe_output_pydantic_validates_fields():
     """Pydantic auto-validation: z_layer must be a Literal value."""
-    with pytest.raises(Exception):  # Pydantic ValidationError
+    with pytest.raises(ValidationError):
         AgentRegionOutput(region_id="bad", x_frac=0.1, y_frac=0.1, w_frac=0.5, h_frac=0.5, z_layer=15)
 
 
 @pytest.mark.anyio
 async def test_agent_recipe_output_rejects_out_of_bounds_coords():
     """Pydantic auto-validation: x_frac must be in [0,1] range."""
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         AgentRegionOutput(region_id="bad", x_frac=-0.1, y_frac=0.1, w_frac=0.5, h_frac=0.5, z_layer=10)
 
 
 @pytest.mark.anyio
 async def test_agent_recipe_output_rejects_overflow():
     """Pydantic auto-validation: w_frac must be in [0,1] range."""
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         AgentRegionOutput(region_id="bad", x_frac=0.1, y_frac=0.1, w_frac=1.5, h_frac=0.5, z_layer=10)
-
-
-from slidegen.services.presentation.recipe_agent import resolve_recipe
 
 
 @pytest.mark.anyio
 async def test_resolve_recipe_falls_back_on_agent_error():
     agent = RecipeAgent()
+
     async def _fail(_prompt: str):
         raise RecipeAgentError("mock failure")
+
     agent._run_agent = _fail
     spec = _make_spec()
     recipe = await resolve_recipe(spec, DEFAULT_TOKENS, agent=agent, enable_agent=True)
     assert isinstance(recipe, LayoutRecipe)
-    assert recipe.name in ("TitleBodyRecipe", "GridCardsRecipe", "TwoColumnRecipe",
-                           "CoverRecipe", "AgendaRecipe", "ClosingRecipe")
+    assert recipe.name == PresetRecipeFallback().select(spec, DEFAULT_TOKENS).name
 
 
 @pytest.mark.anyio
@@ -114,22 +124,20 @@ async def test_resolve_recipe_uses_fallback_when_agent_disabled():
     spec = _make_spec()
     recipe = await resolve_recipe(spec, DEFAULT_TOKENS, agent=agent, enable_agent=False)
     assert isinstance(recipe, LayoutRecipe)
-    assert recipe.name in ("TitleBodyRecipe", "GridCardsRecipe", "TwoColumnRecipe",
-                           "CoverRecipe", "AgendaRecipe", "ClosingRecipe")
-
-
-from slidegen.services.presentation.recipe_agent import resolve_all_recipes
+    assert recipe.name == PresetRecipeFallback().select(spec, DEFAULT_TOKENS).name
 
 
 @pytest.mark.anyio
 async def test_resolve_all_recipes_concurrent():
     agent = RecipeAgent()
     call_count = 0
+
     async def slow_agent(_prompt: str):
         nonlocal call_count
         call_count += 1
         await asyncio.sleep(0.05)
         return _valid_output()
+
     agent._run_agent = slow_agent
 
     specs = [_make_spec() for _ in range(5)]
@@ -145,6 +153,7 @@ async def test_resolve_all_recipes_concurrent():
 async def test_resolve_all_recipes_one_failure_doesnt_block_others():
     agent = RecipeAgent()
     call_count = 0
+
     async def flaky_agent(_prompt: str):
         nonlocal call_count
         call_count += 1
@@ -153,6 +162,7 @@ async def test_resolve_all_recipes_one_failure_doesnt_block_others():
         if call_index == 2:
             raise RecipeAgentError("injected failure")
         return _valid_output()
+
     agent._run_agent = flaky_agent
 
     specs = [_make_spec() for _ in range(4)]

@@ -22,17 +22,26 @@ class PresetRecipeFallback:
             return RECIPE_FACTORIES["CoverRecipe"](tokens)
         elif kind == SlideKind.AGENDA:
             return RECIPE_FACTORIES["AgendaRecipe"](tokens, n_blocks=n)
+        elif kind == SlideKind.SECTION_COVER:
+            return RECIPE_FACTORIES["SectionCoverRecipe"](tokens)
         elif kind == SlideKind.CLOSING:
             return RECIPE_FACTORIES["ClosingRecipe"](tokens)
         elif kind == SlideKind.COMPARISON:
+            if n == 2:
+                return RECIPE_FACTORIES["ClassicTwoPointsRecipe"](tokens)
             return RECIPE_FACTORIES["TwoColumnRecipe"](tokens, n_blocks=n)
         elif kind in (SlideKind.CONTENT_POINTS, SlideKind.PROCESS, SlideKind.TIMELINE):
-            if n <= 2 and not short_blocks:
-                return RECIPE_FACTORIES["TitleBodyRecipe"](tokens, n_blocks=n)
+            if n == 1:
+                return RECIPE_FACTORIES["ClassicOnePointRecipe"](tokens)
+            elif n == 2:
+                return RECIPE_FACTORIES["ClassicTwoPointsRecipe"](tokens)
+            elif n == 3:
+                return RECIPE_FACTORIES["ClassicThreePointsRecipe"](tokens)
+            elif n == 4:
+                return RECIPE_FACTORIES["ClassicFourPointsRecipe"](tokens)
             elif n <= 6 and short_blocks:
                 return RECIPE_FACTORIES["GridCardsRecipe"](tokens, n_blocks=n)
-            else:
-                return RECIPE_FACTORIES["TitleBodyRecipe"](tokens, n_blocks=n)
+            return RECIPE_FACTORIES["TitleBodyRecipe"](tokens, n_blocks=n)
         elif kind == SlideKind.DATA_TABLE:
             return RECIPE_FACTORIES["TitleBodyRecipe"](tokens, n_blocks=n)
         else:

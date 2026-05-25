@@ -48,7 +48,13 @@ def is_auto_theme_preset(theme_preset: str | None) -> bool:
 class PresentationGenerator:
     """Generator for creating PowerPoint presentations from user requests"""
 
-    def __init__(self, templates_dir: str | None = None, *, recipe_model: Any = None) -> None:
+    def __init__(
+        self,
+        templates_dir: str | None = None,
+        *,
+        recipe_model: Model | None = None,
+        enable_visual_plan_mvp: bool = False,
+    ) -> None:
         """Initialize the presentation generator."""
         if templates_dir is None:
             project_root = Path(__file__).parent.parent.parent.parent
@@ -57,7 +63,10 @@ class PresentationGenerator:
         self.templates_dir = Path(templates_dir)
         self.user_template_storage = UserTemplateStorage()
         self.uploaded_template_service = uploaded_template_service
-        self.converter = MarkdownToPresentation(recipe_model=recipe_model)
+        self.converter = MarkdownToPresentation(
+            recipe_model=recipe_model,
+            enable_visual_plan_mvp=enable_visual_plan_mvp,
+        )
 
     def get_template_path(self, template_name: str, user_id: uuid.UUID | None = None) -> str:
         """Get the full path for a built-in or uploaded template."""

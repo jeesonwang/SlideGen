@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pptx
 from pptx.presentation import Presentation
@@ -12,6 +12,7 @@ from slidegen.services.presentation.post_render_validator import PostRenderValid
 from slidegen.services.presentation.recipe_agent import RecipeAgent, resolve_recipe
 from slidegen.services.presentation.semantic import BlockKind, BlockSpec, SlideKind, SlideSpec, build_content_slide_spec
 from slidegen.services.presentation.slide_renderer import AssetProvider, SlideRenderer
+from slidegen.services.presentation.visual_plan import VisualPlanRenderer, build_composite_points_visual_plan
 from slidegen.services.slidegen.outline_structure import iter_chapter_slide_groups
 
 if TYPE_CHECKING:
@@ -21,9 +22,16 @@ if TYPE_CHECKING:
 class MarkdownToPresentation:
     """Generate a PPT presentation from a markdown document."""
 
-    def __init__(self, *, recipe_model: Model | None = None, asset_provider: AssetProvider | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        recipe_model: Model | None = None,
+        asset_provider: AssetProvider | None = None,
+        enable_visual_plan_mvp: bool = False,
+    ) -> None:
         self.recipe_model = recipe_model
         self.asset_provider = asset_provider
+        self.enable_visual_plan_mvp = enable_visual_plan_mvp
 
     async def generate(
         self,
@@ -45,11 +53,17 @@ class MarkdownToPresentation:
         output_prs.slide_height = template_prs.slide_height
         tokens = extract_design_tokens_from_presentation(template_prs, "general")
         renderer = SlideRenderer(tokens, asset_provider=self.asset_provider)
+        visual_renderer = VisualPlanRenderer(tokens)
         agent = RecipeAgent(model=self.recipe_model) if self.recipe_model is not None else None
 
         async def render_spec(spec: SlideSpec) -> None:
-            recipe = await resolve_recipe(spec, tokens, agent=agent, enable_agent=agent is not None)
             slide = output_prs.slides.add_slide(output_prs.slide_layouts[6])
+            if self.enable_visual_plan_mvp and spec.kind == SlideKind.CONTENT_POINTS and spec.blocks:
+                plan = build_composite_points_visual_plan(spec, tokens)
+                await visual_renderer.render(slide, plan, spec)
+                return
+
+            recipe = await resolve_recipe(spec, tokens, agent=agent, enable_agent=agent is not None)
             await renderer.render(slide, recipe, spec)
 
         await render_spec(self._cover_spec(main_heading))

@@ -1,6 +1,16 @@
 from slidegen.services.presentation.default_recipes import (
-    title_body_recipe, grid_cards_recipe, two_column_recipe,
-    cover_recipe, agenda_recipe, closing_recipe, RECIPE_FACTORIES,
+    RECIPE_FACTORIES,
+    agenda_recipe,
+    classic_four_points_recipe,
+    classic_one_point_recipe,
+    classic_three_points_recipe,
+    classic_two_points_recipe,
+    closing_recipe,
+    cover_recipe,
+    grid_cards_recipe,
+    section_cover_recipe,
+    title_body_recipe,
+    two_column_recipe,
 )
 from slidegen.services.presentation.design_tokens import DEFAULT_TOKENS
 from slidegen.services.presentation.region import RegionRole
@@ -93,8 +103,50 @@ class TestClosingRecipe:
 
 
 class TestRecipeFactories:
-    def test_all_6_recipes_registered(self):
-        assert len(RECIPE_FACTORIES) == 6
-        for name in ["TitleBodyRecipe", "GridCardsRecipe", "TwoColumnRecipe",
-                      "CoverRecipe", "AgendaRecipe", "ClosingRecipe"]:
+    def test_all_core_recipes_registered(self):
+        for name in [
+            "TitleBodyRecipe",
+            "GridCardsRecipe",
+            "TwoColumnRecipe",
+            "CoverRecipe",
+            "AgendaRecipe",
+            "ClosingRecipe",
+            "SectionCoverRecipe",
+            "ClassicOnePointRecipe",
+            "ClassicTwoPointsRecipe",
+            "ClassicThreePointsRecipe",
+            "ClassicFourPointsRecipe",
+        ]:
             assert name in RECIPE_FACTORIES
+
+
+class TestClassicRecipes:
+    def test_one_point_preserves_shape_json_style_roles(self):
+        recipe = classic_one_point_recipe(DEFAULT_TOKENS)
+        assert recipe.name == "ClassicOnePointRecipe"
+        assert "slide_title" in recipe.region_ids
+        assert "point_title_0" in recipe.region_ids
+        assert "point_body_0" in recipe.region_ids
+        assert any(role == RegionRole.DECORATION for role in recipe.region_roles.values())
+        assert recipe.region_text_sources["point_title_0"] == "block_title"
+        assert recipe.region_text_sources["point_body_0"] == "block_text"
+
+    def test_two_three_four_point_recipes_have_numbered_content_slots(self):
+        for factory, expected_count in [
+            (classic_two_points_recipe, 2),
+            (classic_three_points_recipe, 3),
+            (classic_four_points_recipe, 4),
+        ]:
+            recipe = factory(DEFAULT_TOKENS)
+            index_ids = [rid for rid, role in recipe.region_roles.items() if role == RegionRole.INDEX]
+            body_ids = [rid for rid, role in recipe.region_roles.items() if role == RegionRole.CARD_BODY]
+            assert recipe.name.startswith("Classic")
+            assert len(index_ids) == expected_count
+            assert len(body_ids) == expected_count
+
+    def test_section_cover_recipe_is_not_generic_title_body(self):
+        recipe = section_cover_recipe(DEFAULT_TOKENS)
+        assert recipe.name == "SectionCoverRecipe"
+        assert "section_title" in recipe.region_ids
+        assert any(role == RegionRole.DECORATION for role in recipe.region_roles.values())
+        assert recipe.region_text_sources["section_title"] == "slide_title"
