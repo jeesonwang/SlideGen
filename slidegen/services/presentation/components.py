@@ -47,7 +47,7 @@ class ContentType(Enum):
     NUMBER = "number"
     TITLE = "title"
     ICON = "icon"
-    NONE = None
+    DECORATION = "decoration"
 
     def __eq__(self, other: str | object) -> bool:
         if isinstance(other, str):
@@ -91,7 +91,7 @@ class CShape:
 
     xml: str | None
     zorder: int
-    content_type: str | None
+    content_type: ContentType
     location: list[Location]
 
     @classmethod
@@ -103,10 +103,18 @@ class CShape:
                 Location(x=loc.get("x", 0), y=loc.get("y", 0), width=loc.get("width", 0), height=loc.get("height", 0))
             )
 
+        ct = data.get("content_type")
+        if ct is None:
+            content_type = ContentType.DECORATION
+        elif isinstance(ct, ContentType):
+            content_type = ct
+        else:
+            content_type = ContentType(ct)
+
         return cls(
             xml=data.get("xml"),
             zorder=data.get("zorder", 0),
-            content_type=data.get("content_type"),
+            content_type=content_type,
             location=location_list,
         )
 
@@ -118,7 +126,7 @@ class CShape:
         return {
             "xml": self.xml,
             "zorder": self.zorder,
-            "content_type": self.content_type,
+            "content_type": self.content_type.value,
             "location": location_list,
         }
 
@@ -401,9 +409,9 @@ class ComponentsManager:
             location = Location(x=shape.left, y=shape.top, width=shape.width, height=shape.height)
             if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                 if self.is_icon(location):
-                    content_type = "icon"
+                    content_type = ContentType.ICON
                 else:
-                    content_type = "picture"
+                    content_type = ContentType.PICTURE
                 shape_data = {
                     "xml": None,
                     "zorder": i,
@@ -421,9 +429,9 @@ class ComponentsManager:
                 if current_area > area:
                     area = current_area
                 shape_text = cast(Shape, shape).text
-                content_type = None
+                content_type = ContentType.DECORATION
                 if shape_text:
-                    content_type = "content"
+                    content_type = ContentType.CONTENT
                 shape_data = {
                     "xml": xml_str,
                     "zorder": i,
@@ -442,7 +450,7 @@ class ComponentsManager:
                     shape_data = {
                         "xml": xml_str,
                         "zorder": i,
-                        "content_type": None,
+                        "content_type": ContentType.DECORATION,
                         "location": [
                             {"x": location.x, "y": location.y, "width": location.width, "height": location.height}
                         ],
@@ -459,13 +467,13 @@ class ComponentsManager:
             if shape_data["xml"] is None:
                 continue
 
-            if shape_data["content_type"] == "content" and isinstance(shape_data["location"], list):
+            if shape_data["content_type"] == ContentType.CONTENT and isinstance(shape_data["location"], list):
                 current_area = int(shape_data["location"][0]["height"]) * int(shape_data["location"][0]["width"])
                 if current_area < (area - 10000):
                     if self.get_text_from_xml(shape_data["xml"]).isdigit():  # type: ignore
-                        shape_data["content_type"] = "number"
+                        shape_data["content_type"] = ContentType.NUMBER
                     else:
-                        shape_data["content_type"] = "title"
+                        shape_data["content_type"] = ContentType.TITLE
 
             for shape_name_other, shape_data_other in list(shape_data_dict.items()):
                 if shape_name == shape_name_other or shape_data_other["xml"] is None:
