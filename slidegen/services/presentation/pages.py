@@ -2,6 +2,7 @@ import copy
 import io
 import os
 import random
+import unicodedata
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,10 @@ from slidegen.utils.slide import (
     convert_paragraph_xml,
     runs_merge,
 )
+
+EMU_PER_PT = 12700
+TITLE_TEXTBOX_HORIZONTAL_PADDING_EMU = 228600
+TITLE_TEXTBOX_RIGHT_MARGIN_EMU = 457200
 
 
 class Page:
@@ -78,6 +83,105 @@ class Page:
             if value is None:
                 continue
             setattr(paragraph.font, key, value)
+
+    @staticmethod
+    def _get_text_frame_font_size_pt(shape: BaseShape) -> float | None:
+        if not shape.has_text_frame:
+            return None
+        for paragraph in shape.text_frame.paragraphs:
+            if paragraph.font.size is not None:
+                return paragraph.font.size.pt
+            for run in paragraph.runs:
+                if run.font.size is not None:
+                    return run.font.size.pt
+        return None
+
+    @staticmethod
+    def _estimate_single_line_text_width(text: str, font_size_pt: float) -> int:
+        width_units = 0.0
+        for char in text:
+            if char.isspace():
+                width_units += 0.35
+            elif unicodedata.east_asian_width(char) in {"F", "W"}:
+                width_units += 1.0
+            elif unicodedata.east_asian_width(char) == "A":
+                width_units += 0.85
+            elif char.isupper():
+                width_units += 0.68
+            else:
+                width_units += 0.56
+        return int(width_units * font_size_pt * EMU_PER_PT + TITLE_TEXTBOX_HORIZONTAL_PADDING_EMU)
+
+    @staticmethod
+    def _expand_title_text_box(slide: Slide, shape: BaseShape, text: str) -> None:
+        """Expand a no-wrap title shape horizontally when the title is likely too long."""
+        if not shape.has_text_frame or not text.strip():
+            return
+
+        font_size_pt = Page._get_text_frame_font_size_pt(shape)
+        if font_size_pt is None:
+            font_size_pt = max(18.0, min(44.0, shape.height / EMU_PER_PT / 1.2))
+
+        required_width = Page._estimate_single_line_text_width(text, font_size_pt)
+        if required_width <= shape.width:
+            return
+
+        prs = slide.part.package.presentation_part.presentation
+        right_boundary = max(0, prs.slide_width - TITLE_TEXTBOX_RIGHT_MARGIN_EMU)
+        max_width = max(0, right_boundary - shape.left)
+        target_width = min(required_width, max_width)
+        if target_width > shape.width:
+            shape.width = target_width
+
+    @staticmethod
+    def _find_or_inject_placeholder(
+        slide: Slide,
+        page_type: str,
+        role: str,
+        text: str,
+        *,
+        placeholder_types: tuple[int, ...],
+        shape_name_prefix: str = "injected",
+    ) -> BaseShape | None:
+        """Find a matching placeholder on the slide, or inject one from shape.json.
+
+        Args:
+            slide: The slide to operate on.
+            page_type: Key for page_placeholders lookup (e.g. "cover").
+            role: Role key for page_placeholders lookup (e.g. "title").
+            text: Text content to set on the shape.
+            placeholder_types: Tuple of PP_PLACEHOLDER int values to match.
+            shape_name_prefix: Prefix for the injected shape name.
+
+        Returns:
+            The Shape if found or injected and text was set, None otherwise.
+        """
+        for ph in slide.shapes.placeholders:
+            if ph.placeholder_format.type in placeholder_types:
+                Page._set_text(ph, text)
+                if ph.has_text_frame:
+                    ph.text_frame.word_wrap = False
+                    Page._expand_title_text_box(slide, ph, text)
+                return ph
+
+        ph_data = components_manager.get_page_placeholder(page_type, role)
+        if ph_data is not None:
+            loc = ph_data.location
+            injected = add_shape_by_xml(
+                slide=slide,
+                shape_xml=ph_data.xml,
+                shape_id=slide.shapes._next_shape_id,
+                shape_name=f"{shape_name_prefix}_{role}",
+                text_content=text,
+                location=loc,
+            )
+            if injected.has_text_frame:
+                injected.text_frame.word_wrap = False
+            Page._set_text(injected, text)
+            Page._expand_title_text_box(slide, injected, text)
+            return injected
+
+        return None
 
     @staticmethod
     def move_slide(pres: Presentation, slide: Slide, index: int) -> None:
@@ -156,17 +260,19 @@ class CoverPage(Page):
         main_title = content.element_text
         if not main_title.strip():
             main_title = "Presentation Title"
-        title_found = False
         # TODO: add subtitle
-        for placeholder in cover_page.shapes.placeholders:
-            placeholder_type = placeholder.placeholder_format.type
-            if placeholder_type == PP_PLACEHOLDER.TITLE or placeholder_type == PP_PLACEHOLDER.CENTER_TITLE:
-                CoverPage._set_text(placeholder, main_title)
-                placeholder.text_frame.word_wrap = False
-                title_found = True
-                break
-        if not title_found:
-            raise PPTTemplateError(f"{CoverPage.__name__}: No title placeholder found in cover slide")
+        title_shape = Page._find_or_inject_placeholder(
+            slide=cover_page,
+            page_type="cover",
+            role="title",
+            text=main_title,
+            placeholder_types=(PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE),
+        )
+        if not title_shape:
+            raise PPTTemplateError(
+                f"{CoverPage.__name__}: No title placeholder found in cover slide "
+                f"and no fallback data in shape.json page_placeholders.cover"
+            )
 
 
 class CatalogLayout(Enum):
@@ -718,26 +824,27 @@ class ChapterHomePage(Page):
         chapter_home_slide = prs.slides.add_slide(template_slide.slide_layout)
 
         title = content.element_text
-        title_placeholder = None
-
-        for placeholder in chapter_home_slide.shapes.placeholders:
-            if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
-                ChapterHomePage._set_text(placeholder, title)
-                tf = placeholder.text_frame
-                tf.word_wrap = False
-                title_placeholder = placeholder
-                break
-
-        if not title_placeholder:
-            raise PPTTemplateError(f"{ChapterHomePage.__name__}: No title placeholder found in chapter home slide")
+        title_shape = Page._find_or_inject_placeholder(
+            slide=chapter_home_slide,
+            page_type="chapter_home",
+            role="title",
+            text=title,
+            placeholder_types=(PP_PLACEHOLDER.TITLE,),
+            shape_name_prefix="chapter_title",
+        )
+        if not title_shape:
+            raise PPTTemplateError(
+                f"{ChapterHomePage.__name__}: No title placeholder found in chapter home slide "
+                f"and no fallback data in shape.json page_placeholders.chapter_home"
+            )
         chapter_number_shape = None
         min_distance = float("inf")
         for shape in chapter_home_slide.shapes:
-            if shape == title_placeholder:
+            if shape == title_shape:
                 continue
             if shape.has_text_frame:
-                if shape.top < title_placeholder.top:
-                    distance = title_placeholder.top - shape.top
+                if shape.top < title_shape.top:
+                    distance = title_shape.top - shape.top
                     if distance < min_distance:
                         shape_text = shape.text.strip()
                         if (
@@ -833,12 +940,20 @@ class ChapterContentPage(Page):
 
         chapter_page = prs.slides[chapter_page_index]
         new_slide = prs.slides.add_slide(chapter_page.slide_layout)
-        # set the title of the new slide
-        for placeholder in new_slide.shapes.placeholders:
-            if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
-                placeholder.text = content.element_text
-                placeholder.text_frame.word_wrap = False
-                break
+
+        title_shape = Page._find_or_inject_placeholder(
+            slide=new_slide,
+            page_type="chapter_content",
+            role="title",
+            text=content.element_text,
+            placeholder_types=(PP_PLACEHOLDER.TITLE,),
+            shape_name_prefix="content_title",
+        )
+        if not title_shape:
+            logger.warning(
+                f"{ChapterContentPage.__name__}: No title placeholder found and no fallback data "
+                f"in shape.json page_placeholders.chapter_content; title will not be displayed"
+            )
 
         index = 0
         chapter_layout = ChapterLayout(slide_type)  # type: ignore
@@ -976,15 +1091,18 @@ class EndPage(Page):
             content = Heading(text="Thank you!", level=2)
         template_slide = prs.slides[end_page_index]
         end_slide = prs.slides.add_slide(template_slide.slide_layout)
-        title_found = False
-        for placeholder in end_slide.shapes.placeholders:
-            if placeholder.placeholder_format.type == PP_PLACEHOLDER.TITLE:
-                placeholder.text = content.element_text
-                placeholder.text_frame.word_wrap = False
-                title_found = True
-                break
-        if not title_found:
+        title_shape = Page._find_or_inject_placeholder(
+            slide=end_slide,
+            page_type="end",
+            role="title",
+            text=content.element_text,
+            placeholder_types=(PP_PLACEHOLDER.TITLE,),
+            shape_name_prefix="end_title",
+        )
+        if not title_shape:
             raise PPTTemplateError(
-                f"{EndPage.__name__}: No title placeholder found in end slide, end slide index: {end_page_index}"
+                f"{EndPage.__name__}: No title placeholder found in end slide "
+                f"and no fallback data in shape.json page_placeholders.end, "
+                f"end slide index: {end_page_index}"
             )
         EndPage.move_slide(prs, end_slide, slide_index)

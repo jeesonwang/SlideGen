@@ -6,7 +6,7 @@ from typing import Any, cast
 
 from loguru import logger
 from lxml import etree
-from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pptx.shapes.autoshape import Shape
 from pptx.slide import Slide
 
@@ -123,6 +123,38 @@ class CShape:
         }
 
 
+@dataclass
+class PagePlaceholder:
+    """Stored placeholder info extracted from a template page slide."""
+
+    xml: str
+    placeholder_type: str
+    location: Location
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PagePlaceholder":
+        loc = data.get("location", {})
+        location = Location(
+            x=loc.get("x", 0), y=loc.get("y", 0),
+            width=loc.get("width", 0), height=loc.get("height", 0),
+        )
+        return cls(
+            xml=data["xml"],
+            placeholder_type=data["placeholder_type"],
+            location=location,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "xml": self.xml,
+            "placeholder_type": self.placeholder_type,
+            "location": {
+                "x": self.location.x, "y": self.location.y,
+                "width": self.location.width, "height": self.location.height,
+            },
+        }
+
+
 class Style:
     """Represent a style of shapes, including multiple shapes"""
 
@@ -215,6 +247,7 @@ class ComponentsManager:
 
     def __init__(self, json_path: str | Path | None = None):
         self.layout_types: dict[str, LayoutType] = {}
+        self.page_placeholders: dict[str, dict[str, PagePlaceholder]] = {}
 
         if json_path:
             self.load_from_json(json_path)
@@ -224,13 +257,26 @@ class ComponentsManager:
         with open(json_path, encoding="utf-8") as f:
             data = json.load(f)
 
-        for layout_name, layout_data in data.items():
-            self.layout_types[layout_name] = LayoutType(layout_name, layout_data)
+        for key, value in data.items():
+            if key == "page_placeholders":
+                for page_type, ph_data in value.items():
+                    self.page_placeholders[page_type] = {}
+                    for role, role_data in ph_data.items():
+                        self.page_placeholders[page_type][role] = PagePlaceholder.from_dict(role_data)
+            else:
+                self.layout_types[key] = LayoutType(key, value)
 
     def save_to_json(self, json_path: str | Path) -> None:
-        data = {}
+        data: dict[str, Any] = {}
         for layout_name, layout in self.layout_types.items():
             data[layout_name] = layout.to_dict()
+
+        if self.page_placeholders:
+            data["page_placeholders"] = {}
+            for page_type, roles in self.page_placeholders.items():
+                data["page_placeholders"][page_type] = {}
+                for role, ph in roles.items():
+                    data["page_placeholders"][page_type][role] = ph.to_dict()
 
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
@@ -439,6 +485,52 @@ class ComponentsManager:
         layout.add_style(new_style)
         logger.info(f"Added style '{style_name}' to layout type '{layout_type}' with {len(new_style.shapes)} shapes")
 
+    def extract_page_placeholder(self, slide: Slide, page_type: str) -> None:
+        """Extract placeholder shapes from a template slide for a given page type.
+
+        Args:
+            slide: The template slide to scan.
+            page_type: Key name like "cover", "chapter_home", "chapter_content", "end".
+        """
+        if page_type not in self.page_placeholders:
+            self.page_placeholders[page_type] = {}
+
+        # Map placeholder types to standardized role keys for lookup
+        _TYPE_TO_ROLE = {"TITLE": "title", "CENTER_TITLE": "title", "SUBTITLE": "subtitle"}
+        for ph in slide.shapes.placeholders:
+            type_name = PP_PLACEHOLDER(ph.placeholder_format.type).name
+            role_key = _TYPE_TO_ROLE.get(type_name)
+            if role_key is None:
+                continue
+
+            xml_str = ph._element.xml
+            xml_str = remove_custDataLst(xml_str)
+
+            location = Location(x=ph.left, y=ph.top, width=ph.width, height=ph.height)
+            self.page_placeholders[page_type][role_key] = PagePlaceholder(
+                xml=xml_str,
+                placeholder_type=type_name,
+                location=location,
+            )
+        logger.info(
+            f"Extracted {len(self.page_placeholders[page_type])} placeholder(s) for page type '{page_type}'"
+        )
+
+    def get_page_placeholder(self, page_type: str, role: str) -> PagePlaceholder | None:
+        """Retrieve stored placeholder data for a page type and role.
+
+        Args:
+            page_type: e.g. "cover", "chapter_home", "chapter_content", "end".
+            role: e.g. "title", "center_title".
+
+        Returns:
+            PagePlaceholder if found, None otherwise.
+        """
+        page_data = self.page_placeholders.get(page_type)
+        if page_data is None:
+            return None
+        return page_data.get(role)
+
     @staticmethod
     def is_icon(shape_location: Location) -> bool:
         """Distinguishing Icons and Images by Area"""
@@ -459,8 +551,15 @@ class ComponentsManager:
         with open(json_path, encoding="utf-8") as f:
             data = json.load(f)
         self.layout_types = {}
-        for layout_name, layout_data in data.items():
-            self.layout_types[layout_name] = LayoutType(layout_name, layout_data)
+        self.page_placeholders = {}
+        for key, value in data.items():
+            if key == "page_placeholders":
+                for page_type, ph_data in value.items():
+                    self.page_placeholders[page_type] = {}
+                    for role, role_data in ph_data.items():
+                        self.page_placeholders[page_type][role] = PagePlaceholder.from_dict(role_data)
+            else:
+                self.layout_types[key] = LayoutType(key, value)
         logger.info(f"Reloaded components from {json_path}")
 
 

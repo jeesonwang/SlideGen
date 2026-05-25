@@ -633,5 +633,55 @@
                 ]
             }
         }
+    },
+    "page_placeholders": {
+        "cover": {
+            "title": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"4\" name=\"标题\"/>\n    <p:cNvSpPr>\n      <a:spLocks noGrp=\"1\"/>\n    </p:cNvSpPr>\n    <p:nvPr>\n      <p:ph type=\"ctrTitle\"/>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr/>\n  <p:txBody>\n    <a:bodyPr>\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" dirty=\"0\"/>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "placeholder_type": "CENTER_TITLE",
+                "location": {
+                    "x": 1135380,
+                    "y": 1802765,
+                    "width": 5091430,
+                    "height": 2399030
+                }
+            }
+        },
+        "chapter_home": {
+            "title": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"4\" name=\"标题\"/>\n    <p:cNvSpPr>\n      <a:spLocks noGrp=\"1\"/>\n    </p:cNvSpPr>\n    <p:nvPr>\n      <p:ph type=\"title\"/>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr/>\n  <p:txBody>\n    <a:bodyPr/>\n    <a:lstStyle/>\n    <a:p>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" dirty=\"0\"/>\n        <a:t>简介</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "placeholder_type": "TITLE",
+                "location": {
+                    "x": 6297295,
+                    "y": 3025775,
+                    "width": 4765675,
+                    "height": 901700
+                }
+            }
+        },
+        "chapter_content": {
+            "title": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"3\" name=\"标题 2\">\n      <a:extLst>\n        <a:ext uri=\"{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}\">\n          <a16:creationId xmlns:a16=\"http://schemas.microsoft.com/office/drawing/2014/main\" id=\"{39DD6FAC-DCB7-7171-E2E3-48FF556FC34E}\"/>\n        </a:ext>\n      </a:extLst>\n    </p:cNvPr>\n    <p:cNvSpPr>\n      <a:spLocks noGrp=\"1\"/>\n    </p:cNvSpPr>\n    <p:nvPr>\n      <p:ph type=\"title\"/>\n    </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr/>\n  <p:txBody>\n    <a:bodyPr/>\n    <a:lstStyle/>\n    <a:p>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\"/>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "placeholder_type": "TITLE",
+                "location": {
+                    "x": 695960,
+                    "y": 360000,
+                    "width": 10800000,
+                    "height": 720000
+                }
+            }
+        },
+        "end": {
+            "title": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"2\" name=\"Title 1\"/>\n    <p:cNvSpPr>\n      <a:spLocks noGrp=\"1\"/>\n    </p:cNvSpPr>\n    <p:nvPr>\n      <p:ph type=\"title\"/>\n    </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr/>\n  <p:txBody>\n    <a:bodyPr/>\n    <a:lstStyle/>\n    <a:p>\n      <a:endParaRPr/>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "placeholder_type": "TITLE",
+                "location": {
+                    "x": 6297295,
+                    "y": 3025775,
+                    "width": 4765675,
+                    "height": 901700
+                }
+            }
+        }
     }
 }

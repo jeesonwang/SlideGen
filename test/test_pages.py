@@ -1,8 +1,10 @@
+import asyncio
 import os
 import sys
 from collections import Counter
 
 import pytest
+from pptx.enum.shapes import PP_PLACEHOLDER
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "slidegen"))
@@ -60,6 +62,37 @@ class TestPages:
         presentation.save(temp_output)
 
         assert os.path.exists(temp_output)
+
+    def test_cover_page_generation_keeps_title_word_wrap_disabled(self, presentation):
+        """Cover title placeholders should keep the previous no-wrap behavior."""
+        title = Heading(level=1, text="A Long Cover Title")
+
+        asyncio.run(CoverPage.generate_slide(presentation, title, cover_page_index=0))
+
+        title_placeholder = next(
+            shape
+            for shape in presentation.slides[0].shapes.placeholders
+            if shape.placeholder_format.type in (PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE)
+        )
+        assert title_placeholder.text_frame.word_wrap is False
+
+    def test_cover_page_generation_expands_narrow_title_box_first(self, presentation):
+        """Long no-wrap titles should first expand their text box."""
+        title_placeholder = next(
+            shape
+            for shape in presentation.slides[0].shapes.placeholders
+            if shape.placeholder_format.type in (PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE)
+        )
+        title_placeholder.width = title_placeholder.width // 5
+        narrow_width = title_placeholder.width
+
+        title = Heading(level=1, text="A Very Long Strategy Report Title That Needs More Horizontal Space")
+
+        asyncio.run(CoverPage.generate_slide(presentation, title, cover_page_index=0))
+
+        assert title_placeholder.text_frame.word_wrap is False
+        assert title_placeholder.width > narrow_width
+        assert title_placeholder.left + title_placeholder.width <= presentation.slide_width
 
     async def test_catalog_page_generation(self, presentation, heading_list):
         """test CatalogPage"""
