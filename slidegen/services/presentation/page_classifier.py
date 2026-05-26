@@ -64,7 +64,7 @@ class AgentPageClassificationOutput(BaseModel):
 AgentFactory = Callable[[Model | Any], Any]
 
 
-PAGE_CLASSIFIER_INSTRUCTIONS = """
+PAGE_CLASSIFIER_INSTRUCTIONS = """\
 Classify a PowerPoint slide into exactly one page type:
 - cover: presentation cover with a main title, subtitle, author, date, or topic.
 - catalog: agenda, table of contents, roadmap, or chapter list.
@@ -72,9 +72,7 @@ Classify a PowerPoint slide into exactly one page type:
 - chapter_content: actual content slide with ideas, title/body groups, analysis, diagrams, data, or explanations.
 - end: closing slide, thank-you slide, Q&A, contact, or final call-to-action.
 - unknown: use when the slide cannot be classified reliably.
-
-Return only the structured output requested by the output schema. Do not classify one_point/two_points layouts.
-""".strip()
+"""
 
 END_KEYWORDS = ("thank you", "thanks", "q&a", "qa", "questions", "谢谢", "感谢")
 
@@ -277,8 +275,8 @@ class PageTypeClassifier:
             name="Page type classifier",
             instructions=[PAGE_CLASSIFIER_INSTRUCTIONS],
             model=model,
-            structured_outputs=True,
-            output_model=AgentPageClassificationOutput,
+            output_schema=AgentPageClassificationOutput,
+            structured_outputs=False,
         )
 
     async def classify_pages(
