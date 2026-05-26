@@ -10,7 +10,7 @@
 ChapterContentPage.generate_slide()
   -> ChapterLayout(len(content.children))
   -> components_manager.get_random_style(chapter_layout)
-  -> 按 ContentType 替换 title/content/picture/number/icon
+  -> 按 ContentType 处理 title/content/picture/number/icon/decoration
 ```
 
 因此第二阶段的产物必须严格符合 `components/shapes/shapes.json` 的现有结构，而不是引入新的渲染模型。更长期的语义布局渲染器仍可把 `shapes.json` 作为迁移和样式资产，但本阶段的目标是先把“人工收集样式”变成“可控的自动导入流程”。
@@ -19,7 +19,7 @@ ChapterContentPage.generate_slide()
 
 - 新增一个内容页样式导入服务，接收 PPTX 路径、`user_id`、可选 `llm_config_id` 和写入选项。
 - 复用第一阶段 `PageTypeClassifier`，只筛选 `chapter_content` 且置信度达标的页面。
-- 对内容页中的 shape 做内容组识别和 `ContentType` 标注。
+- 对内容页中的 shape 做内容组识别和 `ContentType` 标注，覆盖 `TITLE`、`CONTENT`、`NUMBER`、`PICTURE`、`ICON`、`DECORATION`。
 - 将合格内容页转换为 `Style`，写入 `one_point`、`two_points`、`three_points`、`four_points`。
 - 默认支持 dry-run，先返回导入报告，不修改 `shapes.json`。
 - 真正写入时保护已有 JSON：保留现有 layout、style 和 `page_placeholders`，并使用原子写入。
