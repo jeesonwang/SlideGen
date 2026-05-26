@@ -6,7 +6,7 @@ from typing import Any, cast
 
 from loguru import logger
 from lxml import etree
-from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.shapes.autoshape import Shape
 from pptx.slide import Slide
 
@@ -143,8 +143,10 @@ class PagePlaceholder:
     def from_dict(cls, data: dict[str, Any]) -> "PagePlaceholder":
         loc = data.get("location", {})
         location = Location(
-            x=loc.get("x", 0), y=loc.get("y", 0),
-            width=loc.get("width", 0), height=loc.get("height", 0),
+            x=loc.get("x", 0),
+            y=loc.get("y", 0),
+            width=loc.get("width", 0),
+            height=loc.get("height", 0),
         )
         return cls(
             xml=data["xml"],
@@ -157,8 +159,10 @@ class PagePlaceholder:
             "xml": self.xml,
             "placeholder_type": self.placeholder_type,
             "location": {
-                "x": self.location.x, "y": self.location.y,
-                "width": self.location.width, "height": self.location.height,
+                "x": self.location.x,
+                "y": self.location.y,
+                "width": self.location.width,
+                "height": self.location.height,
             },
         }
 
@@ -401,7 +405,7 @@ class ComponentsManager:
         new_style = Style(style_name)
 
         shapes = slide.shapes
-        shape_data_dict = {}
+        shape_data_dict: dict[str, dict[str, Any]] = {}
         area = 0
         for i, shape in enumerate(shapes):
             if shape.is_placeholder:
@@ -412,7 +416,7 @@ class ComponentsManager:
                     content_type = ContentType.ICON
                 else:
                     content_type = ContentType.PICTURE
-                shape_data = {
+                shape_data: dict[str, Any] = {
                     "xml": None,
                     "zorder": i,
                     "content_type": content_type,
@@ -470,7 +474,7 @@ class ComponentsManager:
             if shape_data["content_type"] == ContentType.CONTENT and isinstance(shape_data["location"], list):
                 current_area = int(shape_data["location"][0]["height"]) * int(shape_data["location"][0]["width"])
                 if current_area < (area - 10000):
-                    if self.get_text_from_xml(shape_data["xml"]).isdigit():  # type: ignore
+                    if self.get_text_from_xml(shape_data["xml"]).isdigit():
                         shape_data["content_type"] = ContentType.NUMBER
                     else:
                         shape_data["content_type"] = ContentType.TITLE
@@ -478,8 +482,8 @@ class ComponentsManager:
             for shape_name_other, shape_data_other in list(shape_data_dict.items()):
                 if shape_name == shape_name_other or shape_data_other["xml"] is None:
                     continue
-                if self.are_same_shape(shape_data["xml"], shape_data_other["xml"]):  # type: ignore
-                    shape_data["location"].extend(shape_data_other["location"])  # type: ignore
+                if self.are_same_shape(shape_data["xml"], shape_data_other["xml"]):
+                    shape_data["location"].extend(shape_data_other["location"])
                     shape_data_other["xml"] = None
                     shapes_to_remove.append(shape_name_other)
 
@@ -506,7 +510,7 @@ class ComponentsManager:
         # Map placeholder types to standardized role keys for lookup
         _TYPE_TO_ROLE = {"TITLE": "title", "CENTER_TITLE": "title", "SUBTITLE": "subtitle"}
         for ph in slide.shapes.placeholders:
-            type_name = PP_PLACEHOLDER(ph.placeholder_format.type).name
+            type_name = ph.placeholder_format.type.name
             role_key = _TYPE_TO_ROLE.get(type_name)
             if role_key is None:
                 continue
@@ -520,9 +524,7 @@ class ComponentsManager:
                 placeholder_type=type_name,
                 location=location,
             )
-        logger.info(
-            f"Extracted {len(self.page_placeholders[page_type])} placeholder(s) for page type '{page_type}'"
-        )
+        logger.info(f"Extracted {len(self.page_placeholders[page_type])} placeholder(s) for page type '{page_type}'")
 
     def get_page_placeholder(self, page_type: str, role: str) -> PagePlaceholder | None:
         """Retrieve stored placeholder data for a page type and role.

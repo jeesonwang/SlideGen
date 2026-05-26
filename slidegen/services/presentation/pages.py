@@ -5,7 +5,7 @@ import random
 import unicodedata
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from loguru import logger
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
@@ -88,7 +88,7 @@ class Page:
     def _get_text_frame_font_size_pt(shape: BaseShape) -> float | None:
         if not shape.has_text_frame:
             return None
-        for paragraph in shape.text_frame.paragraphs:
+        for paragraph in cast(Shape, shape).text_frame.paragraphs:
             if paragraph.font.size is not None:
                 return paragraph.font.size.pt
             for run in paragraph.runs:
@@ -176,8 +176,8 @@ class Page:
                 location=loc,
             )
             if injected.has_text_frame:
-                injected.text_frame.word_wrap = False
-            Page._set_text(injected, text)
+                cast(Shape, injected).text_frame.word_wrap = False
+            Page._set_text(cast(Shape, injected), text)
             Page._expand_title_text_box(slide, injected, text)
             return injected
 
@@ -974,6 +974,7 @@ class ChapterContentPage(Page):
                                 f"{ChapterContentPage.__name__}: \
                                             Text content must be equal to the number of locations: {len(section_texts)} != {len(locs)}"
                             )
+                        assert shape.xml is not None
                         added_shape = add_shape_by_xml(
                             slide=new_slide,
                             shape_xml=shape.xml,
@@ -989,6 +990,7 @@ class ChapterContentPage(Page):
                                 f"{ChapterContentPage.__name__}: \
                                             Title must be equal to the number of locations: {len(titles)} != {len(locs)}"
                             )
+                        assert shape.xml is not None
                         added_shape = add_shape_by_xml(
                             slide=new_slide,
                             shape_xml=shape.xml,
@@ -1018,6 +1020,7 @@ class ChapterContentPage(Page):
 
                         added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
                     case ContentType.NUMBER:
+                        assert shape.xml is not None
                         added_shape = add_shape_by_xml(
                             slide=new_slide,
                             shape_xml=shape.xml,
@@ -1029,13 +1032,11 @@ class ChapterContentPage(Page):
                     case ContentType.ICON:
                         icon_path = None
                         try:
-                            query = None
+                            query = content.element_text
                             if idx < len(titles) and titles[idx]:
                                 query = titles[idx]
                             elif idx < len(section_texts) and section_texts[idx]:
                                 query = section_texts[idx]
-                            else:
-                                query = content.element_text
 
                             logger.info(
                                 "{}: searching icon for slide '{}' using query '{}'",
