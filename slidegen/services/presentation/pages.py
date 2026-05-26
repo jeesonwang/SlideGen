@@ -19,7 +19,7 @@ from pptx.slide import Slide
 from slidegen.exceptions import PPTGenError, PPTTemplateError
 from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.services.document.markdown import Heading
-from slidegen.services.presentation.components import ChapterLayout, ContentType, components_manager
+from slidegen.services.presentation.components import ChapterLayout, ComponentContentType, components_manager
 from slidegen.services.presentation.icon_searcher import IconSearcher, icon_searcher
 from slidegen.services.presentation.image_generator import ImageGenerator
 from slidegen.utils.env import get_temp_directory_env
@@ -968,7 +968,7 @@ class ChapterContentPage(Page):
             locs = shape.location
             for idx, loc in enumerate(locs):
                 match shape.content_type:
-                    case ContentType.CONTENT:
+                    case ComponentContentType.CONTENT:
                         if len(section_texts) != len(locs):
                             raise PPTGenError(
                                 f"{ChapterContentPage.__name__}: \
@@ -984,7 +984,7 @@ class ChapterContentPage(Page):
                             location=loc,
                         )
                         ChapterContentPage._shape_alignment(added_shape)
-                    case ContentType.TITLE:
+                    case ComponentContentType.TITLE:
                         if len(titles) != len(locs):
                             raise PPTGenError(
                                 f"{ChapterContentPage.__name__}: \
@@ -1000,7 +1000,7 @@ class ChapterContentPage(Page):
                             location=loc,
                         )
                         ChapterContentPage._shape_alignment(added_shape)
-                    case ContentType.PICTURE:
+                    case ComponentContentType.PICTURE:
                         image_path = None
                         try:
                             prompt_text = titles[idx] if idx < len(titles) else content.element_text
@@ -1019,7 +1019,7 @@ class ChapterContentPage(Page):
                             logger.exception(f"{ChapterContentPage.__name__}: Image generation failed")
 
                         added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
-                    case ContentType.NUMBER:
+                    case ComponentContentType.NUMBER:
                         assert shape.xml is not None
                         added_shape = add_shape_by_xml(
                             slide=new_slide,
@@ -1029,7 +1029,7 @@ class ChapterContentPage(Page):
                             text_content=str(idx + 1).zfill(2),
                             location=loc,
                         )
-                    case ContentType.ICON:
+                    case ComponentContentType.ICON:
                         icon_path = None
                         try:
                             query = content.element_text

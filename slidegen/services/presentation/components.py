@@ -41,7 +41,7 @@ def remove_custDataLst(xml_str: str) -> str:
     )
 
 
-class ContentType(Enum):
+class ComponentContentType(Enum):
     CONTENT = "content"
     PICTURE = "picture"
     NUMBER = "number"
@@ -91,7 +91,7 @@ class CShape:
 
     xml: str | None
     zorder: int
-    content_type: ContentType
+    content_type: ComponentContentType
     location: list[Location]
 
     @classmethod
@@ -105,11 +105,11 @@ class CShape:
 
         ct = data.get("content_type")
         if ct is None:
-            content_type = ContentType.DECORATION
-        elif isinstance(ct, ContentType):
+            content_type = ComponentContentType.DECORATION
+        elif isinstance(ct, ComponentContentType):
             content_type = ct
         else:
-            content_type = ContentType(ct)
+            content_type = ComponentContentType(ct)
 
         return cls(
             xml=data.get("xml"),
@@ -413,9 +413,9 @@ class ComponentsManager:
             location = Location(x=shape.left, y=shape.top, width=shape.width, height=shape.height)
             if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                 if self.is_icon(location):
-                    content_type = ContentType.ICON
+                    content_type = ComponentContentType.ICON
                 else:
-                    content_type = ContentType.PICTURE
+                    content_type = ComponentContentType.PICTURE
                 shape_data: dict[str, Any] = {
                     "xml": None,
                     "zorder": i,
@@ -433,9 +433,9 @@ class ComponentsManager:
                 if current_area > area:
                     area = current_area
                 shape_text = cast(Shape, shape).text
-                content_type = ContentType.DECORATION
+                content_type = ComponentContentType.DECORATION
                 if shape_text:
-                    content_type = ContentType.CONTENT
+                    content_type = ComponentContentType.CONTENT
                 shape_data = {
                     "xml": xml_str,
                     "zorder": i,
@@ -454,7 +454,7 @@ class ComponentsManager:
                     shape_data = {
                         "xml": xml_str,
                         "zorder": i,
-                        "content_type": ContentType.DECORATION,
+                        "content_type": ComponentContentType.DECORATION,
                         "location": [
                             {"x": location.x, "y": location.y, "width": location.width, "height": location.height}
                         ],
@@ -471,13 +471,13 @@ class ComponentsManager:
             if shape_data["xml"] is None:
                 continue
 
-            if shape_data["content_type"] == ContentType.CONTENT and isinstance(shape_data["location"], list):
+            if shape_data["content_type"] == ComponentContentType.CONTENT and isinstance(shape_data["location"], list):
                 current_area = int(shape_data["location"][0]["height"]) * int(shape_data["location"][0]["width"])
                 if current_area < (area - 10000):
                     if self.get_text_from_xml(shape_data["xml"]).isdigit():
-                        shape_data["content_type"] = ContentType.NUMBER
+                        shape_data["content_type"] = ComponentContentType.NUMBER
                     else:
-                        shape_data["content_type"] = ContentType.TITLE
+                        shape_data["content_type"] = ComponentContentType.TITLE
 
             for shape_name_other, shape_data_other in list(shape_data_dict.items()):
                 if shape_name == shape_name_other or shape_data_other["xml"] is None:
