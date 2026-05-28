@@ -69,6 +69,7 @@ class ContentStyleImportOptions:
     dry_run: bool = True
     overwrite_existing: bool = False
     backup: bool = True
+    preview_dir: Path | None = None
 
 
 @dataclass
@@ -82,6 +83,13 @@ class ShapeAssignment:
 
 
 @dataclass
+class ValidationResult:
+    ok: bool
+    reason: str
+    preview_path: Path | None = None
+
+
+@dataclass
 class ImportedSlideReport:
     page_index: int
     page_type: PageType
@@ -91,6 +99,7 @@ class ImportedSlideReport:
     style_name: str | None
     reason: str
     warnings: list[str] = field(default_factory=list)
+    validation: ValidationResult | None = None
 
 
 @dataclass
@@ -1008,6 +1017,7 @@ class ContentStyleImporter:
         dry_run: bool = True,
         overwrite_existing: bool = False,
         backup: bool = True,
+        preview_dir: Path | None = None,
     ) -> ImportReport:
         """Full import pipeline per the Phase 2 spec."""
         path = Path(pptx_path)
@@ -1108,6 +1118,7 @@ class ContentStyleImporter:
                     dry_run=dry_run,
                     overwrite_existing=overwrite_existing,
                     min_role_confidence=min_role_confidence,
+                    preview_dir=preview_dir,
                 )
                 slides.append(report)
                 if report.status == ImportSlideStatus.IMPORTED or report.status == ImportSlideStatus.DRY_RUN:
@@ -1146,6 +1157,69 @@ class ContentStyleImporter:
             slides=slides,
         )
 
+    @staticmethod
+    def _build_dummy_heading(point_count: int) -> Any:
+        """Build a minimal Heading tree with `point_count` children for validation."""
+        from slidegen.services.document.markdown.elements import Heading
+
+        root = Heading(text="Validation Test", level=2)
+        for i in range(point_count):
+            child = Heading(text=f"Point {i + 1}", level=3)
+            child.text = f"Dummy body text for validation point {i + 1}."
+            root.children.append(child)
+        return root
+
+    async def _validate_render_roundtrip(
+        self,
+        *,
+        style: Style,
+        layout_type: ChapterLayout,
+        preview_dir: Path | None = None,
+    ) -> ValidationResult:
+        """Force-render one slide with dummy content using the given style.
+
+        Creates a temporary PPTX from a blank template, injects the style
+        into ChapterContentPage.generate_slide, and verifies the output
+        can be saved without error.
+        """
+        from pptx import Presentation as PPTXPresentation
+
+        from slidegen.services.presentation.pages import ChapterContentPage
+
+        point_count = layout_type.value
+        content = self._build_dummy_heading(point_count)
+
+        try:
+            prs = PPTXPresentation()
+            # Add two blank slides: one as layout source, one as target.
+            prs.slides.add_slide(prs.slide_layouts[6])  # blank (layout source)
+            prs.slides.add_slide(prs.slide_layouts[6])  # blank (placeholder)
+
+            await ChapterContentPage.generate_slide(
+                prs=prs,
+                content=content,
+                chapter_page_index=0,
+                slide_index=1,
+                style_override=style,
+            )
+
+            if len(prs.slides) < 3:
+                return ValidationResult(ok=False, reason="No new slide was added during validation render.")
+
+            if preview_dir is not None:
+                preview_dir.mkdir(parents=True, exist_ok=True)
+                preview_path = preview_dir / f"validation_{style.name}.pptx"
+                prs.save(str(preview_path))
+                return ValidationResult(ok=True, reason="Render OK.", preview_path=preview_path)
+            else:
+                with tempfile.NamedTemporaryFile(suffix=".pptx", delete=True) as tmp:
+                    prs.save(tmp.name)
+                return ValidationResult(ok=True, reason="Render OK.")
+
+        except Exception as exc:
+            logger.warning("Validation render failed for style '{}': {}", style.name, exc)
+            return ValidationResult(ok=False, reason=str(exc))
+
     async def _process_content_slide(
         self,
         *,
@@ -1158,6 +1232,7 @@ class ContentStyleImporter:
         dry_run: bool,
         overwrite_existing: bool,
         min_role_confidence: float,
+        preview_dir: Path | None = None,
     ) -> ImportedSlideReport:
         """Process a single chapter_content slide through the full pipeline."""
         slide = presentation.slides[page_index]
@@ -1236,6 +1311,24 @@ class ContentStyleImporter:
             assignments=local_assignments,
         )
 
+        # --- Validation gate ---
+        validation = await self._validate_render_roundtrip(
+            style=style,
+            layout_type=layout_type,
+            preview_dir=preview_dir if dry_run else None,
+        )
+        if not validation.ok:
+            return ImportedSlideReport(
+                page_index=page_index,
+                page_type=classification.page_type,
+                page_confidence=classification.confidence,
+                status=ImportSlideStatus.FAILED,
+                layout=layout_type,
+                style_name=style_name,
+                reason=f"Validation render failed: {validation.reason}",
+                validation=validation,
+            )
+
         # Add to ComponentsManager (in-memory) only for real imports.
         if not dry_run:
             if overwrite_existing and layout.get_style(style_name):
@@ -1258,6 +1351,7 @@ class ContentStyleImporter:
             style_name=style_name,
             reason=f"Detected {layout_type.value} reusable content groups.",
             warnings=warnings,
+            validation=validation,
         )
 
     @staticmethod
