@@ -65,7 +65,7 @@ class ChapterLayout(IntEnum):
     THREE_POINTS = (3, "three_points")
     FOUR_POINTS = (4, "four_points")
 
-    def __new__(cls, number: int, str_value: str) -> "ChapterLayout":
+    def __new__(cls, number: int, str_value: str = "") -> "ChapterLayout":
         obj = int.__new__(cls, number)
         obj._value_ = number
         obj.str_value = str_value
@@ -278,7 +278,7 @@ class ComponentsManager:
             else:
                 self.layout_types[key] = LayoutType(key, value)
 
-    def save_to_json(self, json_path: str | Path) -> None:
+    def save_to_json(self, json_path: str | Path, backup: bool = True) -> None:
         data: dict[str, Any] = {}
         for layout_name, layout in self.layout_types.items():
             data[layout_name] = layout.to_dict()
@@ -290,8 +290,9 @@ class ComponentsManager:
                 for role, ph in roles.items():
                     data["page_placeholders"][page_type][role] = ph.to_dict()
 
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+        from slidegen.services.presentation.component_importer import atomic_save_json
+
+        atomic_save_json(data, json_path, backup=backup)
 
     def get_layout_type(self, layout_name: ChapterLayout) -> LayoutType | None:
         """Get a layout type by its name

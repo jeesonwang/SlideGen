@@ -896,6 +896,16 @@ class ChapterContentPage(Page):
     icon_searcher: IconSearcher = icon_searcher
 
     @staticmethod
+    def _resolve_placeholder_image_path() -> str | None:
+        placeholder_rel = os.path.join("components", "icons", "placeholder.png")
+        placeholder_abs = os.path.join(Path(__file__).resolve().parents[3], placeholder_rel)
+        if os.path.exists(placeholder_abs):
+            return placeholder_abs
+        if os.path.exists(placeholder_rel):
+            return placeholder_rel
+        return None
+
+    @staticmethod
     def _get_slide_type(content: Heading) -> int:
         """
         Get the slide type of the chapter content page
@@ -956,7 +966,7 @@ class ChapterContentPage(Page):
             )
 
         index = 0
-        chapter_layout = ChapterLayout(slide_type)  # type: ignore
+        chapter_layout = ChapterLayout(slide_type)
         style = components_manager.get_random_style(chapter_layout)
         logger.debug(f"{ChapterContentPage.__name__}: {chapter_layout} {style.name if style else 'None'}")
 
@@ -1018,6 +1028,13 @@ class ChapterContentPage(Page):
                         except Exception:
                             logger.exception(f"{ChapterContentPage.__name__}: Image generation failed")
 
+                        if not image_path:
+                            image_path = ChapterContentPage._resolve_placeholder_image_path()
+                            if not image_path:
+                                raise PPTGenError(
+                                    f"{ChapterContentPage.__name__}: Unable to resolve image path for shape '{shape_name}'"
+                                )
+
                         added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
                     case ComponentContentType.NUMBER:
                         assert shape.xml is not None
@@ -1053,13 +1070,8 @@ class ChapterContentPage(Page):
                             logger.exception(f"{ChapterContentPage.__name__}: Icon search failed")
 
                         if not icon_path:
-                            placeholder_rel = os.path.join("components", "icons", "placeholder.png")
-                            placeholder_abs = os.path.join(Path(__file__).resolve().parents[3], placeholder_rel)
-                            if os.path.exists(placeholder_abs):
-                                icon_path = placeholder_abs
-                            elif os.path.exists(placeholder_rel):
-                                icon_path = placeholder_rel
-                            else:
+                            icon_path = ChapterContentPage._resolve_placeholder_image_path()
+                            if not icon_path:
                                 raise PPTGenError(
                                     f"{ChapterContentPage.__name__}: Unable to resolve icon path for shape '{shape_name}'"
                                 )

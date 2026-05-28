@@ -2,17 +2,21 @@ import asyncio
 import os
 import sys
 from collections import Counter
+from types import SimpleNamespace
 
 import pytest
 from pptx.enum.shapes import PP_PLACEHOLDER
+from pptx.util import Emu
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "slidegen"))
 
 from pptx import Presentation
 
+import slidegen.services.presentation.pages as pages_module
 from slidegen.services.document import MarkdownDocument
 from slidegen.services.document.markdown.elements import Heading
+from slidegen.services.presentation.components import ComponentContentType, CShape, Location, Style
 from slidegen.services.presentation.orchestrator import PresentationOrchestrator
 from slidegen.services.presentation.pages import CatalogPage, ChapterContentPage, ChapterHomePage, CoverPage, Page
 
@@ -170,6 +174,42 @@ class TestPages:
         temp_output = os.path.join(os.path.dirname(__file__), "test_chapter_content.pptx")
         presentation.save(temp_output)
         assert os.path.exists(temp_output)
+
+    @pytest.mark.anyio
+    async def test_chapter_content_picture_uses_placeholder_when_generation_fails(self, presentation, monkeypatch):
+        """Picture styles should not call add_picture with None when generation fails."""
+        style = Style("picture_only")
+        style.add_shape(
+            "picture",
+            CShape(
+                xml=None,
+                zorder=0,
+                content_type=ComponentContentType.PICTURE,
+                location=[Location(x=Emu(900000), y=Emu(1200000), width=Emu(2500000), height=Emu(1600000))],
+            ),
+        )
+
+        class FakeComponentsManager:
+            def get_random_style(self, _chapter_layout):
+                return style
+
+            def get_page_placeholder(self, _page_type, _role):
+                return None
+
+        class FailingImageGenerator:
+            async def generate_image(self, _prompt):
+                return SimpleNamespace(path=None)
+
+        monkeypatch.setattr(pages_module, "components_manager", FakeComponentsManager())
+        monkeypatch.setattr(ChapterContentPage, "image_generator", FailingImageGenerator())
+
+        content = Heading(level=2, text="Market Context")
+        content.append(Heading(level=3, text="Customer Signals"))
+
+        await ChapterContentPage.generate_slide(presentation, content, chapter_page_index=4, slide_index=4)
+
+        generated_slide = presentation.slides[4]
+        assert any(shape.shape_type.name == "PICTURE" for shape in generated_slide.shapes)
 
     async def test_ppt_generation(self, presentation, markdown_document):
         """test PresentationOrchestrator"""
