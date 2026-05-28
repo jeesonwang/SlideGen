@@ -30,6 +30,9 @@ from slidegen.services.presentation.components import (
     ChapterLayout,
     ComponentContentType,
     ComponentsManager,
+    CShape,
+    Location,
+    Style,
 )
 from slidegen.services.presentation.page_classifier import (
     PageClassification,
@@ -1017,3 +1020,135 @@ async def test_shape_role_agent_ignores_invalid_shape_id():
 
     # No changes should be made for invalid shape_id
     assert merged == local_assignments
+
+
+# --- Validation render round-trip tests ---
+
+
+def _make_style_with_one_text_shape(name: str = "test_style") -> Style:
+    """Build a minimal valid one_point style with one TITLE + one CONTENT shape."""
+    style = Style(name)
+    xml = (
+        '<p:sp xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+        ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+        '<p:nvSpPr><p:cNvPr id="1" name="title"/>'
+        '<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+        '<p:spPr><a:xfrm><a:off x="100000" y="100000"/>'
+        '<a:ext cx="5000000" cy="600000"/></a:xfrm></p:spPr>'
+        '<p:txBody><a:bodyPr/><a:p><a:r><a:t>placeholder</a:t></a:r></a:p></p:txBody>'
+        "</p:sp>"
+    )
+
+    title_shape = CShape(
+        xml=xml,
+        zorder=0,
+        content_type=ComponentContentType.TITLE,
+        location=[Location(x=100000, y=100000, width=5000000, height=600000)],
+    )
+    content_shape = CShape(
+        xml=xml,
+        zorder=1,
+        content_type=ComponentContentType.CONTENT,
+        location=[Location(x=100000, y=800000, width=5000000, height=2000000)],
+    )
+    style.add_shape("title_0", title_shape)
+    style.add_shape("content_0", content_shape)
+    return style
+
+
+@pytest.mark.anyio
+async def test_validation_passes_for_valid_one_point_style():
+    """A style with one TITLE + one CONTENT location should render successfully."""
+    style = _make_style_with_one_text_shape()
+    cm = ComponentsManager()
+    importer = ContentStyleImporter(cm)
+
+    result = await importer._validate_render_roundtrip(
+        style=style,
+        layout_type=ChapterLayout.ONE_POINT,
+    )
+
+    assert result.ok, f"Expected OK but got: {result.reason}"
+    assert "OK" in result.reason
+
+
+@pytest.mark.anyio
+async def test_validation_fails_when_location_count_mismatches_point_count():
+    """A one_point style with 2 TITLE locations should fail — counts don't match."""
+    style = Style("bad_style")
+    xml = (
+        '<p:sp xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+        ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+        '<p:nvSpPr><p:cNvPr id="1" name="title"/>'
+        '<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+        '<p:spPr><a:xfrm><a:off x="100000" y="100000"/>'
+        '<a:ext cx="5000000" cy="600000"/></a:xfrm></p:spPr>'
+        '<p:txBody><a:bodyPr/><a:p><a:r><a:t>placeholder</a:t></a:r></a:p></p:txBody>'
+        "</p:sp>"
+    )
+    title_shape = CShape(
+        xml=xml,
+        zorder=0,
+        content_type=ComponentContentType.TITLE,
+        location=[
+            Location(x=100000, y=100000, width=5000000, height=600000),
+            Location(x=100000, y=2000000, width=5000000, height=600000),
+        ],
+    )
+    content_shape = CShape(
+        xml=xml,
+        zorder=1,
+        content_type=ComponentContentType.CONTENT,
+        location=[Location(x=100000, y=800000, width=5000000, height=2000000)],
+    )
+    style.add_shape("title_0", title_shape)
+    style.add_shape("content_0", content_shape)
+
+    cm = ComponentsManager()
+    importer = ContentStyleImporter(cm)
+
+    result = await importer._validate_render_roundtrip(
+        style=style,
+        layout_type=ChapterLayout.ONE_POINT,
+    )
+
+    assert not result.ok
+
+
+@pytest.mark.anyio
+async def test_validation_fails_with_broken_xml():
+    """A style whose shape XML is not valid p:sp should fail."""
+    style = Style("broken")
+    broken = CShape(
+        xml="<not>valid</not>",
+        zorder=0,
+        content_type=ComponentContentType.TITLE,
+        location=[Location(x=100000, y=100000, width=5000000, height=600000)],
+    )
+    content = CShape(
+        xml=(
+            '<p:sp xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            '<p:nvSpPr><p:cNvPr id="2" name="content"/>'
+            '<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+            '<p:spPr><a:xfrm><a:off x="100000" y="800000"/>'
+            '<a:ext cx="5000000" cy="2000000"/></a:xfrm></p:spPr>'
+            '<p:txBody><a:bodyPr/><a:p><a:r><a:t>placeholder</a:t></a:r></a:p></p:txBody>'
+            "</p:sp>"
+        ),
+        zorder=1,
+        content_type=ComponentContentType.CONTENT,
+        location=[Location(x=100000, y=800000, width=5000000, height=2000000)],
+    )
+    style.add_shape("broken_title", broken)
+    style.add_shape("content_0", content)
+
+    cm = ComponentsManager()
+    importer = ContentStyleImporter(cm)
+
+    result = await importer._validate_render_roundtrip(
+        style=style,
+        layout_type=ChapterLayout.ONE_POINT,
+    )
+
+    assert not result.ok
