@@ -19,7 +19,7 @@ from pptx.slide import Slide
 from slidegen.exceptions import PPTGenError, PPTTemplateError
 from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.services.document.markdown import Heading
-from slidegen.services.presentation.components import ChapterLayout, ComponentContentType, components_manager
+from slidegen.services.presentation.components import ChapterLayout, ComponentContentType, Style, components_manager
 from slidegen.services.presentation.icon_searcher import IconSearcher, icon_searcher
 from slidegen.services.presentation.image_generator import ImageGenerator
 from slidegen.utils.env import get_temp_directory_env
@@ -928,6 +928,7 @@ class ChapterContentPage(Page):
         *,
         chapter_page_index: int = 3,
         slide_index: int = 3,
+        style_override: Style | None = None,
     ) -> None:
         """
         Generate the chapter content page
@@ -937,6 +938,7 @@ class ChapterContentPage(Page):
             content: Heading object
             chapter_page_index: index of the template chapter content slide
             slide_index: index of the slide to be generated
+            style_override: if set, use this Style instead of calling get_random_style()
         """
         assert content.level in (2, 3), (
             f"{ChapterContentPage.__name__}: Chapter content page must have a level 2 or level 3 heading"
@@ -967,7 +969,10 @@ class ChapterContentPage(Page):
 
         index = 0
         chapter_layout = ChapterLayout(slide_type)
-        style = components_manager.get_random_style(chapter_layout)
+        if style_override is not None:
+            style = style_override
+        else:
+            style = components_manager.get_random_style(chapter_layout)
         logger.debug(f"{ChapterContentPage.__name__}: {chapter_layout} {style.name if style else 'None'}")
 
         # Sort by zorder
