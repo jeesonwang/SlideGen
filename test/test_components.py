@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__f
 
 from pptx import Presentation
 
-from slidegen.services.presentation.components import components_manager
+from slidegen.services.presentation.components import ComponentsManager, components_manager
 
 
 def test_components_manager():
@@ -22,6 +22,30 @@ def test_components_manager():
 
         for shape_name, shape in random_style.shapes.items():
             print(f"  Shape: {shape_name}, Content type: {shape.content_type}")
+
+
+def test_components_manager_loads_metadata_without_layout_pollution(tmp_path):
+    json_path = tmp_path / "shapes.json"
+    json_path.write_text(
+        """
+        {
+          "metadata": {
+            "slide_width": 12192000,
+            "slide_height": 6858000
+          },
+          "one_point": {
+            "style0": {}
+          }
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    manager = ComponentsManager(json_path)
+
+    assert manager.metadata == {"slide_width": 12192000, "slide_height": 6858000}
+    assert "metadata" not in manager.layout_types_names
+    assert "one_point" in manager.layout_types_names
 
 
 def test_add_style():

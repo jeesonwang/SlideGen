@@ -19,7 +19,13 @@ from pptx.slide import Slide
 from slidegen.exceptions import PPTGenError, PPTTemplateError
 from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.services.document.markdown import Heading
-from slidegen.services.presentation.components import ChapterLayout, ComponentContentType, Style, components_manager
+from slidegen.services.presentation.components import (
+    ChapterLayout,
+    ComponentContentType,
+    Location,
+    Style,
+    components_manager,
+)
 from slidegen.services.presentation.icon_searcher import IconSearcher, icon_searcher
 from slidegen.services.presentation.image_generator import ImageGenerator
 from slidegen.utils.env import get_temp_directory_env
@@ -134,6 +140,26 @@ class Page:
             shape.width = target_width
 
     @staticmethod
+    def _scale_shape_location(prs: Presentation, loc: Location) -> Location:
+        metadata = getattr(components_manager, "metadata", {}) or {}
+        source_width = metadata.get("slide_width")
+        source_height = metadata.get("slide_height")
+        target_width = prs.slide_width
+        target_height = prs.slide_height
+
+        if not source_width or not source_height or not target_width or not target_height:
+            return loc
+
+        x_scale = int(target_width) / int(source_width)
+        y_scale = int(target_height) / int(source_height)
+        return Location(
+            x=round(loc.x * x_scale),
+            y=round(loc.y * y_scale),
+            width=round(loc.width * x_scale),
+            height=round(loc.height * y_scale),
+        )
+
+    @staticmethod
     def _find_or_inject_placeholder(
         slide: Slide,
         page_type: str,
@@ -166,7 +192,8 @@ class Page:
 
         ph_data = components_manager.get_page_placeholder(page_type, role)
         if ph_data is not None:
-            loc = ph_data.location
+            prs = slide.part.package.presentation_part.presentation
+            loc = Page._scale_shape_location(prs, ph_data.location)
             injected = add_shape_by_xml(
                 slide=slide,
                 shape_xml=ph_data.xml,
@@ -982,6 +1009,7 @@ class ChapterContentPage(Page):
             # locs must be in order
             locs = shape.location
             for idx, loc in enumerate(locs):
+                scaled_loc = Page._scale_shape_location(prs, loc)
                 match shape.content_type:
                     case ComponentContentType.CONTENT:
                         if len(section_texts) != len(locs):
@@ -996,7 +1024,7 @@ class ChapterContentPage(Page):
                             shape_id=index,
                             shape_name=shape_name,
                             text_content=section_texts[idx],
-                            location=loc,
+                            location=scaled_loc,
                         )
                         ChapterContentPage._shape_alignment(added_shape)
                     case ComponentContentType.TITLE:
@@ -1012,7 +1040,7 @@ class ChapterContentPage(Page):
                             shape_id=index,
                             shape_name=shape_name,
                             text_content=titles[idx],
-                            location=loc,
+                            location=scaled_loc,
                         )
                         ChapterContentPage._shape_alignment(added_shape)
                     case ComponentContentType.PICTURE:
@@ -1040,7 +1068,13 @@ class ChapterContentPage(Page):
                                     f"{ChapterContentPage.__name__}: Unable to resolve image path for shape '{shape_name}'"
                                 )
 
-                        added_shape = new_slide.shapes.add_picture(image_path, loc.x, loc.y, loc.width, loc.height)
+                        added_shape = new_slide.shapes.add_picture(
+                            image_path,
+                            scaled_loc.x,
+                            scaled_loc.y,
+                            scaled_loc.width,
+                            scaled_loc.height,
+                        )
                     case ComponentContentType.NUMBER:
                         assert shape.xml is not None
                         added_shape = add_shape_by_xml(
@@ -1049,7 +1083,7 @@ class ChapterContentPage(Page):
                             shape_id=index,
                             shape_name=shape_name,
                             text_content=str(idx + 1).zfill(2),
-                            location=loc,
+                            location=scaled_loc,
                         )
                     case ComponentContentType.ICON:
                         icon_path = None
@@ -1081,14 +1115,20 @@ class ChapterContentPage(Page):
                                     f"{ChapterContentPage.__name__}: Unable to resolve icon path for shape '{shape_name}'"
                                 )
 
-                        added_shape = new_slide.shapes.add_picture(icon_path, loc.x, loc.y, loc.width, loc.height)
+                        added_shape = new_slide.shapes.add_picture(
+                            icon_path,
+                            scaled_loc.x,
+                            scaled_loc.y,
+                            scaled_loc.width,
+                            scaled_loc.height,
+                        )
                     case _:
                         added_shape = add_shape_by_xml(
                             slide=new_slide,
                             shape_xml=shape.xml,  # type: ignore
                             shape_id=index,
                             shape_name=shape_name,
-                            location=loc,
+                            location=scaled_loc,
                         )
             index += 1
         ChapterContentPage.move_slide(prs, new_slide, slide_index)

@@ -258,6 +258,7 @@ class ComponentsManager:
     """Manage all components, styles, and layouts"""
 
     def __init__(self, json_path: str | Path | None = None):
+        self.metadata: dict[str, Any] = {}
         self.layout_types: dict[str, LayoutType] = {}
         self.page_placeholders: dict[str, dict[str, PagePlaceholder]] = {}
 
@@ -265,12 +266,14 @@ class ComponentsManager:
             self.load_from_json(json_path)
             self.json_path = json_path
 
-    def load_from_json(self, json_path: str | Path) -> None:
-        with open(json_path, encoding="utf-8") as f:
-            data = json.load(f)
-
+    def _load_from_dict(self, data: dict[str, Any]) -> None:
+        self.metadata = {}
+        self.layout_types = {}
+        self.page_placeholders = {}
         for key, value in data.items():
-            if key == "page_placeholders":
+            if key == "metadata":
+                self.metadata = dict(value) if isinstance(value, dict) else {}
+            elif key == "page_placeholders":
                 for page_type, ph_data in value.items():
                     self.page_placeholders[page_type] = {}
                     for role, role_data in ph_data.items():
@@ -278,8 +281,15 @@ class ComponentsManager:
             else:
                 self.layout_types[key] = LayoutType(key, value)
 
+    def load_from_json(self, json_path: str | Path) -> None:
+        with open(json_path, encoding="utf-8") as f:
+            data = json.load(f)
+        self._load_from_dict(data)
+
     def save_to_json(self, json_path: str | Path, backup: bool = True) -> None:
         data: dict[str, Any] = {}
+        if self.metadata:
+            data["metadata"] = self.metadata
         for layout_name, layout in self.layout_types.items():
             data[layout_name] = layout.to_dict()
 
@@ -294,7 +304,7 @@ class ComponentsManager:
 
         atomic_save_json(data, json_path, backup=backup)
 
-    def get_layout_type(self, layout_name: ChapterLayout) -> LayoutType | None:
+    def get_layout_type(self, layout_name: ChapterLayout | str) -> LayoutType | None:
         """Get a layout type by its name
 
         example:
@@ -303,7 +313,8 @@ class ComponentsManager:
         layout = shapes_manager.get_layout_type(ChapterLayout.TWO_POINTS)
         ```
         """
-        return self.layout_types.get(layout_name.str_value)
+        layout_key = layout_name.str_value if isinstance(layout_name, ChapterLayout) else layout_name
+        return self.layout_types.get(layout_key)
 
     def get_random_style(self, layout_name: ChapterLayout) -> Style:
         """Get a random style from a specified layout type
@@ -561,16 +572,7 @@ class ComponentsManager:
     def reload(self, json_path: str) -> None:
         with open(json_path, encoding="utf-8") as f:
             data = json.load(f)
-        self.layout_types = {}
-        self.page_placeholders = {}
-        for key, value in data.items():
-            if key == "page_placeholders":
-                for page_type, ph_data in value.items():
-                    self.page_placeholders[page_type] = {}
-                    for role, role_data in ph_data.items():
-                        self.page_placeholders[page_type][role] = PagePlaceholder.from_dict(role_data)
-            else:
-                self.layout_types[key] = LayoutType(key, value)
+        self._load_from_dict(data)
         logger.info(f"Reloaded components from {json_path}")
 
 
