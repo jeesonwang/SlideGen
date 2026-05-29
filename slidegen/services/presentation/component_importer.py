@@ -1162,11 +1162,10 @@ class ContentStyleImporter:
         """Build a minimal Heading tree with `point_count` children for validation."""
         from slidegen.services.document.markdown.elements import Heading
 
-        root = Heading(text="Validation Test", level=2)
+        root = Heading(level=2, text="Validation Test")
         for i in range(point_count):
-            child = Heading(text=f"Point {i + 1}", level=3)
-            child.text = f"Dummy body text for validation point {i + 1}."
-            root.children.append(child)
+            child = Heading(level=3, text=f"Point {i + 1}")
+            root.append(child)
         return root
 
     async def _validate_render_roundtrip(
