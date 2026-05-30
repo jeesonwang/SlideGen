@@ -295,20 +295,20 @@ class TestPages:
         assert generated_picture.height == 12000
 
     @pytest.mark.anyio
-    async def test_chapter_content_icon_scaling_keeps_square(self, presentation, monkeypatch):
-        """Icon locations should remain square when source and target slide ratios differ."""
+    async def test_chapter_content_square_shape_scaling_keeps_square(self, presentation, monkeypatch):
+        """Square shape locations should remain square when source and target slide ratios differ."""
         source_width = int(presentation.slide_width)
         source_height = int(presentation.slide_height)
         presentation.slide_width = Emu(source_width * 2)
         presentation.slide_height = Emu(source_height * 3)
 
-        style = Style("scaled_icon")
+        style = Style("scaled_square_picture")
         style.add_shape(
-            "icon",
+            "picture",
             CShape(
                 xml=None,
                 zorder=0,
-                content_type=ComponentContentType.ICON,
+                content_type=ComponentContentType.PICTURE,
                 location=[Location(x=1000, y=2000, width=3000, height=3000)],
             ),
         )
@@ -322,23 +322,23 @@ class TestPages:
             def get_page_placeholder(self, _page_type, _role):
                 return None
 
-        class EmptyIconSearcher:
-            async def search_icons(self, _query, k=1):
-                return []
+        class FailingImageGenerator:
+            async def generate_image(self, _prompt):
+                return SimpleNamespace(path=None)
 
         monkeypatch.setattr(pages_module, "components_manager", FakeComponentsManager())
-        monkeypatch.setattr(ChapterContentPage, "icon_searcher", EmptyIconSearcher())
+        monkeypatch.setattr(ChapterContentPage, "image_generator", FailingImageGenerator())
 
         content = Heading(level=2, text="Market Context")
         content.append(Heading(level=3, text="Customer Signals"))
 
         await ChapterContentPage.generate_slide(presentation, content, chapter_page_index=4, slide_index=4)
 
-        generated_icon = next(shape for shape in presentation.slides[4].shapes if shape.shape_type.name == "PICTURE")
-        assert generated_icon.left == 2000
-        assert generated_icon.top == 7500
-        assert generated_icon.width == 6000
-        assert generated_icon.height == 6000
+        generated_picture = next(shape for shape in presentation.slides[4].shapes if shape.shape_type.name == "PICTURE")
+        assert generated_picture.left == 2000
+        assert generated_picture.top == 7500
+        assert generated_picture.width == 6000
+        assert generated_picture.height == 6000
 
     async def test_ppt_generation(self, presentation, markdown_document):
         """test PresentationOrchestrator"""
