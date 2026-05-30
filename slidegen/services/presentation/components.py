@@ -386,6 +386,18 @@ class ComponentsManager:
             for t_elem in t_elements2:
                 t_elem.text = "placeholder_text"
 
+            # Remove internal PowerPoint attributes that don't affect visual appearance
+            # These attributes are used by PowerPoint internally and can vary between shapes
+            # that are visually identical
+            internal_attrs = ["dirty", "smtClean", "smtId"]
+            for attr in internal_attrs:
+                for elem in root1.iter():
+                    if attr in elem.attrib:
+                        del elem.attrib[attr]
+                for elem in root2.iter():
+                    if attr in elem.attrib:
+                        del elem.attrib[attr]
+
             xml_str1 = etree.tostring(root1, encoding="unicode")
             xml_str2 = etree.tostring(root2, encoding="unicode")
 
