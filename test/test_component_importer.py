@@ -3,9 +3,11 @@
 import base64
 import hashlib
 import json
+import re
 import uuid
 
 import pytest
+from lxml import etree
 from pptx import Presentation
 from pptx.util import Emu, Pt
 
@@ -558,6 +560,75 @@ def test_style_builder_excludes_skip_shapes():
     assert len(style) == 0  # no shapes included
 
 
+def test_style_builder_replaces_imported_text_in_shape_xml():
+    prs, slide = _blank_slide()
+    shape = slide.shapes.add_textbox(Emu(100000), Emu(100000), Emu(4000000), Emu(600000))
+    text_frame = shape.text_frame
+    text_frame.clear()
+    paragraph = text_frame.paragraphs[0]
+    paragraph.add_run().text = "Original sensitive sentence"
+    paragraph.add_run().text = "Second imported sentence"
+
+    assignments = [
+        ShapeAssignment(
+            shape_id=shape.shape_id,
+            content_type=ComponentContentType.CONTENT,
+            group_index=0,
+            include=True,
+            reason="Content",
+            confidence=0.9,
+        )
+    ]
+
+    style = StyleBuilder().build_style_from_assignments(
+        slide=slide,
+        _layout_type=ChapterLayout.ONE_POINT,
+        style_name="text_placeholder_test",
+        assignments=assignments,
+    )
+
+    content_shape = style.get_shape("content_0")
+    assert content_shape is not None
+    assert content_shape.xml is not None
+    assert "Original sensitive sentence" not in content_shape.xml
+    assert "Second imported sentence" not in content_shape.xml
+
+    root = etree.fromstring(content_shape.xml)
+    text_values = [elem.text for elem in root.findall(".//a:t", namespaces=root.nsmap)]
+    assert text_values == ["Text", "Text"]
+
+
+def test_style_builder_replaces_chinese_shape_names_in_shape_xml():
+    prs, slide = _blank_slide()
+    shape = slide.shapes.add_textbox(Emu(100000), Emu(100000), Emu(4000000), Emu(600000))
+    shape.name = "矩形 3"
+    shape.text = "Content"
+
+    assignments = [
+        ShapeAssignment(
+            shape_id=shape.shape_id,
+            content_type=ComponentContentType.CONTENT,
+            group_index=0,
+            include=True,
+            reason="Content",
+            confidence=0.9,
+        )
+    ]
+
+    style = StyleBuilder().build_style_from_assignments(
+        slide=slide,
+        _layout_type=ChapterLayout.ONE_POINT,
+        style_name="shape_name_test",
+        assignments=assignments,
+    )
+
+    content_shape = style.get_shape("content_0")
+    assert content_shape is not None
+    assert content_shape.xml is not None
+    assert 'name="矩形 3"' not in content_shape.xml
+    assert 'name="rectangle_3"' in content_shape.xml
+
+
 # --- Step 7: Full import pipeline ---
 
 
@@ -740,6 +811,70 @@ async def test_import_from_pptx_uses_unique_name_when_generated_collision_exists
     imported = [s for s in report.slides if s.status == ImportSlideStatus.IMPORTED]
     assert len(imported) == 1
     assert imported[0].style_name not in existing_names
+
+
+def test_generate_style_name_uses_english_stem_for_chinese_pptx(tmp_path):
+    prs, _slide = _blank_slide()
+    pptx_path = tmp_path / "深度学习原理架构与应用.pptx"
+    prs.save(str(pptx_path))
+
+    importer = ContentStyleImporter(ComponentsManager(), style_name_stem="deck")
+
+    style_name = importer._generate_style_name(pptx_path, 0)
+
+    assert re.fullmatch(r"upload_deck_[0-9a-f]{8}_p1", style_name)
+
+
+@pytest.mark.anyio
+async def test_import_from_pptx_skips_duplicate_style_in_same_layout(tmp_path):
+    prs, slide = _two_point_slide_with_font()
+    pptx_path = tmp_path / "deck.pptx"
+    prs.save(str(pptx_path))
+
+    json_path = tmp_path / "shapes.json"
+    json_path.write_text(json.dumps({"one_point": {}, "two_points": {}, "three_points": {}}))
+    cm = ComponentsManager(str(json_path))
+
+    local_classifier = LocalShapeRoleClassifier()
+    summaries = PageTypeClassifier().summarize_slide(slide)
+    assignments = local_classifier.assign_group_indices(
+        local_classifier.classify(summaries),
+        summaries,
+    )
+    existing_style = StyleBuilder().build_style_from_assignments(
+        slide=slide,
+        _layout_type=ChapterLayout.TWO_POINTS,
+        style_name="existing_duplicate",
+        assignments=assignments,
+    )
+    cm.get_layout_type(ChapterLayout.TWO_POINTS).add_style(existing_style)
+
+    importer = ContentStyleImporter(
+        cm,
+        page_classifier=PageTypeClassifier(agent_factory=lambda model: FakePageClassifierAgent()),
+        shape_role_agent=ShapeRoleAgent(agent_factory=lambda model: FakeAgentForImport(content={
+            "point_count": 2,
+            "assignments": [],
+            "confidence": 0.95,
+            "reason": "Clear two-point layout.",
+        })),
+    )
+
+    report = await importer.import_from_pptx(
+        pptx_path=str(pptx_path),
+        user_id=uuid.uuid4(),
+        model=object(),
+        target_json_path=str(json_path),
+        dry_run=False,
+        overwrite_existing=False,
+    )
+
+    assert report.imported_count == 0
+    assert report.skipped_count == 1
+    assert report.slides[0].status == ImportSlideStatus.SKIPPED
+    assert report.slides[0].style_name == "existing_duplicate"
+    assert "Duplicate style" in report.slides[0].reason
+    assert cm.get_layout_type(ChapterLayout.TWO_POINTS).style_names == ["existing_duplicate"]
 
 
 @pytest.mark.anyio

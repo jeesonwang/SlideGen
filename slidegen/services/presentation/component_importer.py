@@ -47,6 +47,25 @@ from slidegen.services.presentation.page_classifier import (
 )
 from slidegen.services.slidegen.workflow import get_llm_instance
 
+_SHAPE_NAME_TRANSLATIONS = (
+    ("圆角矩形", "rounded rectangle"),
+    ("任意多边形", "freeform"),
+    ("矩形", "rectangle"),
+    ("椭圆", "ellipse"),
+    ("图形", "shape"),
+    ("形状", "shape"),
+)
+
+
+def _sanitize_ascii_name(value: str | None, *, fallback: str) -> str:
+    """Return a lowercase ASCII identifier safe for style keys and XML names."""
+    text = value or ""
+    for source, target in _SHAPE_NAME_TRANSLATIONS:
+        text = text.replace(source, target)
+    text = re.sub(r"[^A-Za-z0-9]+", "_", text).strip("_").lower()
+    return text or fallback
+
+
 # ---------------------------------------------------------------------------
 # Step 1: Core types
 # ---------------------------------------------------------------------------
@@ -948,6 +967,7 @@ class StyleBuilder:
                 try:
                     raw_xml = first_shape_obj._element.xml
                     xml_str = remove_custDataLst(raw_xml)
+                    xml_str = self._replace_shape_xml_names(xml_str)
                     text_placeholder = "" if ct == ComponentContentType.DECORATION else self.TEXT_PLACEHOLDER
                     xml_str = self._replace_shape_xml_text(xml_str, text_placeholder)
                 except Exception as exc:
@@ -992,6 +1012,20 @@ class StyleBuilder:
         )
 
     @staticmethod
+    def _replace_shape_xml_names(xml_str: str) -> str:
+        """Replace imported PowerPoint shape names with stable English identifiers."""
+        root = etree.fromstring(xml_str)
+        for index, c_nv_pr in enumerate(root.xpath(".//*[local-name()='cNvPr']"), start=1):
+            fallback = f"shape_{c_nv_pr.get('id') or index}"
+            c_nv_pr.set("name", _sanitize_ascii_name(c_nv_pr.get("name"), fallback=fallback))
+        return etree.tostring(
+            root,
+            encoding="unicode",
+            pretty_print=True,
+            xml_declaration=False,
+        )
+
+    @staticmethod
     def _zorder_for(assignment: ShapeAssignment, slide: Slide) -> int:
         """Get zorder index for a shape from its position in slide.shapes."""
         for i, shape in enumerate(slide.shapes):
@@ -1016,12 +1050,18 @@ class ContentStyleImporter:
         local_classifier: LocalShapeRoleClassifier | None = None,
         shape_role_agent: ShapeRoleAgent | None = None,
         style_builder: StyleBuilder | None = None,
+        style_name_stem: str | None = None,
     ) -> None:
         self.cm = components_manager
         self.page_classifier = page_classifier or PageTypeClassifier()
         self.local_classifier = local_classifier or LocalShapeRoleClassifier()
         self.shape_role_agent = shape_role_agent or ShapeRoleAgent()
         self.style_builder = style_builder or StyleBuilder()
+        self.style_name_stem = (
+            _sanitize_ascii_name(style_name_stem, fallback="deck")
+            if style_name_stem is not None
+            else None
+        )
 
     async def import_from_pptx(
         self,
@@ -1329,6 +1369,18 @@ class ContentStyleImporter:
             assignments=local_assignments,
         )
 
+        duplicate_style = self._find_duplicate_style(style, layout)
+        if duplicate_style is not None and (not overwrite_existing or duplicate_style.name != style_name):
+            return ImportedSlideReport(
+                page_index=page_index,
+                page_type=classification.page_type,
+                page_confidence=classification.confidence,
+                status=ImportSlideStatus.SKIPPED,
+                layout=layout_type,
+                style_name=duplicate_style.name,
+                reason=f"Duplicate style already exists in {layout_type.str_value}: {duplicate_style.name}.",
+            )
+
         # --- Validation gate ---
         validation = await self._validate_render_roundtrip(
             style=style,
@@ -1372,11 +1424,10 @@ class ContentStyleImporter:
             validation=validation,
         )
 
-    @staticmethod
-    def _generate_style_name(pptx_path: str | Path, page_index: int) -> str:
+    def _generate_style_name(self, pptx_path: str | Path, page_index: int) -> str:
         """Generate style name: upload_<ppt_stem>_<fingerprint>_p<page_number>."""
         path = Path(pptx_path)
-        ppt_stem = re.sub(r"\W+", "_", path.stem).strip("_") or "deck"
+        ppt_stem = self.style_name_stem or _sanitize_ascii_name(path.stem, fallback="deck")
         short_fingerprint = compute_pptx_fingerprint(path)[:8]
         page_number = page_index + 1
         return f"upload_{ppt_stem}_{short_fingerprint}_p{page_number}"
@@ -1391,3 +1442,43 @@ class ContentStyleImporter:
         while f"{style_name}_{suffix}" in layout.styles:
             suffix += 1
         return f"{style_name}_{suffix}"
+
+    @classmethod
+    def _find_duplicate_style(cls, style: Style, layout: LayoutType) -> Style | None:
+        """Return an existing style with the same visual shape structure."""
+        for existing_style in layout.style_list:
+            if cls._are_same_style(style, existing_style):
+                return existing_style
+        return None
+
+    @classmethod
+    def _are_same_style(cls, left: Style, right: Style) -> bool:
+        if len(left.shape_list) != len(right.shape_list):
+            return False
+
+        unmatched = list(right.shape_list)
+        for left_shape in left.shape_list:
+            match_index = next(
+                (
+                    index
+                    for index, right_shape in enumerate(unmatched)
+                    if cls._are_same_cshape(left_shape, right_shape)
+                ),
+                None,
+            )
+            if match_index is None:
+                return False
+            unmatched.pop(match_index)
+        return True
+
+    @staticmethod
+    def _are_same_cshape(left: CShape, right: CShape) -> bool:
+        if left.content_type != right.content_type:
+            return False
+        if left.zorder != right.zorder:
+            return False
+        if left.location != right.location:
+            return False
+        if left.xml is None or right.xml is None:
+            return left.xml is None and right.xml is None
+        return ComponentsManager.are_same_shape(left.xml, right.xml)
