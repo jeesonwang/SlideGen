@@ -15,6 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "slidegen"))
 
 from pptx import Presentation
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 
 import slidegen.services.presentation.pages as pages_module
 from slidegen.schemas.theme import PresentationTheme, ThemeColorMapping
@@ -22,7 +23,14 @@ from slidegen.services.document import MarkdownDocument
 from slidegen.services.document.markdown.elements import Heading
 from slidegen.services.presentation.components import ComponentContentType, CShape, Location, Style
 from slidegen.services.presentation.orchestrator import PresentationOrchestrator
-from slidegen.services.presentation.pages import CatalogPage, ChapterContentPage, ChapterHomePage, CoverPage, Page
+from slidegen.services.presentation.pages import (
+    CatalogPage,
+    ChapterContentPage,
+    ChapterHomePage,
+    CoverPage,
+    Page,
+    ShapeFactory,
+)
 
 
 class TestPages:
@@ -138,6 +146,55 @@ class TestPages:
         assert injected.top == 6000
         assert injected.width == 6000000
         assert injected.height == 1200000
+
+    def test_shape_factory_creates_text_and_image_shapes(self, tmp_path):
+        """ShapeFactory should centralize XML text and image shape creation."""
+        presentation = Presentation()
+        slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        source_shape = slide.shapes.add_textbox(Emu(0), Emu(0), Emu(1000000), Emu(300000))
+        source_shape.text = "placeholder"
+        source_xml = source_shape.element.xml
+
+        text_shape = ShapeFactory.create_text_shape(
+            slide,
+            source_xml,
+            "Factory text",
+            Location(x=100000, y=200000, width=1200000, height=300000),
+            shape_id=7,
+            shape_name="factory_text",
+        )
+
+        assert text_shape.text == "Factory text"
+        assert text_shape.left == 100000
+        assert text_shape.top == 200000
+        assert text_shape.width == 1200000
+        assert text_shape.height == 300000
+
+        image_path = tmp_path / "factory.png"
+        Image.new("RGBA", (8, 8), (10, 20, 30, 255)).save(image_path)
+        image_shape = ShapeFactory.create_image_shape(
+            slide,
+            str(image_path),
+            Location(x=300000, y=400000, width=500000, height=600000),
+        )
+
+        assert image_shape.shape_type.name == "PICTURE"
+        assert image_shape.left == 300000
+        assert image_shape.top == 400000
+        assert image_shape.width == 500000
+        assert image_shape.height == 600000
+
+    def test_page_shape_alignment_justifies_text_at_top(self):
+        """Text alignment should be a shared Page-level shape operation."""
+        presentation = Presentation()
+        slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        shape = slide.shapes.add_textbox(Emu(0), Emu(0), Emu(1000000), Emu(300000))
+        shape.text = "Aligned"
+
+        Page._shape_alignment(shape)
+
+        assert shape.text_frame.vertical_anchor == MSO_ANCHOR.TOP
+        assert all(paragraph.alignment == PP_ALIGN.JUSTIFY for paragraph in shape.text_frame.paragraphs)
 
     async def test_catalog_page_generation(self, presentation, heading_list):
         """test CatalogPage"""
