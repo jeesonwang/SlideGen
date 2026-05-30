@@ -96,6 +96,15 @@ class Page:
             parent.append(element)
 
     @staticmethod
+    def _shape_alignment(shape: BaseShape | Shape) -> None:
+        """Set the alignment of the shape. Uniformly justify the text in the shape"""
+        if shape.has_text_frame:
+            tf = shape.text_frame  # type: ignore
+            tf.vertical_anchor = MSO_ANCHOR.TOP
+            for paragraph in tf.paragraphs:
+                paragraph.alignment = PP_ALIGN.JUSTIFY
+
+    @staticmethod
     def _set_text_style(shape: Shape, style: dict[str, Any]) -> None:
         """Set the input `Shape` text style"""
         if not shape.has_text_frame:
@@ -226,17 +235,16 @@ class Page:
         if ph_data is not None:
             prs = slide.part.package.presentation_part.presentation
             loc = Page._scale_shape_location(prs, ph_data.location)
-            injected = add_shape_by_xml(
-                slide=slide,
-                shape_xml=ph_data.xml,
+            injected = ShapeFactory.create_text_shape(
+                slide,
+                ph_data.xml,
+                text,
+                loc,
                 shape_id=slide.shapes._next_shape_id,
                 shape_name=f"{shape_name_prefix}_{role}",
-                text_content=text,
-                location=loc,
             )
             if injected.has_text_frame:
-                cast(Shape, injected).text_frame.word_wrap = False
-            Page._set_text(cast(Shape, injected), text)
+                injected.text_frame.word_wrap = False
             Page._expand_title_text_box(slide, injected, text)
             return injected
 
@@ -299,6 +307,64 @@ class Page:
     @staticmethod
     async def generate_slide(*args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError("Page.generate_slide is abstract; override in subclasses")
+
+
+class ShapeFactory:
+    """Factory helpers for creating shapes on slides."""
+
+    @staticmethod
+    def create_xml_shape(
+        slide: Slide,
+        xml: str,
+        location: Location,
+        *,
+        shape_id: int | None = None,
+        shape_name: str = "shape",
+        text: str | None = None,
+    ) -> BaseShape:
+        """Create a shape from XML at the given location."""
+        return add_shape_by_xml(
+            slide=slide,
+            shape_xml=xml,
+            shape_id=shape_id if shape_id is not None else slide.shapes._next_shape_id,
+            shape_name=shape_name,
+            text_content=text,
+            location=location,
+        )
+
+    @staticmethod
+    def create_text_shape(
+        slide: Slide,
+        xml: str,
+        text: str,
+        location: Location,
+        *,
+        shape_id: int | None = None,
+        shape_name: str = "text",
+    ) -> Shape:
+        """Create a text shape from XML and set its text consistently."""
+        shape = ShapeFactory.create_xml_shape(
+            slide,
+            xml,
+            location,
+            shape_id=shape_id,
+            shape_name=shape_name,
+            text=text,
+        )
+        text_shape = cast(Shape, shape)
+        Page._set_text(text_shape, text)
+        return text_shape
+
+    @staticmethod
+    def create_image_shape(slide: Slide, image_path: str, location: Location) -> BaseShape:
+        """Create an image shape at the given location."""
+        return slide.shapes.add_picture(
+            image_path,
+            location.x,
+            location.y,
+            location.width,
+            location.height,
+        )
 
 
 class CoverPage(Page):
@@ -1053,15 +1119,6 @@ class ChapterContentPage(Page):
         return len(content)
 
     @staticmethod
-    def _shape_alignment(shape: BaseShape | Shape) -> None:
-        """Set the alignment of the shape. Uniformly justify the text in the shape"""
-        if shape.has_text_frame:
-            tf = shape.text_frame  # type: ignore
-            tf.vertical_anchor = MSO_ANCHOR.TOP
-            for paragraph in tf.paragraphs:
-                paragraph.alignment = PP_ALIGN.JUSTIFY
-
-    @staticmethod
     async def generate_slide(
         prs: Presentation,
         content: Heading,
@@ -1134,15 +1191,15 @@ class ChapterContentPage(Page):
                                             Text content must be equal to the number of locations: {len(section_texts)} != {len(locs)}"
                             )
                         assert shape.xml is not None
-                        added_shape = add_shape_by_xml(
-                            slide=new_slide,
-                            shape_xml=shape.xml,
+                        added_shape = ShapeFactory.create_text_shape(
+                            new_slide,
+                            shape.xml,
+                            section_texts[idx],
+                            scaled_loc,
                             shape_id=index,
                             shape_name=shape_name,
-                            text_content=section_texts[idx],
-                            location=scaled_loc,
                         )
-                        ChapterContentPage._shape_alignment(added_shape)
+                        Page._shape_alignment(added_shape)
                     case ComponentContentType.TITLE:
                         if len(titles) != len(locs):
                             raise PPTGenError(
@@ -1150,15 +1207,15 @@ class ChapterContentPage(Page):
                                             Title must be equal to the number of locations: {len(titles)} != {len(locs)}"
                             )
                         assert shape.xml is not None
-                        added_shape = add_shape_by_xml(
-                            slide=new_slide,
-                            shape_xml=shape.xml,
+                        added_shape = ShapeFactory.create_text_shape(
+                            new_slide,
+                            shape.xml,
+                            titles[idx],
+                            scaled_loc,
                             shape_id=index,
                             shape_name=shape_name,
-                            text_content=titles[idx],
-                            location=scaled_loc,
                         )
-                        ChapterContentPage._shape_alignment(added_shape)
+                        Page._shape_alignment(added_shape)
                     case ComponentContentType.PICTURE:
                         image_path = None
                         try:
@@ -1184,22 +1241,16 @@ class ChapterContentPage(Page):
                                     f"{ChapterContentPage.__name__}: Unable to resolve image path for shape '{shape_name}'"
                                 )
 
-                        added_shape = new_slide.shapes.add_picture(
-                            image_path,
-                            scaled_loc.x,
-                            scaled_loc.y,
-                            scaled_loc.width,
-                            scaled_loc.height,
-                        )
+                        added_shape = ShapeFactory.create_image_shape(new_slide, image_path, scaled_loc)
                     case ComponentContentType.NUMBER:
                         assert shape.xml is not None
-                        added_shape = add_shape_by_xml(
-                            slide=new_slide,
-                            shape_xml=shape.xml,
+                        added_shape = ShapeFactory.create_text_shape(
+                            new_slide,
+                            shape.xml,
+                            str(idx + 1).zfill(2),
+                            scaled_loc,
                             shape_id=index,
                             shape_name=shape_name,
-                            text_content=str(idx + 1).zfill(2),
-                            location=scaled_loc,
                         )
                     case ComponentContentType.ICON:
                         icon_path = None
@@ -1232,21 +1283,15 @@ class ChapterContentPage(Page):
                                 )
 
                         icon_path = ChapterContentPage._prepare_icon_for_theme(icon_path, theme, icon_index)
-                        added_shape = new_slide.shapes.add_picture(
-                            icon_path,
-                            scaled_loc.x,
-                            scaled_loc.y,
-                            scaled_loc.width,
-                            scaled_loc.height,
-                        )
+                        added_shape = ShapeFactory.create_image_shape(new_slide, icon_path, scaled_loc)
                         icon_index += 1
                     case _:
-                        added_shape = add_shape_by_xml(
-                            slide=new_slide,
-                            shape_xml=shape.xml,  # type: ignore
+                        added_shape = ShapeFactory.create_xml_shape(
+                            new_slide,
+                            shape.xml,  # type: ignore
+                            scaled_loc,
                             shape_id=index,
                             shape_name=shape_name,
-                            location=scaled_loc,
                         )
             index += 1
         if title_shape is not None:
