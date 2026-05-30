@@ -91,23 +91,15 @@ def _two_point_slide():
     prs, slide = _blank_slide()
 
     # Group 0: number + title + content
-    slide.shapes.add_textbox(
-        Emu(200000), Emu(400000), Emu(600000), Emu(300000)
-    ).text = "01"
-    slide.shapes.add_textbox(
-        Emu(900000), Emu(400000), Emu(3000000), Emu(400000)
-    ).text = "Customer Signals"
+    slide.shapes.add_textbox(Emu(200000), Emu(400000), Emu(600000), Emu(300000)).text = "01"
+    slide.shapes.add_textbox(Emu(900000), Emu(400000), Emu(3000000), Emu(400000)).text = "Customer Signals"
     slide.shapes.add_textbox(
         Emu(900000), Emu(900000), Emu(5000000), Emu(1200000)
     ).text = "Customers ask for faster onboarding."
 
     # Group 1: number + title + content (positioned lower)
-    slide.shapes.add_textbox(
-        Emu(200000), Emu(2800000), Emu(600000), Emu(300000)
-    ).text = "02"
-    slide.shapes.add_textbox(
-        Emu(900000), Emu(2800000), Emu(3000000), Emu(400000)
-    ).text = "Market Drivers"
+    slide.shapes.add_textbox(Emu(200000), Emu(2800000), Emu(600000), Emu(300000)).text = "02"
+    slide.shapes.add_textbox(Emu(900000), Emu(2800000), Emu(3000000), Emu(400000)).text = "Market Drivers"
     slide.shapes.add_textbox(
         Emu(900000), Emu(3300000), Emu(5000000), Emu(1200000)
     ).text = "The market is shifting toward AI-first products."
@@ -203,11 +195,31 @@ def test_local_classifier_classifies_pictures():
     local = LocalShapeRoleClassifier()
 
     assignments = local.classify(summaries)
-    picture_types = [a.content_type for a in assignments if a.include and a.content_type in (
-        ComponentContentType.PICTURE, ComponentContentType.ICON
-    )]
+    picture_types = [
+        a.content_type
+        for a in assignments
+        if a.include and a.content_type in (ComponentContentType.PICTURE, ComponentContentType.ICON)
+    ]
     assert ComponentContentType.ICON in picture_types
     assert ComponentContentType.PICTURE in picture_types
+
+
+def test_local_classifier_classifies_medium_wide_picture_as_picture():
+    prs, slide = _blank_slide()
+
+    image_path = "/tmp/test_importer_pixel.png"
+    with open(image_path, "wb") as f:
+        f.write(PNG_BYTES)
+
+    slide.shapes.add_picture(image_path, 100000, 100000, 2880449, 1520002)
+
+    classifier = PageTypeClassifier()
+    summaries = classifier.summarize_slide(slide)
+    local = LocalShapeRoleClassifier()
+
+    assignments = local.classify(summaries)
+
+    assert assignments[0].content_type == ComponentContentType.PICTURE
 
 
 def test_local_classifier_classifies_text_shapes():
@@ -218,9 +230,9 @@ def test_local_classifier_classifies_text_shapes():
     title_box.text_frame.paragraphs[0].text = "Section title"
     title_box.text_frame.paragraphs[0].font.bold = True
     # Content with longer text
-    slide.shapes.add_textbox(Emu(100000), Emu(1000000), Emu(5000000), Emu(1200000)).text = (
-        "This is a longer body paragraph that describes the content in detail."
-    )
+    slide.shapes.add_textbox(
+        Emu(100000), Emu(1000000), Emu(5000000), Emu(1200000)
+    ).text = "This is a longer body paragraph that describes the content in detail."
 
     classifier = PageTypeClassifier()
     summaries = classifier.summarize_slide(slide)
@@ -269,17 +281,17 @@ def test_local_classifier_groups_horizontal_columns_by_visual_group():
     left_title.text_frame.paragraphs[0].text = "Customer Signals"
     left_title.text_frame.paragraphs[0].font.size = Pt(20)
     left_title.text_frame.paragraphs[0].font.bold = True
-    slide.shapes.add_textbox(Emu(400000), Emu(1050000), Emu(3000000), Emu(800000)).text = (
-        "Customers ask for faster onboarding and better tools."
-    )
+    slide.shapes.add_textbox(
+        Emu(400000), Emu(1050000), Emu(3000000), Emu(800000)
+    ).text = "Customers ask for faster onboarding and better tools."
 
     right_title = slide.shapes.add_textbox(Emu(4500000), Emu(500000), Emu(2500000), Emu(400000))
     right_title.text_frame.paragraphs[0].text = "Market Drivers"
     right_title.text_frame.paragraphs[0].font.size = Pt(20)
     right_title.text_frame.paragraphs[0].font.bold = True
-    slide.shapes.add_textbox(Emu(4500000), Emu(1050000), Emu(3000000), Emu(800000)).text = (
-        "The market is shifting toward AI-first products and solutions."
-    )
+    slide.shapes.add_textbox(
+        Emu(4500000), Emu(1050000), Emu(3000000), Emu(800000)
+    ).text = "The market is shifting toward AI-first products and solutions."
 
     classifier = PageTypeClassifier()
     summaries = classifier.summarize_slide(slide)
@@ -297,8 +309,17 @@ def test_local_classifier_groups_horizontal_columns_by_visual_group():
 
 def test_identify_layout_type_one_point():
     assignments = [
-        ShapeAssignment(shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9),
-        ShapeAssignment(shape_id=2, content_type=ComponentContentType.CONTENT, group_index=0, include=True, reason="", confidence=0.9),
+        ShapeAssignment(
+            shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9
+        ),
+        ShapeAssignment(
+            shape_id=2,
+            content_type=ComponentContentType.CONTENT,
+            group_index=0,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
     ]
     layout = identify_layout_type(assignments)
     assert layout == ChapterLayout.ONE_POINT
@@ -306,10 +327,28 @@ def test_identify_layout_type_one_point():
 
 def test_identify_layout_type_two_points():
     assignments = [
-        ShapeAssignment(shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9),
-        ShapeAssignment(shape_id=2, content_type=ComponentContentType.CONTENT, group_index=0, include=True, reason="", confidence=0.9),
-        ShapeAssignment(shape_id=3, content_type=ComponentContentType.TITLE, group_index=1, include=True, reason="", confidence=0.9),
-        ShapeAssignment(shape_id=4, content_type=ComponentContentType.CONTENT, group_index=1, include=True, reason="", confidence=0.9),
+        ShapeAssignment(
+            shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9
+        ),
+        ShapeAssignment(
+            shape_id=2,
+            content_type=ComponentContentType.CONTENT,
+            group_index=0,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
+        ShapeAssignment(
+            shape_id=3, content_type=ComponentContentType.TITLE, group_index=1, include=True, reason="", confidence=0.9
+        ),
+        ShapeAssignment(
+            shape_id=4,
+            content_type=ComponentContentType.CONTENT,
+            group_index=1,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
     ]
     layout = identify_layout_type(assignments)
     assert layout == ChapterLayout.TWO_POINTS
@@ -317,7 +356,14 @@ def test_identify_layout_type_two_points():
 
 def test_identify_layout_type_returns_none_for_no_content():
     assignments = [
-        ShapeAssignment(shape_id=1, content_type=ComponentContentType.DECORATION, group_index=None, include=True, reason="", confidence=0.9),
+        ShapeAssignment(
+            shape_id=1,
+            content_type=ComponentContentType.DECORATION,
+            group_index=None,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
     ]
     layout = identify_layout_type(assignments)
     assert layout is None
@@ -328,8 +374,17 @@ def test_identify_layout_type_returns_none_for_no_content():
 
 def test_validate_compatibility_passes_for_valid_assignments():
     assignments = [
-        ShapeAssignment(shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9),
-        ShapeAssignment(shape_id=2, content_type=ComponentContentType.CONTENT, group_index=0, include=True, reason="", confidence=0.9),
+        ShapeAssignment(
+            shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9
+        ),
+        ShapeAssignment(
+            shape_id=2,
+            content_type=ComponentContentType.CONTENT,
+            group_index=0,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
     ]
     layout = ChapterLayout.ONE_POINT
     valid, reason = validate_compatibility(assignments, layout)
@@ -339,9 +394,25 @@ def test_validate_compatibility_passes_for_valid_assignments():
 
 def test_validate_compatibility_fails_for_mismatched_title_count():
     assignments = [
-        ShapeAssignment(shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9),
-        ShapeAssignment(shape_id=2, content_type=ComponentContentType.CONTENT, group_index=0, include=True, reason="", confidence=0.9),
-        ShapeAssignment(shape_id=3, content_type=ComponentContentType.CONTENT, group_index=1, include=True, reason="", confidence=0.9),
+        ShapeAssignment(
+            shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9
+        ),
+        ShapeAssignment(
+            shape_id=2,
+            content_type=ComponentContentType.CONTENT,
+            group_index=0,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
+        ShapeAssignment(
+            shape_id=3,
+            content_type=ComponentContentType.CONTENT,
+            group_index=1,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
     ]
     layout = ChapterLayout.TWO_POINTS
     valid, reason = validate_compatibility(assignments, layout)
@@ -351,7 +422,9 @@ def test_validate_compatibility_fails_for_mismatched_title_count():
 
 def test_validate_compatibility_fails_for_missing_content():
     assignments = [
-        ShapeAssignment(shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9),
+        ShapeAssignment(
+            shape_id=1, content_type=ComponentContentType.TITLE, group_index=0, include=True, reason="", confidence=0.9
+        ),
     ]
     layout = ChapterLayout.ONE_POINT
     valid, reason = validate_compatibility(assignments, layout)
@@ -462,41 +535,77 @@ def test_style_builder_produces_valid_style_from_assignments():
     # Numbers: group 0 and 1
     for s in summaries:
         if s.text == "01":
-            manual_assignments.append(ShapeAssignment(
-                shape_id=s.shape_id, content_type=ComponentContentType.NUMBER,
-                group_index=0, include=True, reason="Number", confidence=0.9,
-            ))
+            manual_assignments.append(
+                ShapeAssignment(
+                    shape_id=s.shape_id,
+                    content_type=ComponentContentType.NUMBER,
+                    group_index=0,
+                    include=True,
+                    reason="Number",
+                    confidence=0.9,
+                )
+            )
         elif s.text == "02":
-            manual_assignments.append(ShapeAssignment(
-                shape_id=s.shape_id, content_type=ComponentContentType.NUMBER,
-                group_index=1, include=True, reason="Number", confidence=0.9,
-            ))
+            manual_assignments.append(
+                ShapeAssignment(
+                    shape_id=s.shape_id,
+                    content_type=ComponentContentType.NUMBER,
+                    group_index=1,
+                    include=True,
+                    reason="Number",
+                    confidence=0.9,
+                )
+            )
 
     # Titles
     for s in summaries:
         if s.text == "Customer Signals":
-            manual_assignments.append(ShapeAssignment(
-                shape_id=s.shape_id, content_type=ComponentContentType.TITLE,
-                group_index=0, include=True, reason="Title", confidence=0.8,
-            ))
+            manual_assignments.append(
+                ShapeAssignment(
+                    shape_id=s.shape_id,
+                    content_type=ComponentContentType.TITLE,
+                    group_index=0,
+                    include=True,
+                    reason="Title",
+                    confidence=0.8,
+                )
+            )
         elif s.text == "Market Drivers":
-            manual_assignments.append(ShapeAssignment(
-                shape_id=s.shape_id, content_type=ComponentContentType.TITLE,
-                group_index=1, include=True, reason="Title", confidence=0.8,
-            ))
+            manual_assignments.append(
+                ShapeAssignment(
+                    shape_id=s.shape_id,
+                    content_type=ComponentContentType.TITLE,
+                    group_index=1,
+                    include=True,
+                    reason="Title",
+                    confidence=0.8,
+                )
+            )
 
     # Contents
     for s in summaries:
         if s.text.startswith("Customers"):
-            manual_assignments.append(ShapeAssignment(
-                shape_id=s.shape_id, content_type=ComponentContentType.CONTENT,
-                group_index=0, include=True, reason="Content", confidence=0.8,
-            ))
+            manual_assignments.append(
+                ShapeAssignment(
+                    shape_id=s.shape_id,
+                    content_type=ComponentContentType.CONTENT,
+                    group_index=0,
+                    include=True,
+                    reason="Content",
+                    confidence=0.8,
+                )
+            )
         elif s.text.startswith("The market"):
-            manual_assignments.append(ShapeAssignment(
-                shape_id=s.shape_id, content_type=ComponentContentType.CONTENT,
-                group_index=1, include=True, reason="Content", confidence=0.8,
-            ))
+            manual_assignments.append(
+                ShapeAssignment(
+                    shape_id=s.shape_id,
+                    content_type=ComponentContentType.CONTENT,
+                    group_index=1,
+                    include=True,
+                    reason="Content",
+                    confidence=0.8,
+                )
+            )
 
     builder = StyleBuilder()
     style = builder.build_style_from_assignments(
@@ -634,6 +743,7 @@ def test_style_builder_replaces_chinese_shape_names_in_shape_xml():
 
 class FakeAgentForImport:
     """Fake agno Agent that returns a shape role output."""
+
     def __init__(self, content=None, exc=None):
         self.content = content
         self.exc = exc
@@ -648,6 +758,7 @@ class FakeAgentForImport:
 
 class FakePageClassifierAgent:
     """Fake agent for PageTypeClassifier that returns chapter_content."""
+
     def __init__(self, content=None, exc=None):
         self.content = content or {
             "page_type": "chapter_content",
@@ -675,32 +786,42 @@ async def test_import_from_pptx_skips_non_chapter_content_slides(tmp_path):
     content = prs.slides.add_slide(prs.slide_layouts[6])
     content.shapes.add_textbox(Emu(200000), Emu(400000), Emu(600000), Emu(300000)).text = "01"
     content.shapes.add_textbox(Emu(900000), Emu(400000), Emu(3000000), Emu(400000)).text = "Signals"
-    content.shapes.add_textbox(Emu(900000), Emu(900000), Emu(5000000), Emu(1200000)).text = "Longer content text about onboarding."
+    content.shapes.add_textbox(
+        Emu(900000), Emu(900000), Emu(5000000), Emu(1200000)
+    ).text = "Longer content text about onboarding."
     content.shapes.add_textbox(Emu(200000), Emu(2800000), Emu(600000), Emu(300000)).text = "02"
     content.shapes.add_textbox(Emu(900000), Emu(2800000), Emu(3000000), Emu(400000)).text = "Drivers"
-    content.shapes.add_textbox(Emu(900000), Emu(3300000), Emu(5000000), Emu(1200000)).text = "The market is shifting toward AI products."
+    content.shapes.add_textbox(
+        Emu(900000), Emu(3300000), Emu(5000000), Emu(1200000)
+    ).text = "The market is shifting toward AI products."
 
     pptx_path = tmp_path / "deck.pptx"
     prs.save(str(pptx_path))
 
     # Use a ComponentsManager with existing data
     json_path = tmp_path / "shapes.json"
-    json_path.write_text(json.dumps({
-        "one_point": {},
-        "two_points": {},
-        "three_points": {},
-    }))
+    json_path.write_text(
+        json.dumps(
+            {
+                "one_point": {},
+                "two_points": {},
+                "three_points": {},
+            }
+        )
+    )
     cm = ComponentsManager(str(json_path))
 
     fake_page_agent = FakePageClassifierAgent()
     page_classifier = PageTypeClassifier(agent_factory=lambda model: fake_page_agent)
 
-    fake_shape_agent = FakeAgentForImport(content={
-        "point_count": 2,
-        "assignments": [],
-        "confidence": 0.9,
-        "reason": "Two-point layout.",
-    })
+    fake_shape_agent = FakeAgentForImport(
+        content={
+            "point_count": 2,
+            "assignments": [],
+            "confidence": 0.9,
+            "reason": "Two-point layout.",
+        }
+    )
     shape_role_agent = ShapeRoleAgent(agent_factory=lambda model: fake_shape_agent)
 
     importer = ContentStyleImporter(
@@ -739,12 +860,14 @@ async def test_import_from_pptx_dry_run_does_not_modify_json(tmp_path):
     fake_page_agent = FakePageClassifierAgent()
     page_classifier = PageTypeClassifier(agent_factory=lambda model: fake_page_agent)
 
-    fake_shape_agent = FakeAgentForImport(content={
-        "point_count": 2,
-        "assignments": [],
-        "confidence": 0.95,
-        "reason": "Clear two-point layout.",
-    })
+    fake_shape_agent = FakeAgentForImport(
+        content={
+            "point_count": 2,
+            "assignments": [],
+            "confidence": 0.95,
+            "reason": "Clear two-point layout.",
+        }
+    )
     shape_role_agent = ShapeRoleAgent(agent_factory=lambda model: fake_shape_agent)
 
     importer = ContentStyleImporter(
@@ -781,22 +904,30 @@ async def test_import_from_pptx_uses_unique_name_when_generated_collision_exists
     existing_suffix = hashlib.sha256(b"upload_p1").hexdigest()[:6]
     existing_names = {"upload_p1", f"upload_p1_{existing_suffix}"}
     json_path = tmp_path / "shapes.json"
-    json_path.write_text(json.dumps({
-        "one_point": {},
-        "two_points": {name: {} for name in existing_names},
-        "three_points": {},
-    }))
+    json_path.write_text(
+        json.dumps(
+            {
+                "one_point": {},
+                "two_points": {name: {} for name in existing_names},
+                "three_points": {},
+            }
+        )
+    )
     cm = ComponentsManager(str(json_path))
 
     importer = ContentStyleImporter(
         cm,
         page_classifier=PageTypeClassifier(agent_factory=lambda model: FakePageClassifierAgent()),
-        shape_role_agent=ShapeRoleAgent(agent_factory=lambda model: FakeAgentForImport(content={
-            "point_count": 2,
-            "assignments": [],
-            "confidence": 0.95,
-            "reason": "Clear two-point layout.",
-        })),
+        shape_role_agent=ShapeRoleAgent(
+            agent_factory=lambda model: FakeAgentForImport(
+                content={
+                    "point_count": 2,
+                    "assignments": [],
+                    "confidence": 0.95,
+                    "reason": "Clear two-point layout.",
+                }
+            )
+        ),
     )
 
     report = await importer.import_from_pptx(
@@ -852,12 +983,16 @@ async def test_import_from_pptx_skips_duplicate_style_in_same_layout(tmp_path):
     importer = ContentStyleImporter(
         cm,
         page_classifier=PageTypeClassifier(agent_factory=lambda model: FakePageClassifierAgent()),
-        shape_role_agent=ShapeRoleAgent(agent_factory=lambda model: FakeAgentForImport(content={
-            "point_count": 2,
-            "assignments": [],
-            "confidence": 0.95,
-            "reason": "Clear two-point layout.",
-        })),
+        shape_role_agent=ShapeRoleAgent(
+            agent_factory=lambda model: FakeAgentForImport(
+                content={
+                    "point_count": 2,
+                    "assignments": [],
+                    "confidence": 0.95,
+                    "reason": "Clear two-point layout.",
+                }
+            )
+        ),
     )
 
     report = await importer.import_from_pptx(
@@ -895,20 +1030,22 @@ async def test_import_from_pptx_honors_min_role_confidence(tmp_path):
 
     saved_slide = Presentation(str(pptx_path)).slides[0]
     shape_id = next(s.shape_id for s in PageTypeClassifier().summarize_slide(saved_slide) if s.text == "Signal")
-    fake_shape_agent = FakeAgentForImport(content={
-        "point_count": 1,
-        "assignments": [
-            {
-                "shape_id": shape_id,
-                "content_type": "title",
-                "group_index": 0,
-                "confidence": 0.6,
-                "reason": "Short text is the content group title.",
-            }
-        ],
-        "confidence": 0.6,
-        "reason": "Resolved with lower confidence accepted by caller threshold.",
-    })
+    fake_shape_agent = FakeAgentForImport(
+        content={
+            "point_count": 1,
+            "assignments": [
+                {
+                    "shape_id": shape_id,
+                    "content_type": "title",
+                    "group_index": 0,
+                    "confidence": 0.6,
+                    "reason": "Short text is the content group title.",
+                }
+            ],
+            "confidence": 0.6,
+            "reason": "Resolved with lower confidence accepted by caller threshold.",
+        }
+    )
     importer = ContentStyleImporter(
         cm,
         page_classifier=PageTypeClassifier(agent_factory=lambda model: FakePageClassifierAgent()),
@@ -945,12 +1082,16 @@ async def test_import_from_pptx_reports_excluded_non_placeholder_shapes(tmp_path
     importer = ContentStyleImporter(
         cm,
         page_classifier=PageTypeClassifier(agent_factory=lambda model: FakePageClassifierAgent()),
-        shape_role_agent=ShapeRoleAgent(agent_factory=lambda model: FakeAgentForImport(content={
-            "point_count": 2,
-            "assignments": [],
-            "confidence": 0.95,
-            "reason": "Keep local assignments.",
-        })),
+        shape_role_agent=ShapeRoleAgent(
+            agent_factory=lambda model: FakeAgentForImport(
+                content={
+                    "point_count": 2,
+                    "assignments": [],
+                    "confidence": 0.95,
+                    "reason": "Keep local assignments.",
+                }
+            )
+        ),
     )
 
     report = await importer.import_from_pptx(
@@ -993,12 +1134,14 @@ async def test_import_fingerprint_dedup_prevents_reimport(tmp_path):
 
     fake_page_agent = FakePageClassifierAgent()
     page_classifier = PageTypeClassifier(agent_factory=lambda model: fake_page_agent)
-    fake_shape_agent = FakeAgentForImport(content={
-        "point_count": 2,
-        "assignments": [],
-        "confidence": 0.9,
-        "reason": "Two-point layout.",
-    })
+    fake_shape_agent = FakeAgentForImport(
+        content={
+            "point_count": 2,
+            "assignments": [],
+            "confidence": 0.9,
+            "reason": "Two-point layout.",
+        }
+    )
     shape_role_agent = ShapeRoleAgent(agent_factory=lambda model: fake_shape_agent)
 
     importer = ContentStyleImporter(
@@ -1047,20 +1190,22 @@ async def test_shape_role_agent_assigns_roles_with_fake_agent():
     ambiguous_ids = [a.shape_id for a in local_assignments if a.content_type == "skip" and not a.include]
     assert len(ambiguous_ids) >= 1, "Need at least one ambiguous shape for this test"
 
-    fake_agent = FakeAgentForImport(content={
-        "point_count": 1,
-        "assignments": [
-            {
-                "shape_id": ambiguous_ids[0],
-                "content_type": "title",
-                "group_index": 0,
-                "confidence": 0.8,
-                "reason": "Short text near top looks like a title.",
-            },
-        ],
-        "confidence": 0.8,
-        "reason": "Single-point layout with title.",
-    })
+    fake_agent = FakeAgentForImport(
+        content={
+            "point_count": 1,
+            "assignments": [
+                {
+                    "shape_id": ambiguous_ids[0],
+                    "content_type": "title",
+                    "group_index": 0,
+                    "confidence": 0.8,
+                    "reason": "Short text near top looks like a title.",
+                },
+            ],
+            "confidence": 0.8,
+            "reason": "Single-point layout with title.",
+        }
+    )
 
     agent = ShapeRoleAgent(agent_factory=lambda model: fake_agent)
     page_classification = PageClassification(
@@ -1103,8 +1248,11 @@ async def test_shape_role_agent_fallback_on_llm_failure():
         summaries=summaries,
         local_assignments=local_assignments,
         page_classification=PageClassification(
-            page_index=0, page_type=PageType.CHAPTER_CONTENT,
-            confidence=0.9, reason="test", method="rule",
+            page_index=0,
+            page_type=PageType.CHAPTER_CONTENT,
+            confidence=0.9,
+            reason="test",
+            method="rule",
         ),
     )
 
@@ -1126,20 +1274,22 @@ async def test_shape_role_agent_ignores_invalid_shape_id():
     # Find ambiguous ids
     [a.shape_id for a in local_assignments if a.content_type == "skip" and not a.include]
 
-    fake_agent = FakeAgentForImport(content={
-        "point_count": 1,
-        "assignments": [
-            {
-                "shape_id": 99999,  # nonexistent shape id
-                "content_type": "title",
-                "group_index": 0,
-                "confidence": 0.8,
-                "reason": "Invalid shape id.",
-            },
-        ],
-        "confidence": 0.8,
-        "reason": "Bad data.",
-    })
+    fake_agent = FakeAgentForImport(
+        content={
+            "point_count": 1,
+            "assignments": [
+                {
+                    "shape_id": 99999,  # nonexistent shape id
+                    "content_type": "title",
+                    "group_index": 0,
+                    "confidence": 0.8,
+                    "reason": "Invalid shape id.",
+                },
+            ],
+            "confidence": 0.8,
+            "reason": "Bad data.",
+        }
+    )
 
     agent = ShapeRoleAgent(agent_factory=lambda model: fake_agent)
 
@@ -1148,8 +1298,11 @@ async def test_shape_role_agent_ignores_invalid_shape_id():
         summaries=summaries,
         local_assignments=local_assignments,
         page_classification=PageClassification(
-            page_index=0, page_type=PageType.CHAPTER_CONTENT,
-            confidence=0.9, reason="test", method="rule",
+            page_index=0,
+            page_type=PageType.CHAPTER_CONTENT,
+            confidence=0.9,
+            reason="test",
+            method="rule",
         ),
     )
 
@@ -1170,7 +1323,7 @@ def _make_style_with_one_text_shape(name: str = "test_style") -> Style:
         '<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
         '<p:spPr><a:xfrm><a:off x="100000" y="100000"/>'
         '<a:ext cx="5000000" cy="600000"/></a:xfrm></p:spPr>'
-        '<p:txBody><a:bodyPr/><a:p><a:r><a:t>placeholder</a:t></a:r></a:p></p:txBody>'
+        "<p:txBody><a:bodyPr/><a:p><a:r><a:t>placeholder</a:t></a:r></a:p></p:txBody>"
         "</p:sp>"
     )
 
@@ -1218,7 +1371,7 @@ async def test_validation_fails_when_location_count_mismatches_point_count():
         '<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
         '<p:spPr><a:xfrm><a:off x="100000" y="100000"/>'
         '<a:ext cx="5000000" cy="600000"/></a:xfrm></p:spPr>'
-        '<p:txBody><a:bodyPr/><a:p><a:r><a:t>placeholder</a:t></a:r></a:p></p:txBody>'
+        "<p:txBody><a:bodyPr/><a:p><a:r><a:t>placeholder</a:t></a:r></a:p></p:txBody>"
         "</p:sp>"
     )
     title_shape = CShape(
@@ -1268,7 +1421,7 @@ async def test_validation_fails_with_broken_xml():
             '<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
             '<p:spPr><a:xfrm><a:off x="100000" y="800000"/>'
             '<a:ext cx="5000000" cy="2000000"/></a:xfrm></p:spPr>'
-            '<p:txBody><a:bodyPr/><a:p><a:r><a:t>placeholder</a:t></a:r></a:p></p:txBody>'
+            "<p:txBody><a:bodyPr/><a:p><a:r><a:t>placeholder</a:t></a:r></a:p></p:txBody>"
             "</p:sp>"
         ),
         zorder=1,

@@ -1573,6 +1573,133 @@
                     }
                 ]
             }
+        },
+        "upload_deck_3ff51ef2_p31": {
+            "content_0": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"8\" name=\"rectangle_7\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"901097\" y=\"3690218\"/>\n      <a:ext cx=\"2880446\" cy=\"876095\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:ln>\n      <a:noFill/>\n      <a:prstDash val=\"sysDash\"/>\n    </a:ln>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr vert=\"horz\" wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"just\">\n        <a:lnSpc>\n          <a:spcPct val=\"150000\"/>\n        </a:lnSpc>\n        <a:spcBef>\n          <a:spcPct val=\"0\"/>\n        </a:spcBef>\n        <a:spcAft>\n          <a:spcPct val=\"0\"/>\n        </a:spcAft>\n        <a:defRPr/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"1200\" kern=\"0\" dirty=\"0\">\n          <a:ln>\n            <a:noFill/>\n            <a:prstDash val=\"sysDot\"/>\n          </a:ln>\n          <a:solidFill>\n            <a:schemeClr val=\"tx1\">\n              <a:lumMod val=\"85000\"/>\n              <a:lumOff val=\"15000\"/>\n            </a:schemeClr>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n          <a:cs typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>Text</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "zorder": 1,
+                "content_type": "content",
+                "location": [
+                    {
+                        "x": 901097,
+                        "y": 3690218,
+                        "width": 2880446,
+                        "height": 876095
+                    },
+                    {
+                        "x": 4759324,
+                        "y": 3690218,
+                        "width": 2880446,
+                        "height": 876095
+                    },
+                    {
+                        "x": 8617551,
+                        "y": 3690218,
+                        "width": 2880446,
+                        "height": 876095
+                    }
+                ]
+            },
+            "title_0": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"9\" name=\"rectangle_8\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"901097\" y=\"3009392\"/>\n      <a:ext cx=\"2880444\" cy=\"591205\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"b\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr>\n        <a:spcBef>\n          <a:spcPct val=\"0\"/>\n        </a:spcBef>\n        <a:spcAft>\n          <a:spcPct val=\"0\"/>\n        </a:spcAft>\n        <a:defRPr/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"1700\" b=\"1\" kern=\"0\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\"/>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n          <a:cs typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>Text</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "zorder": 2,
+                "content_type": "title",
+                "location": [
+                    {
+                        "x": 901097,
+                        "y": 3009392,
+                        "width": 2880444,
+                        "height": 591205
+                    },
+                    {
+                        "x": 4759324,
+                        "y": 3009392,
+                        "width": 2880444,
+                        "height": 591205
+                    },
+                    {
+                        "x": 8617551,
+                        "y": 3009392,
+                        "width": 2880443,
+                        "height": 591205
+                    }
+                ]
+            },
+            "number_0": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"13\" name=\"rectangle_12\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"901097\" y=\"1811595\"/>\n      <a:ext cx=\"1325415\" cy=\"991788\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"none\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\">\n      <a:normAutofit fontScale=\"95000\" lnSpcReduction=\"10000\"/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr>\n        <a:spcBef>\n          <a:spcPct val=\"0\"/>\n        </a:spcBef>\n        <a:spcAft>\n          <a:spcPct val=\"0\"/>\n        </a:spcAft>\n        <a:defRPr/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" altLang=\"zh-CN\" sz=\"7200\" b=\"1\" kern=\"0\" dirty=\"0\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\"/>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n          <a:cs typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>Text</a:t>\n      </a:r>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"7200\" b=\"1\" kern=\"0\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"accent1\"/>\n        </a:solidFill>\n        <a:latin typeface=\"+mn-ea\"/>\n        <a:cs typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "zorder": 3,
+                "content_type": "number",
+                "location": [
+                    {
+                        "x": 901097,
+                        "y": 1811595,
+                        "width": 1325415,
+                        "height": 991788
+                    },
+                    {
+                        "x": 4759324,
+                        "y": 1811595,
+                        "width": 1325415,
+                        "height": 991788
+                    },
+                    {
+                        "x": 8617551,
+                        "y": 1811595,
+                        "width": 1325415,
+                        "height": 991788
+                    }
+                ]
+            },
+            "picture_0": {
+                "xml": null,
+                "zorder": 4,
+                "content_type": "picture",
+                "location": [
+                    {
+                        "x": 901097,
+                        "y": 4680972,
+                        "width": 2880449,
+                        "height": 1520002
+                    },
+                    {
+                        "x": 4759324,
+                        "y": 4680972,
+                        "width": 2880449,
+                        "height": 1520002
+                    },
+                    {
+                        "x": 8617551,
+                        "y": 4680972,
+                        "width": 2880449,
+                        "height": 1520002
+                    }
+                ]
+            },
+            "decoration_0": {
+                "xml": "<p:cxnSp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvCxnSpPr>\n    <p:cNvPr id=\"35\" name=\"34\"/>\n    <p:cNvCxnSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvCxnSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"695960\" y=\"1811595\"/>\n      <a:ext cx=\"0\" cy=\"4407542\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"line\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:ln w=\"19050\">\n      <a:solidFill>\n        <a:schemeClr val=\"tx1\">\n          <a:lumMod val=\"40000\"/>\n          <a:lumOff val=\"60000\"/>\n          <a:alpha val=\"30000\"/>\n        </a:schemeClr>\n      </a:solidFill>\n    </a:ln>\n    <a:effectLst/>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:lnRef>\n    <a:fillRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"tx1\"/>\n    </a:fontRef>\n  </p:style>\n</p:cxnSp>\n",
+                "zorder": 13,
+                "content_type": "decoration",
+                "location": [
+                    {
+                        "x": 695960,
+                        "y": 1811595,
+                        "width": 0,
+                        "height": 4407542
+                    },
+                    {
+                        "x": 4544025,
+                        "y": 1811595,
+                        "width": 0,
+                        "height": 4407542
+                    },
+                    {
+                        "x": 8400347,
+                        "y": 1811595,
+                        "width": 0,
+                        "height": 4407542
+                    }
+                ]
+            }
         }
     },
     "page_placeholders": {

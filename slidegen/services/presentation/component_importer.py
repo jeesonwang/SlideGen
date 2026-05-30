@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 from slidegen.core import settings
 from slidegen.schemas.gen_request import BaseGenerationRequest
 from slidegen.services.presentation.components import (
+    ICON_AREA_THRESHOLD,
     ChapterLayout,
     ComponentContentType,
     ComponentsManager,
@@ -240,7 +241,7 @@ def store_fingerprint(pptx_path: str | Path, json_path: str | Path) -> None:
 # Step 2: Local rule-based shape role classifier
 # ---------------------------------------------------------------------------
 
-_ICON_AREA_THRESHOLD = 3_900_000 * 3_900_000  # reuse ComponentsManager.is_icon threshold
+_ICON_AREA_THRESHOLD = ICON_AREA_THRESHOLD
 _SHORT_TEXT_THRESHOLD = 20  # characters
 _NUMBER_MAX_LENGTH = 3  # max digits for a "number" shape
 
@@ -1058,9 +1059,7 @@ class ContentStyleImporter:
         self.shape_role_agent = shape_role_agent or ShapeRoleAgent()
         self.style_builder = style_builder or StyleBuilder()
         self.style_name_stem = (
-            _sanitize_ascii_name(style_name_stem, fallback="deck")
-            if style_name_stem is not None
-            else None
+            _sanitize_ascii_name(style_name_stem, fallback="deck") if style_name_stem is not None else None
         )
 
     async def import_from_pptx(
@@ -1459,11 +1458,7 @@ class ContentStyleImporter:
         unmatched = list(right.shape_list)
         for left_shape in left.shape_list:
             match_index = next(
-                (
-                    index
-                    for index, right_shape in enumerate(unmatched)
-                    if cls._are_same_cshape(left_shape, right_shape)
-                ),
+                (index for index, right_shape in enumerate(unmatched) if cls._are_same_cshape(left_shape, right_shape)),
                 None,
             )
             if match_index is None:

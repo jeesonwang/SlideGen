@@ -12,6 +12,8 @@ from pptx.slide import Slide
 
 from slidegen.core import settings
 
+ICON_AREA_THRESHOLD = 2_000_000 * 2_000_000
+
 
 def remove_custDataLst(xml_str: str) -> str:
     """
@@ -568,7 +570,7 @@ class ComponentsManager:
     @staticmethod
     def is_icon(shape_location: Location) -> bool:
         """Distinguishing Icons and Images by Area"""
-        return shape_location.width * shape_location.height < 3900000 * 3900000
+        return shape_location.width * shape_location.height < ICON_AREA_THRESHOLD
 
     @property
     def layout_types_names(self) -> list[str]:
