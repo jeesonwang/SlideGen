@@ -217,6 +217,55 @@ class TestPages:
         assert os.path.exists(temp_output)
 
     @pytest.mark.anyio
+    async def test_chapter_content_page_title_is_above_imported_style_shapes(self, monkeypatch):
+        """Page-level titles should be brought above shapes imported from the style."""
+        presentation = Presentation()
+        for _ in range(5):
+            presentation.slides.add_slide(presentation.slide_layouts[6])
+
+        xml_source_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        xml_source_shape = xml_source_slide.shapes.add_textbox(Emu(0), Emu(0), Emu(1000000), Emu(300000))
+        xml_source_shape.text = "placeholder"
+
+        fallback_placeholder = SimpleNamespace(
+            xml=xml_source_shape.element.xml,
+            location=Location(x=100000, y=100000, width=2000000, height=400000),
+        )
+        style = Style("covering_decoration")
+        style.add_shape(
+            "decoration_0",
+            CShape(
+                xml=xml_source_shape.element.xml,
+                zorder=999,
+                content_type=ComponentContentType.DECORATION,
+                location=[Location(x=0, y=0, width=3000000, height=1000000)],
+            ),
+        )
+
+        class FakeComponentsManager:
+            def get_page_placeholder(self, _page_type, _role):
+                return fallback_placeholder
+
+            def get_random_style(self, _chapter_layout):
+                return style
+
+        monkeypatch.setattr(pages_module, "components_manager", FakeComponentsManager())
+
+        content = Heading(level=2, text="Validation Test")
+        content.append(Heading(level=3, text="Point 1"))
+
+        await ChapterContentPage.generate_slide(
+            presentation,
+            content,
+            chapter_page_index=4,
+            slide_index=4,
+            style_override=style,
+        )
+
+        generated_slide = presentation.slides[4]
+        assert generated_slide.shapes[-1].name == "content_title_title"
+
+    @pytest.mark.anyio
     async def test_chapter_content_picture_uses_placeholder_when_generation_fails(self, presentation, monkeypatch):
         """Picture styles should not call add_picture with None when generation fails."""
         style = Style("picture_only")

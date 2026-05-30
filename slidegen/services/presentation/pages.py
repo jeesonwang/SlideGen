@@ -83,6 +83,19 @@ class Page:
                 sp_tree.remove(shp.element)
 
     @staticmethod
+    def bring_shape_to_front(shape: BaseShape) -> None:
+        """Move a shape to the top of the slide z-order."""
+        element = shape.element
+        parent = element.getparent()
+        if parent is None:
+            return
+        parent.remove(element)
+        if hasattr(parent, "insert_element_before"):
+            parent.insert_element_before(element, "p:extLst")
+        else:
+            parent.append(element)
+
+    @staticmethod
     def _set_text_style(shape: Shape, style: dict[str, Any]) -> None:
         """Set the input `Shape` text style"""
         if not shape.has_text_frame:
@@ -1236,6 +1249,8 @@ class ChapterContentPage(Page):
                             location=scaled_loc,
                         )
             index += 1
+        if title_shape is not None:
+            Page.bring_shape_to_front(title_shape)
         ChapterContentPage.move_slide(prs, new_slide, slide_index)
 
 
