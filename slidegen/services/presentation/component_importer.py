@@ -20,6 +20,7 @@ from typing import Any, Literal
 from agno.agent import Agent
 from agno.models.base import Model
 from loguru import logger
+from lxml import etree
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.presentation import Presentation as PresentationType
@@ -844,6 +845,8 @@ def validate_compatibility(
 class StyleBuilder:
     """Build a Style from shape assignments — assignment-driven, not heuristic."""
 
+    TEXT_PLACEHOLDER = "Text"
+
     def build_style_from_assignments(
         self,
         slide: Slide,
@@ -945,6 +948,8 @@ class StyleBuilder:
                 try:
                     raw_xml = first_shape_obj._element.xml
                     xml_str = remove_custDataLst(raw_xml)
+                    text_placeholder = "" if ct == ComponentContentType.DECORATION else self.TEXT_PLACEHOLDER
+                    xml_str = self._replace_shape_xml_text(xml_str, text_placeholder)
                 except Exception as exc:
                     logger.warning("Failed to extract XML for shape {}: {}", shape_name, exc)
                     continue
@@ -971,6 +976,20 @@ class StyleBuilder:
             style.add_shape(shape_name, cshape)
 
         return style
+
+    @staticmethod
+    def _replace_shape_xml_text(xml_str: str, placeholder: str) -> str:
+        """Replace imported text runs while preserving shape and run styling."""
+        root = etree.fromstring(xml_str)
+        for text_element in root.findall(".//a:t", namespaces=root.nsmap):
+            if text_element.text:
+                text_element.text = placeholder
+        return etree.tostring(
+            root,
+            encoding="unicode",
+            pretty_print=True,
+            xml_declaration=False,
+        )
 
     @staticmethod
     def _zorder_for(assignment: ShapeAssignment, slide: Slide) -> int:
