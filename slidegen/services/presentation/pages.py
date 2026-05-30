@@ -140,7 +140,12 @@ class Page:
             shape.width = target_width
 
     @staticmethod
-    def _scale_shape_location(prs: Presentation, loc: Location) -> Location:
+    def _scale_shape_location(
+        prs: Presentation,
+        loc: Location,
+        *,
+        content_type: ComponentContentType | None = None,
+    ) -> Location:
         metadata = getattr(components_manager, "metadata", {}) or {}
         source_width = metadata.get("slide_width")
         source_height = metadata.get("slide_height")
@@ -152,11 +157,23 @@ class Page:
 
         x_scale = int(target_width) / int(source_width)
         y_scale = int(target_height) / int(source_height)
+        scaled_x = round(loc.x * x_scale)
+        scaled_y = round(loc.y * y_scale)
+        scaled_width = round(loc.width * x_scale)
+        scaled_height = round(loc.height * y_scale)
+
+        if content_type is ComponentContentType.ICON:
+            square_size = min(scaled_width, scaled_height)
+            scaled_x += round((scaled_width - square_size) / 2)
+            scaled_y += round((scaled_height - square_size) / 2)
+            scaled_width = square_size
+            scaled_height = square_size
+
         return Location(
-            x=round(loc.x * x_scale),
-            y=round(loc.y * y_scale),
-            width=round(loc.width * x_scale),
-            height=round(loc.height * y_scale),
+            x=scaled_x,
+            y=scaled_y,
+            width=scaled_width,
+            height=scaled_height,
         )
 
     @staticmethod
@@ -1009,7 +1026,7 @@ class ChapterContentPage(Page):
             # locs must be in order
             locs = shape.location
             for idx, loc in enumerate(locs):
-                scaled_loc = Page._scale_shape_location(prs, loc)
+                scaled_loc = Page._scale_shape_location(prs, loc, content_type=shape.content_type)
                 match shape.content_type:
                     case ComponentContentType.CONTENT:
                         if len(section_texts) != len(locs):
