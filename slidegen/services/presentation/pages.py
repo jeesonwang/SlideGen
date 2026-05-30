@@ -1,13 +1,16 @@
 import copy
+import hashlib
 import io
 import os
 import random
+import tempfile
 import unicodedata
 from enum import Enum
 from pathlib import Path
 from typing import Any, cast
 
 from loguru import logger
+from PIL import Image
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.oxml.shapes.groupshape import CT_GroupShape
@@ -18,6 +21,7 @@ from pptx.slide import Slide
 
 from slidegen.exceptions import PPTGenError, PPTTemplateError
 from slidegen.schemas.image_prompt import ImagePrompt
+from slidegen.schemas.theme import PresentationTheme
 from slidegen.services.document.markdown import Heading
 from slidegen.services.presentation.components import (
     ChapterLayout,
@@ -948,6 +952,87 @@ class ChapterContentPage(Page):
         return None
 
     @staticmethod
+    def _normalize_icon_color(hex_color: str | None) -> str | None:
+        if not hex_color:
+            return None
+
+        color = hex_color.strip()
+        if color.startswith("#"):
+            color = color[1:]
+        if color.lower().startswith("0x"):
+            color = color[2:]
+
+        if len(color) != 6:
+            logger.warning("Invalid icon theme color '{}': expected 6 hex digits", hex_color)
+            return None
+
+        try:
+            int(color, 16)
+        except ValueError:
+            logger.warning("Invalid icon theme color '{}': not a hex color", hex_color)
+            return None
+
+        return color.upper()
+
+    @staticmethod
+    def _theme_icon_color(theme: PresentationTheme | None, icon_index: int) -> str | None:
+        if theme is None:
+            return None
+
+        colors = [
+            ChapterContentPage._normalize_icon_color(theme.colors.accent1),
+            ChapterContentPage._normalize_icon_color(theme.colors.accent2),
+        ]
+        colors = [color for color in colors if color is not None]
+        if not colors:
+            return None
+        return colors[icon_index % len(colors)]
+
+    @staticmethod
+    def _recolor_png_icon(
+        icon_path: str,
+        hex_color: str,
+        *,
+        output_dir: str | os.PathLike[str] | None = None,
+    ) -> str:
+        source_path = Path(icon_path)
+        color = ChapterContentPage._normalize_icon_color(hex_color)
+        if color is None:
+            return icon_path
+
+        if output_dir is None:
+            output_root = Path(get_temp_directory_env() or tempfile.gettempdir()) / "slidegen_recolored_icons"
+        else:
+            output_root = Path(output_dir)
+        output_root.mkdir(parents=True, exist_ok=True)
+
+        source_stat = source_path.stat()
+        cache_key = f"{source_path.resolve()}:{source_stat.st_mtime_ns}:{source_stat.st_size}:{color}".encode()
+        cache_hash = hashlib.sha1(cache_key).hexdigest()[:12]
+        recolored_path = output_root / f"{source_path.stem}-{color}-{cache_hash}.png"
+        if recolored_path.exists():
+            return str(recolored_path)
+
+        source_image = Image.open(source_path).convert("RGBA")
+        rgb = tuple(int(color[index : index + 2], 16) for index in (0, 2, 4))
+        recolored_image = Image.new("RGBA", source_image.size, (*rgb, 0))
+        recolored_image.putalpha(source_image.getchannel("A"))
+        recolored_image.save(recolored_path)
+        return str(recolored_path)
+
+    @staticmethod
+    def _prepare_icon_for_theme(icon_path: str, theme: PresentationTheme | None, icon_index: int) -> str:
+        color = ChapterContentPage._theme_icon_color(theme, icon_index)
+        if color is None:
+            return icon_path
+
+        try:
+            return ChapterContentPage._recolor_png_icon(icon_path, color)
+        except Exception:
+            logger.exception("{}: Failed to recolor icon '{}'", ChapterContentPage.__name__, icon_path)
+            return icon_path
+
+    @staticmethod
     def _get_slide_type(content: Heading) -> int:
         """
         Get the slide type of the chapter content page
@@ -971,6 +1056,7 @@ class ChapterContentPage(Page):
         chapter_page_index: int = 3,
         slide_index: int = 3,
         style_override: Style | None = None,
+        theme: PresentationTheme | None = None,
     ) -> None:
         """
         Generate the chapter content page
@@ -981,6 +1067,7 @@ class ChapterContentPage(Page):
             chapter_page_index: index of the template chapter content slide
             slide_index: index of the slide to be generated
             style_override: if set, use this Style instead of calling get_random_style()
+            theme: if set, recolor inserted icons with accent1/accent2
         """
         assert content.level in (2, 3), (
             f"{ChapterContentPage.__name__}: Chapter content page must have a level 2 or level 3 heading"
@@ -1019,6 +1106,7 @@ class ChapterContentPage(Page):
 
         # Sort by zorder
         sorted_shapes = sorted(style.shapes.items(), key=lambda x: x[1].zorder)
+        icon_index = 0
 
         for shape_name, shape in sorted_shapes:
             # locs must be in order
@@ -1130,6 +1218,7 @@ class ChapterContentPage(Page):
                                     f"{ChapterContentPage.__name__}: Unable to resolve icon path for shape '{shape_name}'"
                                 )
 
+                        icon_path = ChapterContentPage._prepare_icon_for_theme(icon_path, theme, icon_index)
                         added_shape = new_slide.shapes.add_picture(
                             icon_path,
                             scaled_loc.x,
@@ -1137,6 +1226,7 @@ class ChapterContentPage(Page):
                             scaled_loc.width,
                             scaled_loc.height,
                         )
+                        icon_index += 1
                     case _:
                         added_shape = add_shape_by_xml(
                             slide=new_slide,

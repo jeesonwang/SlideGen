@@ -4,6 +4,7 @@ from loguru import logger
 from pptx.presentation import Presentation
 
 from slidegen.exceptions import MarkdownDocumentError
+from slidegen.schemas.theme import PresentationTheme
 from slidegen.services.document.markdown import Heading, MarkdownDocument
 from slidegen.services.presentation.pages import (
     CatalogPage,
@@ -33,6 +34,7 @@ class PresentationOrchestrator:
         markdown_document: MarkdownDocument,
         cover_page_index: int = 0,
         catalog_page_index: int = 1,
+        theme: PresentationTheme | None = None,
     ) -> Presentation:
         """generate the complete PPT presentation"""
         started_at = perf_counter()
@@ -101,6 +103,7 @@ class PresentationOrchestrator:
                     slide,
                     chapter_page_index=chapter_content_page_index,
                     slide_index=current_slide_index,
+                    theme=theme,
                 )
                 current_slide_index += 1
 

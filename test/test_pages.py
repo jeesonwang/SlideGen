@@ -1,10 +1,13 @@
 import asyncio
 import os
 import sys
+import zipfile
 from collections import Counter
+from io import BytesIO
 from types import SimpleNamespace
 
 import pytest
+from PIL import Image
 from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.util import Emu
 
@@ -14,6 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__f
 from pptx import Presentation
 
 import slidegen.services.presentation.pages as pages_module
+from slidegen.schemas.theme import PresentationTheme, ThemeColorMapping
 from slidegen.services.document import MarkdownDocument
 from slidegen.services.document.markdown.elements import Heading
 from slidegen.services.presentation.components import ComponentContentType, CShape, Location, Style
@@ -247,6 +251,86 @@ class TestPages:
 
         generated_slide = presentation.slides[4]
         assert any(shape.shape_type.name == "PICTURE" for shape in generated_slide.shapes)
+
+    def test_recolor_png_icon_uses_theme_color_and_preserves_alpha(self, tmp_path):
+        """Icon recoloring should replace visible RGB values while keeping the source alpha mask."""
+        source_icon = tmp_path / "source.png"
+        Image.new("RGBA", (2, 2), (0, 0, 0, 0)).save(source_icon)
+        image = Image.open(source_icon).convert("RGBA")
+        image.putpixel((0, 0), (0, 0, 0, 255))
+        image.putpixel((1, 0), (0, 0, 0, 128))
+        image.save(source_icon)
+
+        recolored = ChapterContentPage._recolor_png_icon(str(source_icon), "E76F51", output_dir=tmp_path)
+        recolored_image = Image.open(recolored).convert("RGBA")
+
+        assert [pixel[3] for pixel in recolored_image.getdata()] == [255, 128, 0, 0]
+        assert {pixel[:3] for pixel in recolored_image.getdata() if pixel[3] > 0} == {(231, 111, 81)}
+
+    @pytest.mark.anyio
+    async def test_chapter_content_icons_use_accent1_and_accent2_theme_colors(self, tmp_path, monkeypatch):
+        """Generated icon pictures should be recolored with accent1/accent2 before insertion."""
+        source_icon = tmp_path / "source.png"
+        Image.new("RGBA", (8, 8), (0, 0, 0, 255)).save(source_icon)
+
+        style = Style("icon_pair")
+        style.add_shape(
+            "icon",
+            CShape(
+                xml=None,
+                zorder=0,
+                content_type=ComponentContentType.ICON,
+                location=[
+                    Location(x=Emu(900000), y=Emu(1200000), width=Emu(250000), height=Emu(250000)),
+                    Location(x=Emu(1300000), y=Emu(1200000), width=Emu(250000), height=Emu(250000)),
+                ],
+            ),
+        )
+
+        class FakeComponentsManager:
+            def get_random_style(self, _chapter_layout):
+                return style
+
+            def get_page_placeholder(self, _page_type, _role):
+                return None
+
+        class FakeIconSearcher:
+            async def search_icons(self, _query, k=1):
+                return [str(source_icon)]
+
+        monkeypatch.setattr(pages_module, "components_manager", FakeComponentsManager())
+        monkeypatch.setattr(ChapterContentPage, "icon_searcher", FakeIconSearcher())
+
+        presentation = Presentation()
+        for _ in range(5):
+            presentation.slides.add_slide(presentation.slide_layouts[6])
+
+        content = Heading(level=2, text="Market Context")
+        content.append(Heading(level=3, text="Customer Signals"))
+        content.append(Heading(level=3, text="Competitive Position"))
+        theme = PresentationTheme(
+            name="Icon Theme",
+            colors=ThemeColorMapping(accent1="E76F51", accent2="0066FF"),
+        )
+
+        await ChapterContentPage.generate_slide(
+            presentation,
+            content,
+            chapter_page_index=4,
+            slide_index=4,
+            theme=theme,
+        )
+
+        output_path = tmp_path / "icons.pptx"
+        presentation.save(output_path)
+        embedded_rgbs = []
+        with zipfile.ZipFile(output_path) as pptx:
+            for media_name in sorted(name for name in pptx.namelist() if name.startswith("ppt/media/")):
+                image = Image.open(BytesIO(pptx.read(media_name))).convert("RGBA")
+                visible_rgbs = {pixel[:3] for pixel in image.getdata() if pixel[3] > 0}
+                embedded_rgbs.append(next(iter(visible_rgbs)))
+
+        assert embedded_rgbs == [(231, 111, 81), (0, 102, 255)]
 
     @pytest.mark.anyio
     async def test_chapter_content_shapes_scale_to_current_slide_size(self, presentation, monkeypatch):

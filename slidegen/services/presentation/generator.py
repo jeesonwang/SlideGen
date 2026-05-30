@@ -285,7 +285,7 @@ class PresentationGenerator:
             self.apply_theme_colors(template_prs, theme)
 
         logger.info("Converting Markdown to PowerPoint...")
-        presentation = await self.converter.generate(template_prs, markdown_doc)
+        presentation = await self.converter.generate(template_prs, markdown_doc, theme=theme)
 
         # Save PPTX to temp, then conditionally convert
         pptx_tmp = output_path + ".pptx"
@@ -377,7 +377,7 @@ class PresentationGenerator:
         # Convert to PPT
         convert_started_at = perf_counter()
         logger.info("Converting Markdown to PowerPoint...")
-        presentation = await self.converter.generate(template_prs, markdown_doc)
+        presentation = await self.converter.generate(template_prs, markdown_doc, theme=theme)
         logger.info("Markdown converted to PowerPoint in {:.2f}s", perf_counter() - convert_started_at)
 
         # Save PPTX to temp, then conditionally convert
@@ -508,7 +508,7 @@ class PresentationGenerator:
 
             # Convert to PPT
             convert_started_at = perf_counter()
-            presentation = await self.converter.generate(template_prs, markdown_doc)
+            presentation = await self.converter.generate(template_prs, markdown_doc, theme=theme)
             logger.info("Markdown converted to PowerPoint in {:.2f}s", perf_counter() - convert_started_at)
 
             logger.info("PPT stream progress 80%: saving presentation file")
@@ -624,7 +624,7 @@ class PresentationGenerator:
                 message="Converting markdown to slides...",
             )
 
-            presentation = await self.converter.generate(template_prs, markdown_doc)
+            presentation = await self.converter.generate(template_prs, markdown_doc, theme=theme)
 
             yield ProgressEvent(
                 stage="presentation_export",
