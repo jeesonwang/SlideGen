@@ -8,14 +8,13 @@ from types import SimpleNamespace
 
 import pytest
 from PIL import Image
+from pptx import Presentation
 from pptx.enum.shapes import PP_PLACEHOLDER
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Emu
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "slidegen"))
-
-from pptx import Presentation
-from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 
 import slidegen.services.presentation.pages as pages_module
 from slidegen.schemas.theme import PresentationTheme, ThemeColorMapping
@@ -357,6 +356,98 @@ class TestPages:
 
         generated_slide = presentation.slides[4]
         assert any(shape.shape_type.name == "PICTURE" for shape in generated_slide.shapes)
+
+    @pytest.mark.anyio
+    async def test_prepare_slide_data_uses_style_override_and_generated_picture(self, tmp_path, monkeypatch):
+        """Preparation should resolve generated picture assets without mutating a slide."""
+        generated_image = tmp_path / "generated.png"
+        Image.new("RGBA", (8, 8), (255, 0, 0, 255)).save(generated_image)
+
+        style = Style("picture_only")
+        style.add_shape(
+            "picture",
+            CShape(
+                xml=None,
+                zorder=0,
+                content_type=ComponentContentType.PICTURE,
+                location=[Location(x=Emu(900000), y=Emu(1200000), width=Emu(2500000), height=Emu(1600000))],
+            ),
+        )
+
+        class ExplodingComponentsManager:
+            def get_random_style(self, _chapter_layout):
+                raise AssertionError("style_override should avoid random style selection")
+
+        class FakeImageGenerator:
+            async def generate_image(self, prompt):
+                assert prompt.prompt == "Customer Signals"
+                return SimpleNamespace(path=str(generated_image))
+
+        monkeypatch.setattr(pages_module, "components_manager", ExplodingComponentsManager())
+        monkeypatch.setattr(ChapterContentPage, "image_generator", FakeImageGenerator())
+
+        content = Heading(level=2, text="Market Context")
+        content.append(Heading(level=3, text="Customer Signals"))
+
+        slide_data = await ChapterContentPage._prepare_slide_data(content, style_override=style, theme=None)
+
+        assert slide_data.content_title == "Market Context"
+        assert slide_data.section_titles == ["Customer Signals"]
+        assert slide_data.section_texts == [""]
+        assert slide_data.style is style
+        asset = slide_data.assets[("picture", 0, ComponentContentType.PICTURE)]
+        assert asset.path == str(generated_image)
+
+    @pytest.mark.anyio
+    async def test_prepare_slide_data_resolves_icons_before_rendering(self, tmp_path, monkeypatch):
+        """Preparation should search icons and apply theme recoloring before rendering."""
+        source_icon = tmp_path / "source.png"
+        recolored_icon = tmp_path / "recolored.png"
+        Image.new("RGBA", (8, 8), (0, 0, 0, 255)).save(source_icon)
+        Image.new("RGBA", (8, 8), (231, 111, 81, 255)).save(recolored_icon)
+
+        style = Style("icon_pair")
+        style.add_shape(
+            "icon",
+            CShape(
+                xml=None,
+                zorder=0,
+                content_type=ComponentContentType.ICON,
+                location=[
+                    Location(x=Emu(900000), y=Emu(1200000), width=Emu(250000), height=Emu(250000)),
+                    Location(x=Emu(1300000), y=Emu(1200000), width=Emu(250000), height=Emu(250000)),
+                ],
+            ),
+        )
+
+        class FakeIconSearcher:
+            async def search_icons(self, query, k=1):
+                assert k == 1
+                assert query in {"Customer Signals", "Competitive Position"}
+                return [str(source_icon)]
+
+        prepared_calls = []
+
+        def fake_prepare_icon(icon_path, theme, icon_index):
+            prepared_calls.append((icon_path, theme, icon_index))
+            return str(recolored_icon)
+
+        monkeypatch.setattr(ChapterContentPage, "icon_searcher", FakeIconSearcher())
+        monkeypatch.setattr(ChapterContentPage, "_prepare_icon_for_theme", staticmethod(fake_prepare_icon))
+
+        content = Heading(level=2, text="Market Context")
+        content.append(Heading(level=3, text="Customer Signals"))
+        content.append(Heading(level=3, text="Competitive Position"))
+        theme = PresentationTheme(
+            name="Icon Theme",
+            colors=ThemeColorMapping(accent1="E76F51", accent2="0066FF"),
+        )
+
+        slide_data = await ChapterContentPage._prepare_slide_data(content, style_override=style, theme=theme)
+
+        assert prepared_calls == [(str(source_icon), theme, 0), (str(source_icon), theme, 1)]
+        assert slide_data.assets[("icon", 0, ComponentContentType.ICON)].path == str(recolored_icon)
+        assert slide_data.assets[("icon", 1, ComponentContentType.ICON)].path == str(recolored_icon)
 
     def test_recolor_png_icon_uses_theme_color_and_preserves_alpha(self, tmp_path):
         """Icon recoloring should replace visible RGB values while keeping the source alpha mask."""
