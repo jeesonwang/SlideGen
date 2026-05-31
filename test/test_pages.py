@@ -449,6 +449,123 @@ class TestPages:
         assert slide_data.assets[("icon", 0, ComponentContentType.ICON)].path == str(recolored_icon)
         assert slide_data.assets[("icon", 1, ComponentContentType.ICON)].path == str(recolored_icon)
 
+    def test_render_slide_is_sync_and_uses_prepared_assets(self, tmp_path, monkeypatch):
+        """Rendering should mutate the slide without calling async asset providers."""
+        prepared_image = tmp_path / "prepared.png"
+        Image.new("RGBA", (8, 8), (0, 102, 255, 255)).save(prepared_image)
+
+        presentation = Presentation()
+        for _ in range(5):
+            presentation.slides.add_slide(presentation.slide_layouts[6])
+        new_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+
+        xml_source_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        text_shape = xml_source_slide.shapes.add_textbox(Emu(0), Emu(0), Emu(1000000), Emu(300000))
+        text_shape.text = "placeholder"
+
+        style = Style("render_style")
+        style.add_shape(
+            "title",
+            CShape(
+                xml=text_shape.element.xml,
+                zorder=0,
+                content_type=ComponentContentType.TITLE,
+                location=[Location(x=Emu(100000), y=Emu(100000), width=Emu(1000000), height=Emu(300000))],
+            ),
+        )
+        style.add_shape(
+            "content",
+            CShape(
+                xml=text_shape.element.xml,
+                zorder=1,
+                content_type=ComponentContentType.CONTENT,
+                location=[Location(x=Emu(100000), y=Emu(500000), width=Emu(1000000), height=Emu(600000))],
+            ),
+        )
+        style.add_shape(
+            "picture",
+            CShape(
+                xml=None,
+                zorder=2,
+                content_type=ComponentContentType.PICTURE,
+                location=[Location(x=Emu(1200000), y=Emu(500000), width=Emu(600000), height=Emu(600000))],
+            ),
+        )
+
+        class FakeComponentsManager:
+            def get_page_placeholder(self, _page_type, _role):
+                return None
+
+        class ExplodingImageGenerator:
+            async def generate_image(self, _prompt):
+                raise AssertionError("rendering should not generate images")
+
+        class ExplodingIconSearcher:
+            async def search_icons(self, _query, k=1):
+                raise AssertionError("rendering should not search icons")
+
+        monkeypatch.setattr(pages_module, "components_manager", FakeComponentsManager())
+        monkeypatch.setattr(ChapterContentPage, "image_generator", ExplodingImageGenerator())
+        monkeypatch.setattr(ChapterContentPage, "icon_searcher", ExplodingIconSearcher())
+
+        slide_data = pages_module.ChapterSlideData(
+            content_title="Market Context",
+            section_titles=["Customer Signals"],
+            section_texts=["Signals body"],
+            style=style,
+            assets={
+                ("picture", 0, ComponentContentType.PICTURE): pages_module.ChapterSlideAsset(
+                    shape_name="picture",
+                    location_index=0,
+                    content_type=ComponentContentType.PICTURE,
+                    path=str(prepared_image),
+                )
+            },
+        )
+
+        result = ChapterContentPage._render_slide(presentation, new_slide, slide_data)
+
+        assert result is None
+        assert any(shape.shape_type.name == "PICTURE" for shape in new_slide.shapes)
+        assert any(getattr(shape, "text", "") == "Customer Signals" for shape in new_slide.shapes)
+        assert any(getattr(shape, "text", "") == "Signals body" for shape in new_slide.shapes)
+
+    def test_render_slide_preserves_title_count_validation(self):
+        """Rendering should keep the existing PPTGenError for mismatched title locations."""
+        presentation = Presentation()
+        for _ in range(5):
+            presentation.slides.add_slide(presentation.slide_layouts[6])
+        new_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+
+        xml_source_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        text_shape = xml_source_slide.shapes.add_textbox(Emu(0), Emu(0), Emu(1000000), Emu(300000))
+        text_shape.text = "placeholder"
+
+        style = Style("bad_title_count")
+        style.add_shape(
+            "title",
+            CShape(
+                xml=text_shape.element.xml,
+                zorder=0,
+                content_type=ComponentContentType.TITLE,
+                location=[
+                    Location(x=Emu(100000), y=Emu(100000), width=Emu(1000000), height=Emu(300000)),
+                    Location(x=Emu(100000), y=Emu(500000), width=Emu(1000000), height=Emu(300000)),
+                ],
+            ),
+        )
+
+        slide_data = pages_module.ChapterSlideData(
+            content_title="Market Context",
+            section_titles=["Customer Signals"],
+            section_texts=["Signals body"],
+            style=style,
+            assets={},
+        )
+
+        with pytest.raises(Exception, match="Title must be equal to the number of locations"):
+            ChapterContentPage._render_slide(presentation, new_slide, slide_data)
+
     def test_recolor_png_icon_uses_theme_color_and_preserves_alpha(self, tmp_path):
         """Icon recoloring should replace visible RGB values while keeping the source alpha mask."""
         source_icon = tmp_path / "source.png"
