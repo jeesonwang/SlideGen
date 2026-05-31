@@ -5,6 +5,7 @@ import os
 import random
 import tempfile
 import unicodedata
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, cast
@@ -730,6 +731,7 @@ class CatalogPage(Page):
 
         return catalog_list
 
+
     @staticmethod
     async def generate_slide(
         prs: Presentation,
@@ -1008,6 +1010,23 @@ class ChapterHomePage(Page):
             return f"PART {p.number_to_words(chapter_number).upper()}"  # type: ignore
 
 
+@dataclass(frozen=True)
+class ChapterSlideAsset:
+    shape_name: str
+    location_index: int
+    content_type: ComponentContentType
+    path: str
+
+
+@dataclass(frozen=True)
+class ChapterSlideData:
+    content_title: str
+    section_titles: list[str]
+    section_texts: list[str]
+    style: Style
+    assets: dict[tuple[str, int, ComponentContentType], ChapterSlideAsset]
+
+
 class ChapterContentPage(Page):
     """
     Chapter content page
@@ -1117,6 +1136,156 @@ class ChapterContentPage(Page):
         Get the slide type of the chapter content page
         """
         return len(content)
+
+
+    @staticmethod
+    def _asset_key(
+        shape_name: str,
+        location_index: int,
+        content_type: ComponentContentType,
+    ) -> tuple[str, int, ComponentContentType]:
+        return (shape_name, location_index, content_type)
+
+    @staticmethod
+    async def _resolve_picture_asset(
+        shape_name: str,
+        location_index: int,
+        content_title: str,
+        section_titles: list[str],
+    ) -> ChapterSlideAsset:
+        image_path = None
+        try:
+            prompt_text = section_titles[location_index] if location_index < len(section_titles) else content_title
+            prompt = ImagePrompt(prompt=prompt_text, theme_prompt=None)
+
+            logger.info(
+                "{}: generating image asset for slide '{}' using prompt '{}...'",
+                ChapterContentPage.__name__,
+                content_title,
+                prompt_text[:20],
+            )
+            image_result = await ChapterContentPage.image_generator.generate_image(prompt)
+            if image_result.path and os.path.exists(image_result.path):
+                image_path = image_result.path
+        except Exception:
+            logger.exception(f"{ChapterContentPage.__name__}: Image generation failed")
+
+        if not image_path:
+            image_path = ChapterContentPage._resolve_placeholder_image_path()
+            if not image_path:
+                raise PPTGenError(f"{ChapterContentPage.__name__}: Unable to resolve image path for shape '{shape_name}'")
+
+        return ChapterSlideAsset(
+            shape_name=shape_name,
+            location_index=location_index,
+            content_type=ComponentContentType.PICTURE,
+            path=image_path,
+        )
+
+    @staticmethod
+    async def _resolve_icon_asset(
+        shape_name: str,
+        location_index: int,
+        content_title: str,
+        section_titles: list[str],
+        section_texts: list[str],
+        theme: PresentationTheme | None,
+        icon_index: int,
+    ) -> ChapterSlideAsset:
+        icon_path = None
+        try:
+            query = content_title
+            if location_index < len(section_titles) and section_titles[location_index]:
+                query = section_titles[location_index]
+            elif location_index < len(section_texts) and section_texts[location_index]:
+                query = section_texts[location_index]
+
+            logger.info(
+                "{}: searching icon for slide '{}' using query '{}'",
+                ChapterContentPage.__name__,
+                content_title,
+                query,
+            )
+            results = await ChapterContentPage.icon_searcher.search_icons(query, k=1)
+            if results:
+                rel_path = results[0]
+                abs_path = os.path.join(Path(__file__).resolve().parents[3], rel_path)
+                icon_path = abs_path if os.path.exists(abs_path) else rel_path
+        except Exception:
+            logger.exception(f"{ChapterContentPage.__name__}: Icon search failed")
+
+        if not icon_path:
+            icon_path = ChapterContentPage._resolve_placeholder_image_path()
+            if not icon_path:
+                raise PPTGenError(f"{ChapterContentPage.__name__}: Unable to resolve icon path for shape '{shape_name}'")
+
+        icon_path = ChapterContentPage._prepare_icon_for_theme(icon_path, theme, icon_index)
+        return ChapterSlideAsset(
+            shape_name=shape_name,
+            location_index=location_index,
+            content_type=ComponentContentType.ICON,
+            path=icon_path,
+        )
+
+    @staticmethod
+    async def _prepare_slide_data(
+        content: Heading,
+        *,
+        style_override: Style | None = None,
+        theme: PresentationTheme | None = None,
+    ) -> ChapterSlideData:
+        assert content.level in (2, 3), (
+            f"{ChapterContentPage.__name__}: Chapter content page must have a level 2 or level 3 heading"
+        )
+
+        slide_type = ChapterContentPage._get_slide_type(content)
+        if slide_type > 4:
+            raise PPTGenError(f"{ChapterContentPage.__name__}: Invalid slide type: {slide_type}")
+
+        section_titles = [child.element_text for child in content.children]
+        section_texts = [child.text for child in content.children]
+        chapter_layout = ChapterLayout(slide_type)
+        if style_override is not None:
+            style = style_override
+        else:
+            style = components_manager.get_random_style(chapter_layout)
+
+        logger.debug(f"{ChapterContentPage.__name__}: {chapter_layout} {style.name if style else 'None'}")
+
+        assets: dict[tuple[str, int, ComponentContentType], ChapterSlideAsset] = {}
+        icon_index = 0
+        sorted_shapes = sorted(style.shapes.items(), key=lambda x: x[1].zorder)
+        for shape_name, shape in sorted_shapes:
+            for idx, _loc in enumerate(shape.location):
+                match shape.content_type:
+                    case ComponentContentType.PICTURE:
+                        asset = await ChapterContentPage._resolve_picture_asset(
+                            shape_name,
+                            idx,
+                            content.element_text,
+                            section_titles,
+                        )
+                        assets[ChapterContentPage._asset_key(shape_name, idx, ComponentContentType.PICTURE)] = asset
+                    case ComponentContentType.ICON:
+                        asset = await ChapterContentPage._resolve_icon_asset(
+                            shape_name,
+                            idx,
+                            content.element_text,
+                            section_titles,
+                            section_texts,
+                            theme,
+                            icon_index,
+                        )
+                        assets[ChapterContentPage._asset_key(shape_name, idx, ComponentContentType.ICON)] = asset
+                        icon_index += 1
+
+        return ChapterSlideData(
+            content_title=content.element_text,
+            section_titles=section_titles,
+            section_texts=section_texts,
+            style=style,
+            assets=assets,
+        )
 
     @staticmethod
     async def generate_slide(
