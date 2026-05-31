@@ -1765,6 +1765,96 @@
                     }
                 ]
             }
+        },
+        "upload_deck_3ff51ef2_p33": {
+            "picture_0": {
+                "xml": null,
+                "zorder": 1,
+                "content_type": "picture",
+                "location": [
+                    {
+                        "x": 6724015,
+                        "y": 0,
+                        "width": 5467985,
+                        "height": 6861810
+                    }
+                ]
+            },
+            "content_0": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"2\" name=\"rectangle_1\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"1097692\" y=\"2089975\"/>\n      <a:ext cx=\"4451561\" cy=\"868424\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"just\">\n        <a:lnSpc>\n          <a:spcPct val=\"150000\"/>\n        </a:lnSpc>\n        <a:spcBef>\n          <a:spcPct val=\"0\"/>\n        </a:spcBef>\n        <a:spcAft>\n          <a:spcPct val=\"0\"/>\n        </a:spcAft>\n        <a:defRPr/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"1200\" kern=\"0\" dirty=\"0\">\n          <a:ln>\n            <a:noFill/>\n            <a:prstDash val=\"sysDot\"/>\n          </a:ln>\n          <a:solidFill>\n            <a:schemeClr val=\"tx1\">\n              <a:lumMod val=\"85000\"/>\n              <a:lumOff val=\"15000\"/>\n            </a:schemeClr>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n          <a:cs typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>Text</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "zorder": 2,
+                "content_type": "content",
+                "location": [
+                    {
+                        "x": 1097692,
+                        "y": 2089975,
+                        "width": 4451561,
+                        "height": 868424
+                    },
+                    {
+                        "x": 1097692,
+                        "y": 3703357,
+                        "width": 4451561,
+                        "height": 868424
+                    },
+                    {
+                        "x": 1097692,
+                        "y": 5317374,
+                        "width": 4451561,
+                        "height": 868424
+                    }
+                ]
+            },
+            "title_0": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"4\" name=\"rectangle_3\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"1097692\" y=\"1663296\"/>\n      <a:ext cx=\"4451562\" cy=\"379694\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"b\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr>\n        <a:spcBef>\n          <a:spcPct val=\"0\"/>\n        </a:spcBef>\n        <a:spcAft>\n          <a:spcPct val=\"0\"/>\n        </a:spcAft>\n        <a:defRPr/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"1600\" b=\"1\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\"/>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n          <a:cs typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>Text</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "zorder": 3,
+                "content_type": "title",
+                "location": [
+                    {
+                        "x": 1097692,
+                        "y": 1663296,
+                        "width": 4451562,
+                        "height": 379694
+                    },
+                    {
+                        "x": 1097692,
+                        "y": 3277313,
+                        "width": 4451562,
+                        "height": 379694
+                    },
+                    {
+                        "x": 1097692,
+                        "y": 4891329,
+                        "width": 4451562,
+                        "height": 379694
+                    }
+                ]
+            },
+            "number_0": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"3\" name=\"ellipse_2\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"702760\" y=\"1763616\"/>\n      <a:ext cx=\"321279\" cy=\"321279\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"ellipse\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:solidFill>\n      <a:schemeClr val=\"accent1\"/>\n    </a:solidFill>\n    <a:effectLst/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"none\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\" anchorCtr=\"0\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"ctr\">\n        <a:spcBef>\n          <a:spcPct val=\"0\"/>\n        </a:spcBef>\n        <a:spcAft>\n          <a:spcPct val=\"0\"/>\n        </a:spcAft>\n        <a:defRPr/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" altLang=\"zh-CN\" sz=\"1400\" b=\"1\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n          <a:cs typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>Text</a:t>\n      </a:r>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"1400\" b=\"1\" dirty=\"0\">\n        <a:solidFill>\n          <a:srgbClr val=\"FFFFFF\"/>\n        </a:solidFill>\n        <a:latin typeface=\"+mn-ea\"/>\n        <a:cs typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "zorder": 4,
+                "content_type": "number",
+                "location": [
+                    {
+                        "x": 702760,
+                        "y": 1763616,
+                        "width": 321279,
+                        "height": 321279
+                    },
+                    {
+                        "x": 702760,
+                        "y": 3376998,
+                        "width": 321279,
+                        "height": 321279
+                    },
+                    {
+                        "x": 702760,
+                        "y": 4991015,
+                        "width": 321279,
+                        "height": 321279
+                    }
+                ]
+            }
         }
     },
     "page_placeholders": {
