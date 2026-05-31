@@ -1288,6 +1288,112 @@ class ChapterContentPage(Page):
         )
 
     @staticmethod
+    def _get_prepared_asset(
+        slide_data: ChapterSlideData,
+        shape_name: str,
+        location_index: int,
+        content_type: ComponentContentType,
+    ) -> ChapterSlideAsset:
+        key = ChapterContentPage._asset_key(shape_name, location_index, content_type)
+        try:
+            return slide_data.assets[key]
+        except KeyError as exc:
+            raise PPTGenError(
+                f"{ChapterContentPage.__name__}: Missing prepared asset for shape '{shape_name}' "
+                f"at location {location_index}"
+            ) from exc
+
+    @staticmethod
+    def _render_slide(prs: Presentation, new_slide: Slide, slide_data: ChapterSlideData) -> None:
+        title_shape = Page._find_or_inject_placeholder(
+            slide=new_slide,
+            page_type="chapter_content",
+            role="title",
+            text=slide_data.content_title,
+            placeholder_types=(PP_PLACEHOLDER.TITLE,),
+            shape_name_prefix="content_title",
+        )
+        if not title_shape:
+            logger.warning(
+                f"{ChapterContentPage.__name__}: No title placeholder found and no fallback data "
+                f"in shape.json page_placeholders.chapter_content; title will not be displayed"
+            )
+
+        index = 0
+        sorted_shapes = sorted(slide_data.style.shapes.items(), key=lambda x: x[1].zorder)
+        for shape_name, shape in sorted_shapes:
+            locs = shape.location
+            for idx, loc in enumerate(locs):
+                scaled_loc = Page._scale_shape_location(prs, loc)
+                match shape.content_type:
+                    case ComponentContentType.CONTENT:
+                        if len(slide_data.section_texts) != len(locs):
+                            raise PPTGenError(
+                                f"{ChapterContentPage.__name__}: "
+                                f"Text content must be equal to the number of locations: "
+                                f"{len(slide_data.section_texts)} != {len(locs)}"
+                            )
+                        assert shape.xml is not None
+                        added_shape = ShapeFactory.create_text_shape(
+                            new_slide,
+                            shape.xml,
+                            slide_data.section_texts[idx],
+                            scaled_loc,
+                            shape_id=index,
+                            shape_name=shape_name,
+                        )
+                        Page._shape_alignment(added_shape)
+                    case ComponentContentType.TITLE:
+                        if len(slide_data.section_titles) != len(locs):
+                            raise PPTGenError(
+                                f"{ChapterContentPage.__name__}: "
+                                f"Title must be equal to the number of locations: "
+                                f"{len(slide_data.section_titles)} != {len(locs)}"
+                            )
+                        assert shape.xml is not None
+                        added_shape = ShapeFactory.create_text_shape(
+                            new_slide,
+                            shape.xml,
+                            slide_data.section_titles[idx],
+                            scaled_loc,
+                            shape_id=index,
+                            shape_name=shape_name,
+                        )
+                        Page._shape_alignment(added_shape)
+                    case ComponentContentType.PICTURE:
+                        asset = ChapterContentPage._get_prepared_asset(
+                            slide_data, shape_name, idx, ComponentContentType.PICTURE
+                        )
+                        added_shape = ShapeFactory.create_image_shape(new_slide, asset.path, scaled_loc)
+                    case ComponentContentType.NUMBER:
+                        assert shape.xml is not None
+                        added_shape = ShapeFactory.create_text_shape(
+                            new_slide,
+                            shape.xml,
+                            str(idx + 1).zfill(2),
+                            scaled_loc,
+                            shape_id=index,
+                            shape_name=shape_name,
+                        )
+                    case ComponentContentType.ICON:
+                        asset = ChapterContentPage._get_prepared_asset(
+                            slide_data, shape_name, idx, ComponentContentType.ICON
+                        )
+                        added_shape = ShapeFactory.create_image_shape(new_slide, asset.path, scaled_loc)
+                    case _:
+                        added_shape = ShapeFactory.create_xml_shape(
+                            new_slide,
+                            shape.xml,  # type: ignore
+                            scaled_loc,
+                            shape_id=index,
+                            shape_name=shape_name,
+                        )
+            index += 1
+
+        if title_shape is not None:
+            Page.bring_shape_to_front(title_shape)
+
+    @staticmethod
     async def generate_slide(
         prs: Presentation,
         content: Heading,
@@ -1308,163 +1414,14 @@ class ChapterContentPage(Page):
             style_override: if set, use this Style instead of calling get_random_style()
             theme: if set, recolor inserted icons with accent1/accent2
         """
-        assert content.level in (2, 3), (
-            f"{ChapterContentPage.__name__}: Chapter content page must have a level 2 or level 3 heading"
+        slide_data = await ChapterContentPage._prepare_slide_data(
+            content,
+            style_override=style_override,
+            theme=theme,
         )
-
-        slide_type = ChapterContentPage._get_slide_type(content)
-        if slide_type > 4:
-            raise PPTGenError(f"{ChapterContentPage.__name__}: Invalid slide type: {slide_type}")
-        titles = [child.element_text for child in content.children]
-        section_texts = [child.text for child in content.children]
-
         chapter_page = prs.slides[chapter_page_index]
         new_slide = prs.slides.add_slide(chapter_page.slide_layout)
-
-        title_shape = Page._find_or_inject_placeholder(
-            slide=new_slide,
-            page_type="chapter_content",
-            role="title",
-            text=content.element_text,
-            placeholder_types=(PP_PLACEHOLDER.TITLE,),
-            shape_name_prefix="content_title",
-        )
-        if not title_shape:
-            logger.warning(
-                f"{ChapterContentPage.__name__}: No title placeholder found and no fallback data "
-                f"in shape.json page_placeholders.chapter_content; title will not be displayed"
-            )
-
-        index = 0
-        chapter_layout = ChapterLayout(slide_type)
-        if style_override is not None:
-            style = style_override
-        else:
-            style = components_manager.get_random_style(chapter_layout)
-        logger.debug(f"{ChapterContentPage.__name__}: {chapter_layout} {style.name if style else 'None'}")
-
-        # Sort by zorder
-        sorted_shapes = sorted(style.shapes.items(), key=lambda x: x[1].zorder)
-        icon_index = 0
-
-        for shape_name, shape in sorted_shapes:
-            # locs must be in order
-            locs = shape.location
-            for idx, loc in enumerate(locs):
-                scaled_loc = Page._scale_shape_location(prs, loc)
-                match shape.content_type:
-                    case ComponentContentType.CONTENT:
-                        if len(section_texts) != len(locs):
-                            raise PPTGenError(
-                                f"{ChapterContentPage.__name__}: \
-                                            Text content must be equal to the number of locations: {len(section_texts)} != {len(locs)}"
-                            )
-                        assert shape.xml is not None
-                        added_shape = ShapeFactory.create_text_shape(
-                            new_slide,
-                            shape.xml,
-                            section_texts[idx],
-                            scaled_loc,
-                            shape_id=index,
-                            shape_name=shape_name,
-                        )
-                        Page._shape_alignment(added_shape)
-                    case ComponentContentType.TITLE:
-                        if len(titles) != len(locs):
-                            raise PPTGenError(
-                                f"{ChapterContentPage.__name__}: \
-                                            Title must be equal to the number of locations: {len(titles)} != {len(locs)}"
-                            )
-                        assert shape.xml is not None
-                        added_shape = ShapeFactory.create_text_shape(
-                            new_slide,
-                            shape.xml,
-                            titles[idx],
-                            scaled_loc,
-                            shape_id=index,
-                            shape_name=shape_name,
-                        )
-                        Page._shape_alignment(added_shape)
-                    case ComponentContentType.PICTURE:
-                        image_path = None
-                        try:
-                            prompt_text = titles[idx] if idx < len(titles) else content.element_text
-                            prompt = ImagePrompt(prompt=prompt_text, theme_prompt=None)
-
-                            logger.info(
-                                "{}: generating image asset for slide '{}' using prompt '{}...'",
-                                ChapterContentPage.__name__,
-                                content.element_text,
-                                prompt_text[:20],
-                            )
-                            image_result = await ChapterContentPage.image_generator.generate_image(prompt)
-                            if image_result.path and os.path.exists(image_result.path):
-                                image_path = image_result.path
-                        except Exception:
-                            logger.exception(f"{ChapterContentPage.__name__}: Image generation failed")
-
-                        if not image_path:
-                            image_path = ChapterContentPage._resolve_placeholder_image_path()
-                            if not image_path:
-                                raise PPTGenError(
-                                    f"{ChapterContentPage.__name__}: Unable to resolve image path for shape '{shape_name}'"
-                                )
-
-                        added_shape = ShapeFactory.create_image_shape(new_slide, image_path, scaled_loc)
-                    case ComponentContentType.NUMBER:
-                        assert shape.xml is not None
-                        added_shape = ShapeFactory.create_text_shape(
-                            new_slide,
-                            shape.xml,
-                            str(idx + 1).zfill(2),
-                            scaled_loc,
-                            shape_id=index,
-                            shape_name=shape_name,
-                        )
-                    case ComponentContentType.ICON:
-                        icon_path = None
-                        try:
-                            query = content.element_text
-                            if idx < len(titles) and titles[idx]:
-                                query = titles[idx]
-                            elif idx < len(section_texts) and section_texts[idx]:
-                                query = section_texts[idx]
-
-                            logger.info(
-                                "{}: searching icon for slide '{}' using query '{}'",
-                                ChapterContentPage.__name__,
-                                content.element_text,
-                                query,
-                            )
-                            results = await ChapterContentPage.icon_searcher.search_icons(query, k=1)
-                            if results:
-                                rel_path = results[0]
-                                abs_path = os.path.join(Path(__file__).resolve().parents[3], rel_path)
-                                icon_path = abs_path if os.path.exists(abs_path) else rel_path
-                        except Exception:
-                            logger.exception(f"{ChapterContentPage.__name__}: Icon search failed")
-
-                        if not icon_path:
-                            icon_path = ChapterContentPage._resolve_placeholder_image_path()
-                            if not icon_path:
-                                raise PPTGenError(
-                                    f"{ChapterContentPage.__name__}: Unable to resolve icon path for shape '{shape_name}'"
-                                )
-
-                        icon_path = ChapterContentPage._prepare_icon_for_theme(icon_path, theme, icon_index)
-                        added_shape = ShapeFactory.create_image_shape(new_slide, icon_path, scaled_loc)
-                        icon_index += 1
-                    case _:
-                        added_shape = ShapeFactory.create_xml_shape(
-                            new_slide,
-                            shape.xml,  # type: ignore
-                            scaled_loc,
-                            shape_id=index,
-                            shape_name=shape_name,
-                        )
-            index += 1
-        if title_shape is not None:
-            Page.bring_shape_to_front(title_shape)
+        ChapterContentPage._render_slide(prs, new_slide, slide_data)
         ChapterContentPage.move_slide(prs, new_slide, slide_index)
 
 
