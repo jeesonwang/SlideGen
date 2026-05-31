@@ -1700,6 +1700,71 @@
                     }
                 ]
             }
+        },
+        "upload_deck_3ff51ef2_p38": {
+            "picture_0": {
+                "xml": null,
+                "zorder": 1,
+                "content_type": "picture",
+                "location": [
+                    {
+                        "x": 6205775,
+                        "y": 990575,
+                        "width": 5290980,
+                        "height": 5175300
+                    }
+                ]
+            },
+            "content_0": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"3\" name=\"rectangle_2\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"690692\" y=\"1995613\"/>\n      <a:ext cx=\"3393181\" cy=\"951971\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"just\">\n        <a:lnSpc>\n          <a:spcPct val=\"150000\"/>\n        </a:lnSpc>\n        <a:spcBef>\n          <a:spcPct val=\"0\"/>\n        </a:spcBef>\n        <a:spcAft>\n          <a:spcPct val=\"0\"/>\n        </a:spcAft>\n        <a:defRPr/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"1200\" dirty=\"0\">\n          <a:solidFill>\n            <a:schemeClr val=\"tx1\">\n              <a:lumMod val=\"85000\"/>\n              <a:lumOff val=\"15000\"/>\n            </a:schemeClr>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n          <a:cs typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>Text</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "zorder": 2,
+                "content_type": "content",
+                "location": [
+                    {
+                        "x": 690692,
+                        "y": 1995613,
+                        "width": 3393181,
+                        "height": 951971
+                    },
+                    {
+                        "x": 690692,
+                        "y": 3431507,
+                        "width": 3393181,
+                        "height": 951971
+                    },
+                    {
+                        "x": 690692,
+                        "y": 4867401,
+                        "width": 3393181,
+                        "height": 951971
+                    }
+                ]
+            },
+            "title_0": {
+                "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"4\" name=\"rectangle_3\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"690692\" y=\"1641243\"/>\n      <a:ext cx=\"3389370\" cy=\"329015\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\" anchorCtr=\"0\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr>\n        <a:spcBef>\n          <a:spcPct val=\"0\"/>\n        </a:spcBef>\n        <a:spcAft>\n          <a:spcPct val=\"0\"/>\n        </a:spcAft>\n        <a:defRPr/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" b=\"1\" dirty=\"0\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\"/>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n          <a:cs typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>Text</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                "zorder": 3,
+                "content_type": "title",
+                "location": [
+                    {
+                        "x": 690692,
+                        "y": 1641243,
+                        "width": 3389370,
+                        "height": 329015
+                    },
+                    {
+                        "x": 690692,
+                        "y": 3066976,
+                        "width": 3389370,
+                        "height": 328966
+                    },
+                    {
+                        "x": 690692,
+                        "y": 4492710,
+                        "width": 3389370,
+                        "height": 328966
+                    }
+                ]
+            }
         }
     },
     "page_placeholders": {

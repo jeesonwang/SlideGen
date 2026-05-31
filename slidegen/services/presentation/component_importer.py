@@ -422,6 +422,11 @@ class LocalShapeRoleClassifier:
             for a in groupable
         }
 
+        self._restore_groupable_state(groupable, original_state)
+        if self._apply_title_anchor_grouping(groupable, summary_by_id):
+            if self._grouping_is_compatible(assignments):
+                return assignments
+
         for axis in ("y", "x"):
             self._restore_groupable_state(groupable, original_state)
             if self._apply_axis_grouping(groupable, summary_by_id, axis=axis):
@@ -437,6 +442,82 @@ class LocalShapeRoleClassifier:
                 a.group_index = None
 
         return assignments
+
+    @staticmethod
+    def _apply_title_anchor_grouping(
+        groupable: list[ShapeAssignment],
+        summary_by_id: dict[int, ShapeSummary],
+    ) -> bool:
+        """Group title/content lists by assigning each content shape to its nearest title."""
+        titles = [a for a in groupable if a.content_type == ComponentContentType.TITLE]
+        contents = [a for a in groupable if a.content_type == ComponentContentType.CONTENT]
+        if len(titles) < 2 or len(titles) > 4 or len(contents) < len(titles):
+            return False
+
+        titles.sort(
+            key=lambda a: (
+                summary_by_id[a.shape_id].y,
+                summary_by_id[a.shape_id].x,
+            )
+        )
+        title_groups = {a.shape_id: index for index, a in enumerate(titles)}
+
+        for title in titles:
+            title.group_index = title_groups[title.shape_id]
+
+        for assignment in groupable:
+            if assignment.content_type == ComponentContentType.TITLE:
+                continue
+            assignment.group_index = LocalShapeRoleClassifier._nearest_title_group(
+                assignment,
+                titles,
+                title_groups,
+                summary_by_id,
+            )
+
+        return True
+
+    @staticmethod
+    def _nearest_title_group(
+        assignment: ShapeAssignment,
+        titles: list[ShapeAssignment],
+        title_groups: dict[int, int],
+        summary_by_id: dict[int, ShapeSummary],
+    ) -> int:
+        summary = summary_by_id[assignment.shape_id]
+        center_x = summary.x + summary.width / 2
+        center_y = summary.y + summary.height / 2
+
+        best_title = min(
+            titles,
+            key=lambda title: LocalShapeRoleClassifier._title_anchor_score(
+                center_x,
+                center_y,
+                summary,
+                summary_by_id[title.shape_id],
+            ),
+        )
+        return title_groups[best_title.shape_id]
+
+    @staticmethod
+    def _title_anchor_score(
+        center_x: float,
+        center_y: float,
+        summary: ShapeSummary,
+        title_summary: ShapeSummary,
+    ) -> tuple[int, float, float]:
+        title_center_x = title_summary.x + title_summary.width / 2
+        title_center_y = title_summary.y + title_summary.height / 2
+
+        is_above = title_summary.y <= center_y
+        horizontal_overlap = not (
+            summary.x > title_summary.x + title_summary.width or title_summary.x > summary.x + summary.width
+        )
+        return (
+            0 if is_above else 1,
+            abs(center_x - title_center_x) if not horizontal_overlap else 0,
+            abs(center_y - title_center_y),
+        )
 
     @staticmethod
     def _apply_axis_grouping(
@@ -831,20 +912,23 @@ def validate_compatibility(
     """
     point_count = layout_type.value
 
-    title_groups = set()
-    content_groups = set()
+    title_counts: dict[int, int] = {}
+    content_counts: dict[int, int] = {}
 
     for a in assignments:
         if not a.include or a.group_index is None:
             continue
         if a.content_type == ComponentContentType.TITLE:
-            title_groups.add(a.group_index)
+            title_counts[a.group_index] = title_counts.get(a.group_index, 0) + 1
         elif a.content_type == ComponentContentType.CONTENT:
-            content_groups.add(a.group_index)
+            content_counts[a.group_index] = content_counts.get(a.group_index, 0) + 1
 
-    if not title_groups:
+    title_groups = set(title_counts)
+    content_groups = set(content_counts)
+
+    if not title_counts:
         return False, "No TITLE shape found."
-    if not content_groups:
+    if not content_counts:
         return False, "No CONTENT shape found."
 
     # TITLE groups must cover 0..point_count-1
@@ -853,6 +937,15 @@ def validate_compatibility(
         return False, (f"TITLE group indices {sorted(title_groups)} don't cover 0..{point_count - 1}.")
     if content_groups != expected_groups:
         return False, (f"CONTENT group indices {sorted(content_groups)} don't cover 0..{point_count - 1}.")
+
+    for group_index in sorted(expected_groups):
+        title_count = title_counts.get(group_index, 0)
+        if title_count != 1:
+            return False, f"TITLE group {group_index} has {title_count} shapes; expected exactly 1."
+
+        content_count = content_counts.get(group_index, 0)
+        if content_count != 1:
+            return False, f"CONTENT group {group_index} has {content_count} shapes; expected exactly 1."
 
     return True, ""
 

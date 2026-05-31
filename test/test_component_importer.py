@@ -107,6 +107,32 @@ def _two_point_slide():
     return prs, slide
 
 
+def _vertical_three_point_slide_with_tight_gaps():
+    """Create a three-point vertical list whose inter-item gaps are too small for gap-only grouping."""
+    prs, slide = _blank_slide()
+
+    # Right-side visual area, matching the real slide pattern and preventing the
+    # first section heading from looking like a slide-level title.
+    slide.shapes.add_textbox(Emu(7500000), Emu(900000), Emu(2600000), Emu(3600000)).text = ""
+
+    groups = [
+        ("Machine Translation", "RNN models can encode source sentences and decode target language translations."),
+        ("Text Generation", "RNN models can generate stories or poems from a given context with coherent structure."),
+        ("Question Answering", "RNN models can read a question and retrieve useful information from memory."),
+    ]
+
+    y = 500000
+    for title, body in groups:
+        title_box = slide.shapes.add_textbox(Emu(600000), Emu(y), Emu(3000000), Emu(350000))
+        title_box.text_frame.paragraphs[0].text = title
+        title_box.text_frame.paragraphs[0].font.bold = True
+        body_box = slide.shapes.add_textbox(Emu(600000), Emu(y + 350000), Emu(3600000), Emu(800000))
+        body_box.text = body
+        y += 1050000
+
+    return prs, slide
+
+
 # --- Step 1: Core types ---
 
 
@@ -304,6 +330,20 @@ def test_local_classifier_groups_horizontal_columns_by_visual_group():
     assert valid, reason
 
 
+def test_local_classifier_groups_vertical_title_content_list_by_title_anchors():
+    _prs, slide = _vertical_three_point_slide_with_tight_gaps()
+
+    classifier = PageTypeClassifier()
+    summaries = classifier.summarize_slide(slide)
+    local = LocalShapeRoleClassifier()
+
+    assignments = local.assign_group_indices(local.classify(summaries), summaries)
+
+    assert identify_layout_type(assignments) == ChapterLayout.THREE_POINTS
+    valid, reason = validate_compatibility(assignments, ChapterLayout.THREE_POINTS)
+    assert valid, reason
+
+
 # --- Step 4: Layout identification ---
 
 
@@ -352,6 +392,41 @@ def test_identify_layout_type_two_points():
     ]
     layout = identify_layout_type(assignments)
     assert layout == ChapterLayout.TWO_POINTS
+
+
+def test_validate_compatibility_rejects_duplicate_content_in_same_group():
+    assignments = [
+        ShapeAssignment(
+            shape_id=1,
+            content_type=ComponentContentType.TITLE,
+            group_index=0,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
+        ShapeAssignment(
+            shape_id=2,
+            content_type=ComponentContentType.CONTENT,
+            group_index=0,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
+        ShapeAssignment(
+            shape_id=3,
+            content_type=ComponentContentType.CONTENT,
+            group_index=0,
+            include=True,
+            reason="",
+            confidence=0.9,
+        ),
+    ]
+
+    valid, reason = validate_compatibility(assignments, ChapterLayout.ONE_POINT)
+
+    assert not valid
+    assert "CONTENT" in reason
+    assert "group 0" in reason
 
 
 def test_identify_layout_type_returns_none_for_no_content():
