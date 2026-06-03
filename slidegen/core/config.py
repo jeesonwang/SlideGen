@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     COMPONENTS_PATH: Path = COMPONENTS_BASE_PATH / "shapes" / "shapes.json"
     LOG_DIR: str = (PROJECT_ROOT / "logs").as_posix()
     OUTPUT_DIR: Path = PROJECT_ROOT / "outputs" / "presentations"
+    TEMP_DIRECTORY: str | None = None
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
     SECRET_KEY: str = secrets.token_urlsafe(32)
@@ -86,6 +87,13 @@ class Settings(BaseSettings):
     # [THUMBNAILS]
     THUMBNAILS_DIR: Path = COMPONENTS_BASE_PATH / "templates" / "thumbnails"
     THUMBNAIL_WIDTH: int = 400  # Thumbnail width in pixels
+
+    # [IMAGE GENERATION]
+    IMAGE_PROVIDER: Literal["pexels", "pixabay", "gemini_flash", "dall-e-3"] | None = None
+    PEXELS_API_KEY: str | None = None
+    PIXABAY_API_KEY: str | None = None
+    GOOGLE_API_KEY: str | None = None
+    OPENAI_API_KEY: str | None = None
 
     # [CHROMA]
     CHROMA_BASE_PATH: Path = PROJECT_ROOT / "chroma"

@@ -21,6 +21,7 @@ from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 from pptx.util import Length
 
+from slidegen.core.config import settings
 from slidegen.exceptions import PPTGenError, PPTTemplateError
 from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.schemas.theme import PresentationTheme
@@ -34,7 +35,6 @@ from slidegen.services.presentation.components import (
 )
 from slidegen.services.presentation.icon_searcher import IconSearcher, icon_searcher
 from slidegen.services.presentation.image_generator import ImageGenerator
-from slidegen.utils.env import get_temp_directory_env
 from slidegen.utils.slide import (
     add_para_by_xml,
     add_shape_by_xml,
@@ -1035,7 +1035,7 @@ class ChapterContentPage(Page):
     """
 
     image_generator: ImageGenerator = ImageGenerator(
-        get_temp_directory_env() or os.path.join(os.getcwd(), "generated_images")
+        settings.TEMP_DIRECTORY or os.path.join(os.getcwd(), "generated_images")
     )
     icon_searcher: IconSearcher = icon_searcher
 
@@ -1099,7 +1099,7 @@ class ChapterContentPage(Page):
             return icon_path
 
         if output_dir is None:
-            output_root = Path(get_temp_directory_env() or tempfile.gettempdir()) / "slidegen_recolored_icons"
+            output_root = Path(settings.TEMP_DIRECTORY or tempfile.gettempdir()) / "slidegen_recolored_icons"
         else:
             output_root = Path(output_dir)
         output_root.mkdir(parents=True, exist_ok=True)

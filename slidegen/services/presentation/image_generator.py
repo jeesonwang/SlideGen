@@ -10,10 +10,10 @@ from google.genai.types import GenerateContentConfig
 from loguru import logger
 from openai import AsyncOpenAI
 
+from slidegen.core.config import settings
 from slidegen.models.image_asset import ImageAsset
 from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.utils.download import download_file
-from slidegen.utils.env import get_pexels_api_key_env, get_pixabay_api_key_env
 from slidegen.utils.image import (
     is_dalle3_selected,
     is_gemini_flash_selected,
@@ -110,7 +110,7 @@ class ImageGenerator:
         async with aiohttp.ClientSession(trust_env=True) as session:
             response = await session.get(
                 f"https://api.pexels.com/v1/search?query={quote_plus(prompt)}&per_page=1",
-                headers={"Authorization": f"{get_pexels_api_key_env()}"},
+                headers={"Authorization": f"{settings.PEXELS_API_KEY}"},
             )
             data = await response.json()
             try:
@@ -123,7 +123,7 @@ class ImageGenerator:
     async def get_image_from_pixabay(self, prompt: str, output_directory: str) -> str:
         async with aiohttp.ClientSession(trust_env=True) as session:
             response = await session.get(
-                f"https://pixabay.com/api/?key={get_pixabay_api_key_env()}&q={quote_plus(prompt)}&image_type=photo&per_page=3"
+                f"https://pixabay.com/api/?key={settings.PIXABAY_API_KEY}&q={quote_plus(prompt)}&image_type=photo&per_page=3"
             )
             data = await response.json()
             try:

@@ -1,12 +1,6 @@
 from enum import Enum
 
-from .env import (
-    get_google_api_key_env,
-    get_image_provider_env,
-    get_openai_api_key_env,
-    get_pexels_api_key_env,
-    get_pixabay_api_key_env,
-)
+from slidegen.core.config import settings
 
 
 class ImageProvider(Enum):
@@ -38,21 +32,20 @@ def get_selected_image_provider() -> ImageProvider | None:
     Returns:
         ImageProvider: The selected image provider.
     """
-    image_provider_env = get_image_provider_env()
-    if image_provider_env:
-        return ImageProvider(image_provider_env)
+    if settings.IMAGE_PROVIDER:
+        return ImageProvider(settings.IMAGE_PROVIDER)
     return None
 
 
 def get_image_provider_api_key() -> str | None:
     selected_image_provider = get_selected_image_provider()
     if selected_image_provider == ImageProvider.PEXELS:
-        return get_pexels_api_key_env()
+        return settings.PEXELS_API_KEY
     elif selected_image_provider == ImageProvider.PIXABAY:
-        return get_pixabay_api_key_env()
+        return settings.PIXABAY_API_KEY
     elif selected_image_provider == ImageProvider.GEMINI_FLASH:
-        return get_google_api_key_env()
+        return settings.GOOGLE_API_KEY
     elif selected_image_provider == ImageProvider.DALLE3:
-        return get_openai_api_key_env()
+        return settings.OPENAI_API_KEY
     else:
         raise ValueError(f"Invalid image provider: {selected_image_provider}")

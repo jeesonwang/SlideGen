@@ -37,3 +37,21 @@ def test_settings_cors_origins_accepts_env_formats(monkeypatch: pytest.MonkeyPat
 
     assert settings.BACKEND_CORS_ORIGINS == expected
     assert isinstance(settings.BACKEND_CORS_ORIGINS, list)
+
+
+def test_settings_reads_image_and_temp_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TEMP_DIRECTORY", "/tmp/slidegen")
+    monkeypatch.setenv("IMAGE_PROVIDER", "pexels")
+    monkeypatch.setenv("PEXELS_API_KEY", "pexels-key")
+    monkeypatch.setenv("PIXABAY_API_KEY", "pixabay-key")
+    monkeypatch.setenv("GOOGLE_API_KEY", "google-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-key")
+
+    settings = Settings()
+
+    assert settings.TEMP_DIRECTORY == "/tmp/slidegen"
+    assert settings.IMAGE_PROVIDER == "pexels"
+    assert settings.PEXELS_API_KEY == "pexels-key"
+    assert settings.PIXABAY_API_KEY == "pixabay-key"
+    assert settings.GOOGLE_API_KEY == "google-key"
+    assert settings.OPENAI_API_KEY == "openai-key"
