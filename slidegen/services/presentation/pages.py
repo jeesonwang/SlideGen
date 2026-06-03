@@ -732,7 +732,6 @@ class CatalogPage(Page):
 
         return catalog_list
 
-
     @staticmethod
     async def generate_slide(
         prs: Presentation,
@@ -1138,7 +1137,6 @@ class ChapterContentPage(Page):
         """
         return len(content)
 
-
     @staticmethod
     def _asset_key(
         shape_name: str,
@@ -1174,7 +1172,9 @@ class ChapterContentPage(Page):
         if not image_path:
             image_path = ChapterContentPage._resolve_placeholder_image_path()
             if not image_path:
-                raise PPTGenError(f"{ChapterContentPage.__name__}: Unable to resolve image path for shape '{shape_name}'")
+                raise PPTGenError(
+                    f"{ChapterContentPage.__name__}: Unable to resolve image path for shape '{shape_name}'"
+                )
 
         return ChapterSlideAsset(
             shape_name=shape_name,
@@ -1218,7 +1218,9 @@ class ChapterContentPage(Page):
         if not icon_path:
             icon_path = ChapterContentPage._resolve_placeholder_image_path()
             if not icon_path:
-                raise PPTGenError(f"{ChapterContentPage.__name__}: Unable to resolve icon path for shape '{shape_name}'")
+                raise PPTGenError(
+                    f"{ChapterContentPage.__name__}: Unable to resolve icon path for shape '{shape_name}'"
+                )
 
         icon_path = ChapterContentPage._prepare_icon_for_theme(icon_path, theme, icon_index)
         return ChapterSlideAsset(
