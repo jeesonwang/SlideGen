@@ -19,6 +19,7 @@ from pptx.presentation import Presentation
 from pptx.shapes.autoshape import Shape
 from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
+from pptx.util import Length
 
 from slidegen.exceptions import PPTGenError, PPTTemplateError
 from slidegen.schemas.image_prompt import ImagePrompt
@@ -329,7 +330,7 @@ class ShapeFactory:
             shape_xml=xml,
             shape_id=shape_id if shape_id is not None else slide.shapes._next_shape_id,
             shape_name=shape_name,
-            text_content=text,
+            text_content=text if text is not None else "",
             location=location,
         )
 
@@ -361,10 +362,10 @@ class ShapeFactory:
         """Create an image shape at the given location."""
         return slide.shapes.add_picture(
             image_path,
-            location.x,
-            location.y,
-            location.width,
-            location.height,
+            Length(location.x),
+            Length(location.y),
+            Length(location.width),
+            Length(location.height),
         )
 
 
@@ -1324,6 +1325,7 @@ class ChapterContentPage(Page):
         for shape_name, shape in sorted_shapes:
             locs = shape.location
             for idx, loc in enumerate(locs):
+                added_shape: BaseShape
                 scaled_loc = Page._scale_shape_location(prs, loc)
                 match shape.content_type:
                     case ComponentContentType.CONTENT:
