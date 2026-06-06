@@ -22,8 +22,8 @@ assert.equal(
 
 assert.equal(
   composerSource.includes('workbench-tip-panel'),
-  true,
-  'Generation page should render the refreshed tip surface above the composer stage'
+  false,
+  'Generation page should keep the composer focused without a separate tip surface'
 );
 
 for (const [name, source] of [

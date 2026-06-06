@@ -2,8 +2,6 @@ import { Button, List, Space, Tag, Typography } from 'antd';
 import {
   ArrowRightOutlined,
   ClockCircleOutlined,
-  FileAddOutlined,
-  FolderOpenOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -88,14 +86,6 @@ export const DashboardPage = () => {
                 className="!h-12 !rounded-xl !px-5"
               >
                 Start from a topic
-              </Button>
-              <Button
-                icon={<FileAddOutlined />}
-                size="large"
-                onClick={() => navigate('/knowledge-base')}
-                className="!h-12 !rounded-xl !border-border/70 !bg-surface-100 !px-5 !text-text-main"
-              >
-                Import references
               </Button>
             </div>
           </div>
@@ -198,7 +188,7 @@ export const DashboardPage = () => {
             {recentSessions.length === 0 ? (
               <div className="rounded-[1.5rem] border border-dashed border-border px-5 py-6">
                 <Text className="block text-sm leading-6 !text-text-secondary">
-                  No recent projects yet. Start from a topic or open the reference library to import existing material.
+                  No recent projects yet. Start from a topic and upload supporting material in the composer.
                 </Text>
               </div>
             ) : (
@@ -239,14 +229,6 @@ export const DashboardPage = () => {
                             className="!h-10 !rounded-xl !border-border/70 !bg-surface-100 !text-text-main"
                           >
                             Continue editing
-                          </Button>
-                          <Button
-                            type="link"
-                            icon={<FolderOpenOutlined />}
-                            onClick={() => navigate('/knowledge-base')}
-                            className="!px-0 !text-primary-600"
-                          >
-                            Open references
                           </Button>
                         </div>
                       </div>

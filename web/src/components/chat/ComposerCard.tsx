@@ -3,7 +3,6 @@ import {
   FileAddOutlined,
   FileTextOutlined,
   LoadingOutlined,
-  RobotOutlined,
 } from '@ant-design/icons';
 import { Input } from 'antd';
 import type { FileMetadataPublic } from '../../api/types/file.types';
@@ -14,12 +13,10 @@ const { TextArea } = Input;
 interface ComposerCardProps {
   input: string;
   isStreaming: boolean;
-  hasMessages: boolean;
   selectedReferenceFiles: FileMetadataPublic[];
   fileInputRef: RefObject<HTMLInputElement | null>;
   onInputChange: (value: string) => void;
   onSend: () => void;
-  onGenerate: () => void;
   onOpenFilePicker: () => void;
   onInlineUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onRemoveReferenceFile: (fileId: string) => void;
@@ -28,32 +25,15 @@ interface ComposerCardProps {
 export const ComposerCard = memo(({
   input,
   isStreaming,
-  hasMessages,
   selectedReferenceFiles,
   fileInputRef,
   onInputChange,
   onSend,
-  onGenerate,
   onOpenFilePicker,
   onInlineUpload,
   onRemoveReferenceFile,
 }: ComposerCardProps) => (
   <div className="mx-auto max-w-5xl">
-    <div className="workbench-tip-panel mb-5 flex items-start gap-3 rounded-[1.6rem] px-4 py-4 sm:px-5">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-surface text-brand-strong">
-        <RobotOutlined className="text-lg" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-[0.95rem] font-semibold text-text-main">
-          Tip: shape the structure first, then refine the slides
-        </div>
-        <p className="mt-1 text-sm leading-6 text-text-secondary">
-          Describe the topic, the audience, and the outcome you want. Upload references when you
-          want the outline grounded in source material.
-        </p>
-      </div>
-    </div>
-
     <div className="mb-8 flex flex-col gap-4 rounded-[2rem] bg-surface-50 px-4 py-4 sm:px-5 workbench-stage-panel">
       <input
         ref={fileInputRef}
@@ -64,9 +44,9 @@ export const ComposerCard = memo(({
         onChange={onInlineUpload}
       />
 
-      <div className="flex flex-wrap gap-2">
-        {selectedReferenceFiles.length > 0 ? (
-          selectedReferenceFiles.map((file) => (
+      {selectedReferenceFiles.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {selectedReferenceFiles.map((file) => (
             <div
               key={file.id}
               className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-surface-100 px-3 py-2 text-xs text-text-main"
@@ -82,13 +62,9 @@ export const ComposerCard = memo(({
                 ×
               </button>
             </div>
-          ))
-        ) : (
-          <div className="rounded-full border border-dashed border-border/70 px-3 py-2 text-xs text-text-secondary">
-            Linked references appear here and are automatically used during generation.
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : null}
 
       <TextArea
         aria-label="Presentation prompt"
@@ -116,15 +92,6 @@ export const ComposerCard = memo(({
           >
             <FileAddOutlined />
             Upload references
-          </button>
-
-          <button
-            type="button"
-            onClick={onGenerate}
-            disabled={isStreaming || !hasMessages}
-            className="inline-flex items-center px-3 py-2 text-primary-600 hover:text-primary-700 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-xs transition-colors"
-          >
-            Regenerate outline
           </button>
         </div>
 

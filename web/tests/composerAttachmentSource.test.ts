@@ -25,11 +25,28 @@ assert.equal(
   true,
   'Composer upload action should use presentation-oriented reference copy'
 );
+assert.equal(
+  composerSource.includes('Linked references appear here and are automatically used during generation.'),
+  false,
+  'Composer should not render redundant empty-state reference helper copy'
+);
 
 assert.equal(
-  composerSource.includes('mb-8 flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-background px-4 py-4 shadow-soft sm:px-5'),
+  composerSource.includes('workbench-stage-panel'),
   true,
   'ChatInterface should render the composer as a card inside the chat flow'
+);
+
+assert.equal(
+  composerSource.includes('Tip: shape the structure first, then refine the slides'),
+  false,
+  'Composer should not render the explanatory tip panel above the prompt input'
+);
+
+assert.equal(
+  composerSource.includes('Regenerate outline'),
+  false,
+  'Composer should remove the secondary regenerate outline action from the prompt toolbar'
 );
 
 assert.equal(

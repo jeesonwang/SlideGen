@@ -3,7 +3,6 @@ import {
   MessageOutlined,
   AppstoreOutlined,
   FileOutlined,
-  BookOutlined,
   SettingOutlined,
   LogoutOutlined,
   PlusOutlined,
@@ -42,7 +41,6 @@ import { DEFAULT_PRESENTATION_TITLE } from '../../utils/constants';
 const menuItems = [
   { key: 'dashboard', icon: <AppstoreOutlined />, label: 'Home', path: '/dashboard' },
   { key: 'projects', icon: <FileOutlined />, label: 'Projects', path: '/sessions' },
-  { key: 'knowledge-base', icon: <BookOutlined />, label: 'Reference Library', path: '/knowledge-base' },
 ];
 
 interface SidebarProps {

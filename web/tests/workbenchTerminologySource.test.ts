@@ -9,6 +9,7 @@ const chatMessageSource = readFileSync(resolve('src/components/chat/ChatMessageI
 const dashboardSource = readFileSync(resolve('src/pages/dashboard/DashboardPage.tsx'), 'utf8');
 const sessionsSource = readFileSync(resolve('src/pages/sessions/SessionsPage.tsx'), 'utf8');
 const filesSource = readFileSync(resolve('src/pages/files/FilesPage.tsx'), 'utf8');
+const routerSource = readFileSync(resolve('src/router.tsx'), 'utf8');
 
 assert.equal(
   sidebarSource.includes('Recent Chats'),
@@ -27,8 +28,18 @@ assert.equal(
 );
 assert.equal(
   sidebarSource.includes('Reference Library'),
-  true,
-  'Sidebar should expose a reference library entry point'
+  false,
+  'Sidebar should not expose references as a top-level workspace entry point'
+);
+assert.equal(
+  dashboardSource.includes("navigate('/knowledge-base')"),
+  false,
+  'Dashboard should keep reference uploads inside the generation workspace instead of linking to a library page'
+);
+assert.equal(
+  routerSource.includes("path: 'knowledge-base'"),
+  false,
+  'Reference library should not remain a directly routed workspace section'
 );
 
 assert.equal(
@@ -83,6 +94,7 @@ for (const [name, source] of [
   ['DashboardPage', dashboardSource],
   ['SessionsPage', sessionsSource],
   ['FilesPage', filesSource],
+  ['router', routerSource],
 ] as const) {
   assert.equal(
     /[\p{Script=Han}]/u.test(source),

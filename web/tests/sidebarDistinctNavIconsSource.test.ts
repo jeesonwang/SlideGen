@@ -12,10 +12,10 @@ assert.match(
   'Projects should keep the document-style navigation icon'
 );
 
-assert.match(
+assert.doesNotMatch(
   sidebarSource,
   /key:\s*'knowledge-base'[\s\S]*icon:\s*<BookOutlined\s*\/>/,
-  'Reference Library should use a distinct library-style icon'
+  'Reference Library should not remain in the primary navigation'
 );
 
 console.log('sidebarDistinctNavIconsSource.test.ts passed');

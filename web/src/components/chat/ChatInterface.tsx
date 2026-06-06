@@ -297,12 +297,10 @@ export const ChatInterface = () => {
     <ComposerCard
       input={input}
       isStreaming={isStreaming}
-      hasMessages={hasMessages}
       selectedReferenceFiles={selectedReferenceFiles}
       fileInputRef={fileInputRef}
       onInputChange={setInput}
       onSend={() => void handleSend()}
-      onGenerate={handleGenerate}
       onOpenFilePicker={handleOpenFilePicker}
       onInlineUpload={(event) => void handleInlineUpload(event)}
       onRemoveReferenceFile={(fileId) => void handleRemoveReferenceFile(fileId)}

@@ -35,9 +35,6 @@ const SessionsPage = lazy(() =>
     default: m.SessionsPage,
   }))
 );
-const FilesPage = lazy(() =>
-  import('./pages/files/FilesPage').then((m) => ({ default: m.FilesPage }))
-);
 const GenerationPage = lazy(() =>
   import('./pages/generation/GenerationPage').then((m) => ({
     default: m.GenerationPage,
@@ -93,10 +90,6 @@ export const router = createBrowserRouter([
       {
         path: 'sessions',
         element: <SessionsPage />,
-      },
-      {
-        path: 'knowledge-base',
-        element: <FilesPage />,
       },
       {
         path: 'generate',
