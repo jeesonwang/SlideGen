@@ -31,6 +31,7 @@ import './workbenchStyleRefreshSource.test.ts';
 import './workbenchTerminologySource.test.ts';
 import './composerAttachmentSource.test.ts';
 import './chatUserBubbleActionsSource.test.ts';
+import './chatEditActionsThemeSource.test.ts';
 import './configDisclosureSource.test.ts';
 import './configFixedWidthLayoutSource.test.ts';
 import './generateComposerSpacingSource.test.ts';

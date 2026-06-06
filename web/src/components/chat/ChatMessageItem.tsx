@@ -101,7 +101,7 @@ export const ChatMessageItem = memo(({
                 <button
                   type="button"
                   onClick={onEditMessageCancel}
-                  className="px-4 py-1.5 rounded-xl bg-white text-text-main text-xs font-medium shadow-sm border border-border/40 hover:bg-surface-50 active:scale-[0.98] transition-all cursor-pointer"
+                  className="px-4 py-1.5 rounded-xl bg-surface-100 text-text-main text-xs font-medium shadow-sm border border-border/70 hover:bg-surface-200 hover:border-border active:scale-[0.98] transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
