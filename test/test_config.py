@@ -55,3 +55,13 @@ def test_settings_reads_image_and_temp_environment(monkeypatch: pytest.MonkeyPat
     assert settings.PIXABAY_API_KEY == "pixabay-key"
     assert settings.GOOGLE_API_KEY == "google-key"
     assert settings.OPENAI_API_KEY == "openai-key"
+
+
+def test_settings_accepts_gpt_image_provider_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("IMAGE_PROVIDER", "gpt-image")
+    monkeypatch.setenv("OPENAI_IMAGE_MODEL", "gpt-image-1.5")
+
+    settings = Settings()
+
+    assert settings.IMAGE_PROVIDER == "gpt-image"
+    assert settings.OPENAI_IMAGE_MODEL == "gpt-image-1.5"

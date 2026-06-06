@@ -10,13 +10,19 @@ def test_get_selected_image_provider_reads_settings(monkeypatch: pytest.MonkeyPa
     assert get_selected_image_provider() == ImageProvider.PIXABAY
 
 
+def test_get_selected_image_provider_uses_generic_gpt_provider_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "IMAGE_PROVIDER", "gpt-image")
+
+    assert get_selected_image_provider() == ImageProvider.GPT_IMAGE
+
+
 @pytest.mark.parametrize(
     ("provider", "setting_name", "api_key"),
     [
         ("pexels", "PEXELS_API_KEY", "pexels-key"),
         ("pixabay", "PIXABAY_API_KEY", "pixabay-key"),
         ("gemini_flash", "GOOGLE_API_KEY", "google-key"),
-        ("dall-e-3", "OPENAI_API_KEY", "openai-key"),
+        ("gpt-image", "OPENAI_API_KEY", "openai-key"),
     ],
 )
 def test_get_image_provider_api_key_reads_settings(

@@ -7,7 +7,7 @@ class ImageProvider(Enum):
     PEXELS = "pexels"
     PIXABAY = "pixabay"
     GEMINI_FLASH = "gemini_flash"
-    DALLE3 = "dall-e-3"
+    GPT_IMAGE = "gpt-image"
 
 
 def is_pexels_selected() -> bool:
@@ -22,8 +22,8 @@ def is_gemini_flash_selected() -> bool:
     return ImageProvider.GEMINI_FLASH == get_selected_image_provider()
 
 
-def is_dalle3_selected() -> bool:
-    return ImageProvider.DALLE3 == get_selected_image_provider()
+def is_gpt_image_selected() -> bool:
+    return ImageProvider.GPT_IMAGE == get_selected_image_provider()
 
 
 def get_selected_image_provider() -> ImageProvider | None:
@@ -45,7 +45,7 @@ def get_image_provider_api_key() -> str | None:
         return settings.PIXABAY_API_KEY
     elif selected_image_provider == ImageProvider.GEMINI_FLASH:
         return settings.GOOGLE_API_KEY
-    elif selected_image_provider == ImageProvider.DALLE3:
+    elif selected_image_provider == ImageProvider.GPT_IMAGE:
         return settings.OPENAI_API_KEY
     else:
         raise ValueError(f"Invalid image provider: {selected_image_provider}")

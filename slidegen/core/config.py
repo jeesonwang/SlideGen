@@ -89,11 +89,12 @@ class Settings(BaseSettings):
     THUMBNAIL_WIDTH: int = 400  # Thumbnail width in pixels
 
     # [IMAGE GENERATION]
-    IMAGE_PROVIDER: Literal["pexels", "pixabay", "gemini_flash", "dall-e-3"] | None = None
+    IMAGE_PROVIDER: Literal["pexels", "pixabay", "gemini_flash", "gpt-image"] | None = None
     PEXELS_API_KEY: str | None = None
     PIXABAY_API_KEY: str | None = None
     GOOGLE_API_KEY: str | None = None
     OPENAI_API_KEY: str | None = None
+    OPENAI_IMAGE_MODEL: str = "gpt-image-1.5"
 
     # [CHROMA]
     CHROMA_BASE_PATH: Path = PROJECT_ROOT / "chroma"

@@ -15,8 +15,8 @@ from slidegen.models.image_asset import ImageAsset
 from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.utils.download import download_file
 from slidegen.utils.image import (
-    is_dalle3_selected,
     is_gemini_flash_selected,
+    is_gpt_image_selected,
     is_pexels_selected,
     is_pixabay_selected,
 )
@@ -34,7 +34,7 @@ class ImageGenerator:
             return self.get_image_from_pexels
         elif is_gemini_flash_selected():
             return self.generate_image_google
-        elif is_dalle3_selected():
+        elif is_gpt_image_selected():
             return self.generate_image_openai
         return None
 
@@ -76,7 +76,7 @@ class ImageGenerator:
     async def generate_image_openai(self, prompt: str, output_directory: str) -> str:
         client = AsyncOpenAI()
         result = await client.images.generate(
-            model="dall-e-3",
+            model=settings.OPENAI_IMAGE_MODEL,
             prompt=prompt,
             n=1,
             quality="standard",
