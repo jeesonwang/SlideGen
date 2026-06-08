@@ -3,6 +3,531 @@
         "slide_width": 12192000,
         "slide_height": 6858000
     },
+    "catalog_items": {
+        "career": {
+            "source": "components/templates/career.pptx",
+            "source_slide_index": 1,
+            "items": [
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"6\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"5539105\" y=\"1811655\"/>\n      <a:ext cx=\"791210\" cy=\"847090\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"r\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"2800\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\">\n              <a:lumMod val=\"60000\"/>\n              <a:lumOff val=\"40000\"/>\n            </a:schemeClr>\n          </a:solidFill>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n        </a:rPr>\n        <a:t>01.</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 1,
+                        "text": "01.",
+                        "location": {
+                            "x": 5539105,
+                            "y": 1811655,
+                            "width": 791210,
+                            "height": 847090
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"7\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"6534150\" y=\"1811655\"/>\n      <a:ext cx=\"4804410\" cy=\"841375\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr>\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2400\" b=\"1\" spc=\"300\" dirty=\"0\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\"/>\n          </a:solidFill>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n        </a:rPr>\n        <a:t>概述</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 2,
+                        "text": "概述",
+                        "location": {
+                            "x": 6534150,
+                            "y": 1811655,
+                            "width": 4804410,
+                            "height": 841375
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"9\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"5539105\" y=\"2653030\"/>\n      <a:ext cx=\"791210\" cy=\"841375\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"r\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"2800\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\">\n              <a:lumMod val=\"60000\"/>\n              <a:lumOff val=\"40000\"/>\n            </a:schemeClr>\n          </a:solidFill>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n        </a:rPr>\n        <a:t>02.</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 3,
+                        "text": "02.",
+                        "location": {
+                            "x": 5539105,
+                            "y": 2653030,
+                            "width": 791210,
+                            "height": 841375
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"10\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"6534150\" y=\"2653030\"/>\n      <a:ext cx=\"4804410\" cy=\"841375\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr>\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2400\" b=\"1\" spc=\"300\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"accent1\"/>\n        </a:solidFill>\n        <a:latin typeface=\"+mj-ea\"/>\n        <a:ea typeface=\"+mj-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 4,
+                        "text": "",
+                        "location": {
+                            "x": 6534150,
+                            "y": 2653030,
+                            "width": 4804410,
+                            "height": 841375
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"12\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"5539105\" y=\"3494405\"/>\n      <a:ext cx=\"791210\" cy=\"841375\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"r\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"2800\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\">\n              <a:lumMod val=\"60000\"/>\n              <a:lumOff val=\"40000\"/>\n            </a:schemeClr>\n          </a:solidFill>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n        </a:rPr>\n        <a:t>03.</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 5,
+                        "text": "03.",
+                        "location": {
+                            "x": 5539105,
+                            "y": 3494405,
+                            "width": 791210,
+                            "height": 841375
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"13\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"6534150\" y=\"3494405\"/>\n      <a:ext cx=\"4804410\" cy=\"841375\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr>\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2400\" b=\"1\" spc=\"300\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"accent1\"/>\n        </a:solidFill>\n        <a:latin typeface=\"+mj-ea\"/>\n        <a:ea typeface=\"+mj-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 6,
+                        "text": "",
+                        "location": {
+                            "x": 6534150,
+                            "y": 3494405,
+                            "width": 4804410,
+                            "height": 841375
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"15\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"5539105\" y=\"4335780\"/>\n      <a:ext cx=\"791210\" cy=\"835660\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"r\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"2800\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\">\n              <a:lumMod val=\"60000\"/>\n              <a:lumOff val=\"40000\"/>\n            </a:schemeClr>\n          </a:solidFill>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n        </a:rPr>\n        <a:t>04.</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 7,
+                        "text": "04.",
+                        "location": {
+                            "x": 5539105,
+                            "y": 4335780,
+                            "width": 791210,
+                            "height": 835660
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"16\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"6534150\" y=\"4335780\"/>\n      <a:ext cx=\"4804410\" cy=\"841375\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr>\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2400\" b=\"1\" spc=\"300\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"accent1\"/>\n        </a:solidFill>\n        <a:latin typeface=\"+mj-ea\"/>\n        <a:ea typeface=\"+mj-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 8,
+                        "text": "",
+                        "location": {
+                            "x": 6534150,
+                            "y": 4335780,
+                            "width": 4804410,
+                            "height": 841375
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"8\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"5539105\" y=\"5177155\"/>\n      <a:ext cx=\"791210\" cy=\"835660\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"r\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"2800\">\n          <a:solidFill>\n            <a:schemeClr val=\"accent1\">\n              <a:lumMod val=\"60000\"/>\n              <a:lumOff val=\"40000\"/>\n            </a:schemeClr>\n          </a:solidFill>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n        </a:rPr>\n        <a:t>05.</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 9,
+                        "text": "05.",
+                        "location": {
+                            "x": 5539105,
+                            "y": 5177155,
+                            "width": 791210,
+                            "height": 835660
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"11\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"6534150\" y=\"5177155\"/>\n      <a:ext cx=\"4804410\" cy=\"841375\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr>\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2400\" b=\"1\" spc=\"300\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"accent1\"/>\n        </a:solidFill>\n        <a:latin typeface=\"+mj-ea\"/>\n        <a:ea typeface=\"+mj-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 10,
+                        "text": "",
+                        "location": {
+                            "x": 6534150,
+                            "y": 5177155,
+                            "width": 4804410,
+                            "height": 841375
+                        }
+                    }
+                }
+            ]
+        },
+        "general": {
+            "source": "components/templates/general.pptx",
+            "source_slide_index": 1,
+            "items": [
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"7\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"654685\" y=\"1940249\"/>\n      <a:ext cx=\"1522730\" cy=\"1362710\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\" anchorCtr=\"1\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"7200\" spc=\"-100\" dirty=\"0\">\n          <a:gradFill>\n            <a:gsLst>\n              <a:gs pos=\"16000\">\n                <a:schemeClr val=\"accent1\">\n                  <a:alpha val=\"0\"/>\n                </a:schemeClr>\n              </a:gs>\n              <a:gs pos=\"100000\">\n                <a:schemeClr val=\"accent2\"/>\n              </a:gs>\n            </a:gsLst>\n            <a:lin ang=\"16200000\" scaled=\"0\"/>\n          </a:gradFill>\n          <a:uFillTx/>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n        </a:rPr>\n        <a:t>01</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 14,
+                        "text": "01",
+                        "location": {
+                            "x": 654685,
+                            "y": 1940249,
+                            "width": 1522730,
+                            "height": 1362710
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"10\" name=\"标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"867410\" y=\"2983894\"/>\n      <a:ext cx=\"2005330\" cy=\"1460500\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2200\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"bg2\">\n            <a:lumMod val=\"25000\"/>\n          </a:schemeClr>\n        </a:solidFill>\n        <a:uFillTx/>\n        <a:latin typeface=\"+mj-ea\"/>\n        <a:ea typeface=\"+mj-ea\"/>\n        <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 15,
+                        "text": "",
+                        "location": {
+                            "x": 867410,
+                            "y": 2983894,
+                            "width": 2005330,
+                            "height": 1460500
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:cxnSp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvCxnSpPr>\n    <p:cNvPr id=\"5\" name=\"直接连接符 4\"/>\n    <p:cNvCxnSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvCxnSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"766445\" y=\"-6026\"/>\n      <a:ext cx=\"0\" cy=\"3255010\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"line\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:ln w=\"12700\">\n      <a:solidFill>\n        <a:schemeClr val=\"accent2\">\n          <a:lumMod val=\"75000\"/>\n          <a:alpha val=\"30000\"/>\n        </a:schemeClr>\n      </a:solidFill>\n      <a:tailEnd type=\"oval\"/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:lnRef>\n    <a:fillRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"tx1\"/>\n    </a:fontRef>\n  </p:style>\n</p:cxnSp>\n",
+                        "zorder": 13,
+                        "text": null,
+                        "location": {
+                            "x": 766445,
+                            "y": -6026,
+                            "width": 0,
+                            "height": 3255010
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"132\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"2959655\" y=\"2869565\"/>\n      <a:ext cx=\"1522730\" cy=\"1362710\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\" anchorCtr=\"1\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"7200\" spc=\"-100\" dirty=\"0\">\n          <a:gradFill>\n            <a:gsLst>\n              <a:gs pos=\"16000\">\n                <a:schemeClr val=\"accent1\">\n                  <a:alpha val=\"0\"/>\n                </a:schemeClr>\n              </a:gs>\n              <a:gs pos=\"100000\">\n                <a:schemeClr val=\"accent2\"/>\n              </a:gs>\n            </a:gsLst>\n            <a:lin ang=\"16200000\" scaled=\"0\"/>\n          </a:gradFill>\n          <a:uFillTx/>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n        </a:rPr>\n        <a:t>02</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 2,
+                        "text": "02",
+                        "location": {
+                            "x": 2959655,
+                            "y": 2869565,
+                            "width": 1522730,
+                            "height": 1362710
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"133\" name=\"标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"3172460\" y=\"3912899\"/>\n      <a:ext cx=\"2005330\" cy=\"1460500\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2200\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"bg2\">\n            <a:lumMod val=\"25000\"/>\n          </a:schemeClr>\n        </a:solidFill>\n        <a:uFillTx/>\n        <a:latin typeface=\"+mj-ea\"/>\n        <a:ea typeface=\"+mj-ea\"/>\n        <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 3,
+                        "text": "",
+                        "location": {
+                            "x": 3172460,
+                            "y": 3912899,
+                            "width": 2005330,
+                            "height": 1460500
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:cxnSp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvCxnSpPr>\n    <p:cNvPr id=\"134\" name=\"直接连接符 133\"/>\n    <p:cNvCxnSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvCxnSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"3071415\" y=\"-635\"/>\n      <a:ext cx=\"0\" cy=\"4178935\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"line\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:ln w=\"12700\">\n      <a:solidFill>\n        <a:schemeClr val=\"accent2\">\n          <a:lumMod val=\"75000\"/>\n          <a:alpha val=\"30000\"/>\n        </a:schemeClr>\n      </a:solidFill>\n      <a:tailEnd type=\"oval\"/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:lnRef>\n    <a:fillRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"tx1\"/>\n    </a:fontRef>\n  </p:style>\n</p:cxnSp>\n",
+                        "zorder": 1,
+                        "text": null,
+                        "location": {
+                            "x": 3071415,
+                            "y": -635,
+                            "width": 0,
+                            "height": 4178935
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"25\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"5264625\" y=\"1940249\"/>\n      <a:ext cx=\"1522730\" cy=\"1362710\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\" anchorCtr=\"1\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"7200\" spc=\"-100\" dirty=\"0\">\n          <a:gradFill>\n            <a:gsLst>\n              <a:gs pos=\"16000\">\n                <a:schemeClr val=\"accent1\">\n                  <a:alpha val=\"0\"/>\n                </a:schemeClr>\n              </a:gs>\n              <a:gs pos=\"100000\">\n                <a:schemeClr val=\"accent2\"/>\n              </a:gs>\n            </a:gsLst>\n            <a:lin ang=\"16200000\" scaled=\"0\"/>\n          </a:gradFill>\n          <a:uFillTx/>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n        </a:rPr>\n        <a:t>03</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 5,
+                        "text": "03",
+                        "location": {
+                            "x": 5264625,
+                            "y": 1940249,
+                            "width": 1522730,
+                            "height": 1362710
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"26\" name=\"标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"5477510\" y=\"2983894\"/>\n      <a:ext cx=\"2005330\" cy=\"1460500\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2200\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"bg2\">\n            <a:lumMod val=\"25000\"/>\n          </a:schemeClr>\n        </a:solidFill>\n        <a:uFillTx/>\n        <a:latin typeface=\"+mj-ea\"/>\n        <a:ea typeface=\"+mj-ea\"/>\n        <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 6,
+                        "text": "",
+                        "location": {
+                            "x": 5477510,
+                            "y": 2983894,
+                            "width": 2005330,
+                            "height": 1460500
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:cxnSp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvCxnSpPr>\n    <p:cNvPr id=\"24\" name=\"直接连接符 23\"/>\n    <p:cNvCxnSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvCxnSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"5376385\" y=\"-10471\"/>\n      <a:ext cx=\"0\" cy=\"3259455\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"line\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:ln w=\"12700\">\n      <a:solidFill>\n        <a:schemeClr val=\"accent2\">\n          <a:lumMod val=\"75000\"/>\n          <a:alpha val=\"30000\"/>\n        </a:schemeClr>\n      </a:solidFill>\n      <a:tailEnd type=\"oval\"/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:lnRef>\n    <a:fillRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"tx1\"/>\n    </a:fontRef>\n  </p:style>\n</p:cxnSp>\n",
+                        "zorder": 4,
+                        "text": null,
+                        "location": {
+                            "x": 5376385,
+                            "y": -10471,
+                            "width": 0,
+                            "height": 3259455
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"29\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"7569595\" y=\"2869565\"/>\n      <a:ext cx=\"1522730\" cy=\"1362710\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\" anchorCtr=\"1\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"7200\" spc=\"-100\" dirty=\"0\">\n          <a:gradFill>\n            <a:gsLst>\n              <a:gs pos=\"16000\">\n                <a:schemeClr val=\"accent1\">\n                  <a:alpha val=\"0\"/>\n                </a:schemeClr>\n              </a:gs>\n              <a:gs pos=\"100000\">\n                <a:schemeClr val=\"accent2\"/>\n              </a:gs>\n            </a:gsLst>\n            <a:lin ang=\"16200000\" scaled=\"0\"/>\n          </a:gradFill>\n          <a:uFillTx/>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n        </a:rPr>\n        <a:t>04</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 8,
+                        "text": "04",
+                        "location": {
+                            "x": 7569595,
+                            "y": 2869565,
+                            "width": 1522730,
+                            "height": 1362710
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"32\" name=\"标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"7782560\" y=\"3912899\"/>\n      <a:ext cx=\"2005330\" cy=\"1460500\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2200\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"bg2\">\n            <a:lumMod val=\"25000\"/>\n          </a:schemeClr>\n        </a:solidFill>\n        <a:uFillTx/>\n        <a:latin typeface=\"+mj-ea\"/>\n        <a:ea typeface=\"+mj-ea\"/>\n        <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 9,
+                        "text": "",
+                        "location": {
+                            "x": 7782560,
+                            "y": 3912899,
+                            "width": 2005330,
+                            "height": 1460500
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:cxnSp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvCxnSpPr>\n    <p:cNvPr id=\"28\" name=\"直接连接符 27\"/>\n    <p:cNvCxnSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvCxnSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"7681355\" y=\"-5715\"/>\n      <a:ext cx=\"0\" cy=\"4184015\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"line\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:ln w=\"12700\">\n      <a:solidFill>\n        <a:schemeClr val=\"accent2\">\n          <a:lumMod val=\"75000\"/>\n          <a:alpha val=\"30000\"/>\n        </a:schemeClr>\n      </a:solidFill>\n      <a:tailEnd type=\"oval\"/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:lnRef>\n    <a:fillRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"tx1\"/>\n    </a:fontRef>\n  </p:style>\n</p:cxnSp>\n",
+                        "zorder": 7,
+                        "text": null,
+                        "location": {
+                            "x": 7681355,
+                            "y": -5715,
+                            "width": 0,
+                            "height": 4184015
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"35\" name=\"序号\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"9874566\" y=\"1940249\"/>\n      <a:ext cx=\"1522730\" cy=\"1362710\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\" anchorCtr=\"1\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"7200\" spc=\"-100\" dirty=\"0\">\n          <a:gradFill>\n            <a:gsLst>\n              <a:gs pos=\"16000\">\n                <a:schemeClr val=\"accent1\">\n                  <a:alpha val=\"0\"/>\n                </a:schemeClr>\n              </a:gs>\n              <a:gs pos=\"100000\">\n                <a:schemeClr val=\"accent2\"/>\n              </a:gs>\n            </a:gsLst>\n            <a:lin ang=\"16200000\" scaled=\"0\"/>\n          </a:gradFill>\n          <a:uFillTx/>\n          <a:latin typeface=\"+mj-ea\"/>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n        </a:rPr>\n        <a:t>05</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 11,
+                        "text": "05",
+                        "location": {
+                            "x": 9874566,
+                            "y": 1940249,
+                            "width": 1522730,
+                            "height": 1362710
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"36\" name=\"标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"10086975\" y=\"2983894\"/>\n      <a:ext cx=\"2005330\" cy=\"1460500\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"t\" anchorCtr=\"0\">\n      <a:normAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"l\"/>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" sz=\"2200\" dirty=\"0\">\n        <a:solidFill>\n          <a:schemeClr val=\"bg2\">\n            <a:lumMod val=\"25000\"/>\n          </a:schemeClr>\n        </a:solidFill>\n        <a:uFillTx/>\n        <a:latin typeface=\"+mj-ea\"/>\n        <a:ea typeface=\"+mj-ea\"/>\n        <a:cs typeface=\"MiSans Normal\" panose=\"00000500000000000000\" charset=\"-122\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 12,
+                        "text": "",
+                        "location": {
+                            "x": 10086975,
+                            "y": 2983894,
+                            "width": 2005330,
+                            "height": 1460500
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:cxnSp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvCxnSpPr>\n    <p:cNvPr id=\"34\" name=\"直接连接符 33\"/>\n    <p:cNvCxnSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvCxnSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"9986326\" y=\"2864\"/>\n      <a:ext cx=\"0\" cy=\"3246120\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"line\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:ln w=\"12700\">\n      <a:solidFill>\n        <a:schemeClr val=\"accent2\">\n          <a:lumMod val=\"75000\"/>\n          <a:alpha val=\"30000\"/>\n        </a:schemeClr>\n      </a:solidFill>\n      <a:tailEnd type=\"oval\"/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:lnRef>\n    <a:fillRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"tx1\"/>\n    </a:fontRef>\n  </p:style>\n</p:cxnSp>\n",
+                        "zorder": 10,
+                        "text": null,
+                        "location": {
+                            "x": 9986326,
+                            "y": 2864,
+                            "width": 0,
+                            "height": 3246120
+                        }
+                    }
+                }
+            ]
+        },
+        "purple": {
+            "source": "components/templates/purple.pptx",
+            "source_slide_index": 1,
+            "items": [
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"35\" name=\"圆角矩形 34\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"987989\" y=\"2819400\"/>\n      <a:ext cx=\"828000\" cy=\"828000\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"ellipse\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:gradFill>\n      <a:gsLst>\n        <a:gs pos=\"0\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n        <a:gs pos=\"100000\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n      </a:gsLst>\n      <a:lin ang=\"5820000\" scaled=\"0\"/>\n    </a:gradFill>\n    <a:ln>\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"none\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"3200\" b=\"1\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"+mn-lt\"/>\n          <a:sym typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>01</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 2,
+                        "text": "01",
+                        "location": {
+                            "x": 987989,
+                            "y": 2819400,
+                            "width": 828000,
+                            "height": 828000
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"2\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"587680\" y=\"4081002\"/>\n      <a:ext cx=\"1628618\" cy=\"1000125\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"ctr\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" b=\"1\" spc=\"300\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>简介</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 3,
+                        "text": "简介",
+                        "location": {
+                            "x": 587680,
+                            "y": 4081002,
+                            "width": 1628618,
+                            "height": 1000125
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"28\" name=\"圆角矩形 27\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"518435\" y=\"2393950\"/>\n      <a:ext cx=\"1767109\" cy=\"3259455\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"roundRect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:solidFill>\n      <a:schemeClr val=\"accent1\">\n        <a:alpha val=\"75000\"/>\n      </a:schemeClr>\n    </a:solidFill>\n    <a:ln w=\"25400\">\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"square\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\">\n        <a:sym typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 1,
+                        "text": "",
+                        "location": {
+                            "x": 518435,
+                            "y": 2393950,
+                            "width": 1767109,
+                            "height": 3259455
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"55\" name=\"圆角矩形 34\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"2866228\" y=\"2819400\"/>\n      <a:ext cx=\"828000\" cy=\"828000\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"ellipse\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:gradFill>\n      <a:gsLst>\n        <a:gs pos=\"0\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n        <a:gs pos=\"100000\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n      </a:gsLst>\n      <a:lin ang=\"5820000\" scaled=\"0\"/>\n    </a:gradFill>\n    <a:ln>\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"none\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"3200\" b=\"1\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"+mn-lt\"/>\n          <a:sym typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>02</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 5,
+                        "text": "02",
+                        "location": {
+                            "x": 2866228,
+                            "y": 2819400,
+                            "width": 828000,
+                            "height": 828000
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"56\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"2465919\" y=\"4081002\"/>\n      <a:ext cx=\"1628618\" cy=\"1000125\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"ctr\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" b=\"1\" spc=\"300\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>发展现状</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 6,
+                        "text": "发展现状",
+                        "location": {
+                            "x": 2465919,
+                            "y": 4081002,
+                            "width": 1628618,
+                            "height": 1000125
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"54\" name=\"圆角矩形 27\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"2396674\" y=\"2393950\"/>\n      <a:ext cx=\"1767109\" cy=\"3259455\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"roundRect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:solidFill>\n      <a:schemeClr val=\"accent1\">\n        <a:alpha val=\"75000\"/>\n      </a:schemeClr>\n    </a:solidFill>\n    <a:ln w=\"25400\">\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"square\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\">\n        <a:sym typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 4,
+                        "text": "",
+                        "location": {
+                            "x": 2396674,
+                            "y": 2393950,
+                            "width": 1767109,
+                            "height": 3259455
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"59\" name=\"圆角矩形 34\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"4744467\" y=\"2819400\"/>\n      <a:ext cx=\"828000\" cy=\"828000\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"ellipse\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:gradFill>\n      <a:gsLst>\n        <a:gs pos=\"0\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n        <a:gs pos=\"100000\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n      </a:gsLst>\n      <a:lin ang=\"5820000\" scaled=\"0\"/>\n    </a:gradFill>\n    <a:ln>\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"none\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"3200\" b=\"1\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"+mn-lt\"/>\n          <a:sym typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>03</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 8,
+                        "text": "03",
+                        "location": {
+                            "x": 4744467,
+                            "y": 2819400,
+                            "width": 828000,
+                            "height": 828000
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"60\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"4344158\" y=\"4081002\"/>\n      <a:ext cx=\"1628618\" cy=\"1000125\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"ctr\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" b=\"1\" spc=\"300\" dirty=\"0\">\n        <a:solidFill>\n          <a:srgbClr val=\"FFFFFF\"/>\n        </a:solidFill>\n        <a:latin typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 9,
+                        "text": "",
+                        "location": {
+                            "x": 4344158,
+                            "y": 4081002,
+                            "width": 1628618,
+                            "height": 1000125
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"58\" name=\"圆角矩形 27\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"4274913\" y=\"2393950\"/>\n      <a:ext cx=\"1767109\" cy=\"3259455\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"roundRect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:solidFill>\n      <a:schemeClr val=\"accent1\">\n        <a:alpha val=\"75000\"/>\n      </a:schemeClr>\n    </a:solidFill>\n    <a:ln w=\"25400\">\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"square\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\">\n        <a:sym typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 7,
+                        "text": "",
+                        "location": {
+                            "x": 4274913,
+                            "y": 2393950,
+                            "width": 1767109,
+                            "height": 3259455
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"63\" name=\"圆角矩形 34\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"6622706\" y=\"2819400\"/>\n      <a:ext cx=\"828000\" cy=\"828000\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"ellipse\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:gradFill>\n      <a:gsLst>\n        <a:gs pos=\"0\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n        <a:gs pos=\"100000\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n      </a:gsLst>\n      <a:lin ang=\"5820000\" scaled=\"0\"/>\n    </a:gradFill>\n    <a:ln>\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"none\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"3200\" b=\"1\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"+mn-lt\"/>\n          <a:sym typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>04</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 11,
+                        "text": "04",
+                        "location": {
+                            "x": 6622706,
+                            "y": 2819400,
+                            "width": 828000,
+                            "height": 828000
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"64\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"6222397\" y=\"4081002\"/>\n      <a:ext cx=\"1628618\" cy=\"1000125\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"ctr\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" b=\"1\" spc=\"300\" dirty=\"0\">\n        <a:solidFill>\n          <a:srgbClr val=\"FFFFFF\"/>\n        </a:solidFill>\n        <a:latin typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 12,
+                        "text": "",
+                        "location": {
+                            "x": 6222397,
+                            "y": 4081002,
+                            "width": 1628618,
+                            "height": 1000125
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"62\" name=\"圆角矩形 27\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"6153152\" y=\"2393950\"/>\n      <a:ext cx=\"1767109\" cy=\"3259455\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"roundRect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:solidFill>\n      <a:schemeClr val=\"accent1\">\n        <a:alpha val=\"75000\"/>\n      </a:schemeClr>\n    </a:solidFill>\n    <a:ln w=\"25400\">\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"square\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\">\n        <a:sym typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 10,
+                        "text": "",
+                        "location": {
+                            "x": 6153152,
+                            "y": 2393950,
+                            "width": 1767109,
+                            "height": 3259455
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"67\" name=\"圆角矩形 34\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"8500945\" y=\"2819400\"/>\n      <a:ext cx=\"828000\" cy=\"828000\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"ellipse\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:gradFill>\n      <a:gsLst>\n        <a:gs pos=\"0\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n        <a:gs pos=\"100000\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n      </a:gsLst>\n      <a:lin ang=\"5820000\" scaled=\"0\"/>\n    </a:gradFill>\n    <a:ln>\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"none\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"3200\" b=\"1\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"+mn-lt\"/>\n          <a:sym typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>05</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 14,
+                        "text": "05",
+                        "location": {
+                            "x": 8500945,
+                            "y": 2819400,
+                            "width": 828000,
+                            "height": 828000
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"68\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"8100636\" y=\"4081002\"/>\n      <a:ext cx=\"1628618\" cy=\"1000125\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"ctr\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\" b=\"1\" spc=\"300\" dirty=\"0\">\n        <a:solidFill>\n          <a:srgbClr val=\"FFFFFF\"/>\n        </a:solidFill>\n        <a:latin typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 15,
+                        "text": "",
+                        "location": {
+                            "x": 8100636,
+                            "y": 4081002,
+                            "width": 1628618,
+                            "height": 1000125
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"66\" name=\"圆角矩形 27\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"8031391\" y=\"2393950\"/>\n      <a:ext cx=\"1767109\" cy=\"3259455\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"roundRect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:solidFill>\n      <a:schemeClr val=\"accent1\">\n        <a:alpha val=\"75000\"/>\n      </a:schemeClr>\n    </a:solidFill>\n    <a:ln w=\"25400\">\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"square\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\">\n        <a:sym typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 13,
+                        "text": "",
+                        "location": {
+                            "x": 8031391,
+                            "y": 2393950,
+                            "width": 1767109,
+                            "height": 3259455
+                        }
+                    }
+                },
+                {
+                    "number": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"71\" name=\"圆角矩形 34\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"10379186\" y=\"2819400\"/>\n      <a:ext cx=\"828000\" cy=\"828000\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"ellipse\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:gradFill>\n      <a:gsLst>\n        <a:gs pos=\"0\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n        <a:gs pos=\"100000\">\n          <a:schemeClr val=\"accent1\">\n            <a:lumMod val=\"25000\"/>\n            <a:alpha val=\"40000\"/>\n          </a:schemeClr>\n        </a:gs>\n      </a:gsLst>\n      <a:lin ang=\"5820000\" scaled=\"0\"/>\n    </a:gradFill>\n    <a:ln>\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"none\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"en-US\" sz=\"3200\" b=\"1\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:ea typeface=\"+mj-ea\"/>\n          <a:cs typeface=\"+mn-lt\"/>\n          <a:sym typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>06</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 17,
+                        "text": "06",
+                        "location": {
+                            "x": 10379186,
+                            "y": 2819400,
+                            "width": 828000,
+                            "height": 828000
+                        }
+                    },
+                    "text": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"72\" name=\"项标题\"/>\n    <p:cNvSpPr txBox=\"1\"/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"9978877\" y=\"4081002\"/>\n      <a:ext cx=\"1628618\" cy=\"1000125\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n  </p:spPr>\n  <p:txBody>\n    <a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" rtlCol=\"0\" anchor=\"ctr\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr algn=\"ctr\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr lang=\"zh-CN\" altLang=\"en-US\" b=\"1\" spc=\"300\" dirty=\"0\">\n          <a:solidFill>\n            <a:srgbClr val=\"FFFFFF\"/>\n          </a:solidFill>\n          <a:latin typeface=\"+mn-ea\"/>\n        </a:rPr>\n        <a:t>未来展望</a:t>\n      </a:r>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 18,
+                        "text": "未来展望",
+                        "location": {
+                            "x": 9978877,
+                            "y": 4081002,
+                            "width": 1628618,
+                            "height": 1000125
+                        }
+                    },
+                    "background": {
+                        "xml": "<p:sp xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\n  <p:nvSpPr>\n    <p:cNvPr id=\"70\" name=\"圆角矩形 27\"/>\n    <p:cNvSpPr/>\n    <p:nvPr>\n      </p:nvPr>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"9909632\" y=\"2393950\"/>\n      <a:ext cx=\"1767109\" cy=\"3259455\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"roundRect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:solidFill>\n      <a:schemeClr val=\"accent1\">\n        <a:alpha val=\"75000\"/>\n      </a:schemeClr>\n    </a:solidFill>\n    <a:ln w=\"25400\">\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"2\">\n      <a:schemeClr val=\"accent1\">\n        <a:lumMod val=\"75000\"/>\n      </a:schemeClr>\n    </a:lnRef>\n    <a:fillRef idx=\"1\">\n      <a:schemeClr val=\"accent1\"/>\n    </a:fillRef>\n    <a:effectRef idx=\"0\">\n      <a:srgbClr val=\"FFFFFF\"/>\n    </a:effectRef>\n    <a:fontRef idx=\"minor\">\n      <a:schemeClr val=\"lt1\"/>\n    </a:fontRef>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr vertOverflow=\"overflow\" horzOverflow=\"overflow\" vert=\"horz\" wrap=\"square\" numCol=\"1\" spcCol=\"0\" rtlCol=\"0\" fromWordArt=\"0\" anchor=\"ctr\" anchorCtr=\"0\" forceAA=\"0\" compatLnSpc=\"1\">\n      <a:noAutofit/>\n    </a:bodyPr>\n    <a:lstStyle/>\n    <a:p>\n      <a:pPr lvl=\"0\" algn=\"ctr\">\n        <a:buClrTx/>\n        <a:buSzTx/>\n        <a:buFontTx/>\n      </a:pPr>\n      <a:endParaRPr lang=\"zh-CN\" altLang=\"en-US\">\n        <a:sym typeface=\"+mn-ea\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>\n",
+                        "zorder": 16,
+                        "text": "",
+                        "location": {
+                            "x": 9909632,
+                            "y": 2393950,
+                            "width": 1767109,
+                            "height": 3259455
+                        }
+                    }
+                }
+            ]
+        }
+    },
     "one_point": {
         "style0": {},
         "style1": {

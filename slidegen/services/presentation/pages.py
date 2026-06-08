@@ -770,7 +770,71 @@ class CatalogPage(Page):
         return catalog_list
 
     @staticmethod
-    def _get_or_create_catalog_items(slide: Slide, target_count: int = 1) -> CatalogList:
+    def _create_catalog_items_from_library(
+        slide: Slide,
+        template_name: str | None,
+        target_count: int,
+    ) -> CatalogList:
+        get_catalog_items = getattr(components_manager, "get_catalog_items", None)
+        if get_catalog_items is None:
+            return CatalogList()
+
+        catalog_item_templates = get_catalog_items(template_name)
+        if not catalog_item_templates:
+            return CatalogList()
+
+        prs = slide.part.package.presentation_part.presentation
+        item_count = max(1, min(target_count, len(catalog_item_templates)))
+        catalog_list = CatalogList()
+        for item_index, item_template in enumerate(catalog_item_templates[:item_count]):
+            background_info = None
+            if item_template.background is not None:
+                background_loc = Page._scale_shape_location(prs, item_template.background.location)
+                background_shape = ShapeFactory.create_xml_shape(
+                    slide,
+                    item_template.background.xml,
+                    background_loc,
+                    shape_id=slide.shapes._next_shape_id,
+                    shape_name=f"catalog_{template_name}_background_{item_index}",
+                    text=item_template.background.text,
+                )
+                background_info = CatalogPage._shape_info(background_shape)
+
+            number_loc = Page._scale_shape_location(prs, item_template.number.location)
+            number_shape = ShapeFactory.create_text_shape(
+                slide,
+                item_template.number.xml,
+                item_template.number.text or str(item_index + 1).zfill(2),
+                number_loc,
+                shape_id=slide.shapes._next_shape_id,
+                shape_name=f"catalog_{template_name}_number_{item_index}",
+            )
+
+            text_loc = Page._scale_shape_location(prs, item_template.text.location)
+            text_shape = ShapeFactory.create_text_shape(
+                slide,
+                item_template.text.xml,
+                item_template.text.text or "",
+                text_loc,
+                shape_id=slide.shapes._next_shape_id,
+                shape_name=f"catalog_{template_name}_text_{item_index}",
+            )
+            catalog_list.append(
+                CatalogItem(
+                    CatalogPage._shape_info(number_shape),
+                    CatalogPage._shape_info(text_shape),
+                    background_info,
+                )
+            )
+
+        return catalog_list
+
+    @staticmethod
+    def _get_or_create_catalog_items(
+        slide: Slide,
+        target_count: int = 1,
+        template_name: str | None = None,
+    ) -> CatalogList:
         """Retrieve catalog items from the slide template, or create default items as fallback.
 
         Args:
@@ -785,6 +849,10 @@ class CatalogPage(Page):
         try:
             return CatalogPage._get_catalog_items(slide)
         except CatalogTemplateNotFoundError:
+            catalog_items = CatalogPage._create_catalog_items_from_library(slide, template_name, target_count)
+            if catalog_items:
+                logger.info("Catalog slide has no template items; using shape.json catalog items for {}", template_name)
+                return catalog_items
             logger.info("Catalog slide has no template items; creating default catalog item fallback")
             return CatalogPage._create_default_catalog_items(slide, target_count)
 
@@ -969,6 +1037,7 @@ class CatalogPage(Page):
         *,
         catalog_page_index: int = 1,
         begin_number: int = 1,
+        template_name: str | None = None,
     ) -> int:
         """
         Generate the catalog page
@@ -986,7 +1055,7 @@ class CatalogPage(Page):
         catalog_num = len(content)
         catalog_slide = prs.slides[catalog_page_index]
         CatalogPage._remove_empty_text_placeholders(catalog_slide)
-        catalog_items = CatalogPage._get_or_create_catalog_items(catalog_slide, catalog_num)
+        catalog_items = CatalogPage._get_or_create_catalog_items(catalog_slide, catalog_num, template_name)
 
         # Determine layout direction for position calculations
         layout_direction = CatalogPage._resolve_layout_direction(catalog_items)
@@ -1122,6 +1191,7 @@ class CatalogPage(Page):
                 content[fill_count:],
                 catalog_page_index=catalog_page_index,
                 begin_number=begin_number,
+                template_name=template_name,
             )
 
         return catalog_page_index

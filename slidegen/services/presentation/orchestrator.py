@@ -35,6 +35,7 @@ class PresentationOrchestrator:
         cover_page_index: int = 0,
         catalog_page_index: int = 1,
         theme: PresentationTheme | None = None,
+        template_name: str | None = None,
     ) -> Presentation:
         """generate the complete PPT presentation"""
         started_at = perf_counter()
@@ -64,7 +65,10 @@ class PresentationOrchestrator:
 
         logger.info("PPT conversion: generating catalog slides")
         catalog_last_index = await CatalogPage.generate_slide(
-            template_prs, chapters, catalog_page_index=catalog_page_index
+            template_prs,
+            chapters,
+            catalog_page_index=catalog_page_index,
+            template_name=template_name,
         )
         logger.info("PPT conversion: catalog generated through slide index {}", catalog_last_index)
 
