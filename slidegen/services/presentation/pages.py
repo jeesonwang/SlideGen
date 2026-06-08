@@ -19,10 +19,10 @@ from pptx.presentation import Presentation
 from pptx.shapes.autoshape import Shape
 from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
-from pptx.util import Length
+from pptx.util import Length, Pt
 
 from slidegen.core.config import settings
-from slidegen.exceptions import PPTGenError, PPTTemplateError
+from slidegen.exceptions import CatalogTemplateNotFoundError, PPTGenError, PPTTemplateError
 from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.schemas.theme import PresentationTheme
 from slidegen.services.document.markdown import Heading
@@ -45,6 +45,17 @@ from slidegen.utils.slide import (
 EMU_PER_PT = 12700
 TITLE_TEXTBOX_HORIZONTAL_PADDING_EMU = 228600
 TITLE_TEXTBOX_RIGHT_MARGIN_EMU = 457200
+CATALOG_DEFAULT_LEFT_EMU = 914400
+CATALOG_DEFAULT_TOP_EMU = 1371600
+CATALOG_DEFAULT_NUMBER_WIDTH_EMU = 457200
+CATALOG_DEFAULT_ITEM_HEIGHT_EMU = 342900
+CATALOG_DEFAULT_TEXT_GAP_EMU = 228600
+CATALOG_DEFAULT_ITEM_GAP_EMU = 228600
+CATALOG_DEFAULT_RIGHT_MARGIN_EMU = 914400
+CATALOG_DEFAULT_NUMBER_FONT_SIZE_PT = 18
+CATALOG_DEFAULT_TEXT_FONT_SIZE_PT = 18
+CATALOG_DEFAULT_NUMBER_FONT_BOLD = True
+CATALOG_DEFAULT_NUMBER_ALIGNMENT = PP_ALIGN.CENTER
 
 
 class Page:
@@ -452,6 +463,27 @@ class CatalogPage(Page):
         """Calculate the distance between two shapes"""
         return ((shape1["left"] - shape2["left"]) ** 2 + (shape1["top"] - shape2["top"]) ** 2) ** 0.5
 
+    @staticmethod
+    def _shape_info(shape: BaseShape) -> dict[str, Any]:
+        """Extract shape information into a dictionary for catalog processing.
+
+        Args:
+            shape: The shape to extract information from.
+
+        Returns:
+            Dictionary containing shape properties: text, position, dimensions, type, and reference.
+        """
+        return {
+            "text": cast(Shape, shape).text.strip() if shape.has_text_frame else None,
+            "left": shape.left,
+            "top": shape.top,
+            "width": shape.width,
+            "height": shape.height,
+            "shape_type": shape.shape_type,
+            "shape_id": shape.shape_id,
+            "shape": shape,
+        }
+
     # Roman numerals 1-20
     _ROMAN_NUMERALS: set[str] = {
         "I",
@@ -551,24 +583,181 @@ class CatalogPage(Page):
         Falls back to len(catalog_items) if spacing can't be determined (< 2 items
         or undefined layout).
         """
-        if len(catalog_items) < 2 or layout_direction == CatalogLayout.UNDEFINED:
+        if len(catalog_items) == 0 or layout_direction == CatalogLayout.UNDEFINED:
             return len(catalog_items)
 
-        if layout_direction == CatalogLayout.VERTICAL:
-            positions = [item.number_shape["top"] for item in catalog_items]
-            steps = [abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1)]
-            step = sum(steps) / len(steps)
-            usable = slide_height - catalog_items[0].number_shape["top"]
-        else:  # HORIZONTAL
-            positions = [item.number_shape["left"] for item in catalog_items]
-            steps = [abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1)]
-            step = sum(steps) / len(steps)
-            usable = slide_width - catalog_items[0].number_shape["left"]
-
+        step = CatalogPage._calculate_catalog_step(catalog_items, layout_direction)
         if step <= 0:
             return len(catalog_items)
 
+        first_item = catalog_items[0]
+        if layout_direction == CatalogLayout.VERTICAL:
+            usable = slide_height - min(first_item.number_shape["top"], first_item.text_shape["top"])
+        else:  # HORIZONTAL
+            usable = slide_width - min(first_item.number_shape["left"], first_item.text_shape["left"])
+
         return max(len(catalog_items), int(usable / step))
+
+    @staticmethod
+    def _calculate_catalog_step(
+        catalog_items: "CatalogList",
+        layout_direction: "CatalogLayout",
+    ) -> int:
+        """Calculate the spacing between catalog items along the layout direction.
+
+        For multiple items, computes average spacing from existing positions.
+        For a single item, estimates spacing from item dimensions plus default gap.
+
+        Args:
+            catalog_items: List of catalog items with position information.
+            layout_direction: Direction in which items are arranged.
+
+        Returns:
+            Step size in EMU (English Metric Units), or 0 if calculation is not possible.
+        """
+        if len(catalog_items) >= 2:
+            key = "top" if layout_direction == CatalogLayout.VERTICAL else "left"
+            positions = [item.number_shape[key] for item in catalog_items]
+            return int(
+                sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
+                / (len(positions) - 1)
+            )
+
+        if len(catalog_items) != 1:
+            return 0
+
+        item = catalog_items[0]
+        shapes = [item.number_shape, item.text_shape]
+        if item.background_shape:
+            shapes.append(item.background_shape)
+
+        if layout_direction == CatalogLayout.VERTICAL:
+            start_pos = min(shape["top"] for shape in shapes)
+            end_pos = max(shape["top"] + shape["height"] for shape in shapes)
+        elif layout_direction == CatalogLayout.HORIZONTAL:
+            start_pos = min(shape["left"] for shape in shapes)
+            end_pos = max(shape["left"] + shape["width"] for shape in shapes)
+        else:
+            return 0
+
+        return max(
+            CATALOG_DEFAULT_ITEM_HEIGHT_EMU + CATALOG_DEFAULT_ITEM_GAP_EMU,
+            end_pos - start_pos + CATALOG_DEFAULT_ITEM_GAP_EMU,
+        )
+
+    @staticmethod
+    def _infer_single_item_layout_direction(item: CatalogItem) -> CatalogLayout:
+        """Infer layout direction from the spatial relationship between number and text shapes.
+
+        The logic maps the relationship between number and text shapes to the overall
+        catalog layout direction:
+        - If number and text are horizontally separated (side-by-side), the catalog
+          items are meant to stack VERTICALLY (one row per item).
+        - If number and text are vertically separated (one above the other), the
+          catalog items are arranged HORIZONTALLY (one column per item).
+
+        Args:
+            item: A single catalog item with number and text shape information.
+
+        Returns:
+            CatalogLayout.VERTICAL if items should stack vertically,
+            CatalogLayout.HORIZONTAL if items should arrange horizontally.
+        """
+        number_center_x = item.number_shape["left"] + item.number_shape["width"] / 2
+        number_center_y = item.number_shape["top"] + item.number_shape["height"] / 2
+        text_center_x = item.text_shape["left"] + item.text_shape["width"] / 2
+        text_center_y = item.text_shape["top"] + item.text_shape["height"] / 2
+
+        horizontal_distance = abs(text_center_x - number_center_x)
+        vertical_distance = abs(text_center_y - number_center_y)
+
+        # Horizontal separation between number and text → vertical item stacking
+        if horizontal_distance >= vertical_distance:
+            return CatalogLayout.VERTICAL
+        # Vertical separation between number and text → horizontal item arrangement
+        return CatalogLayout.HORIZONTAL
+
+    @staticmethod
+    def _resolve_layout_direction(catalog_items: "CatalogList") -> CatalogLayout:
+        """Determine the layout direction of catalog items.
+
+        Uses different strategies based on the number of items available:
+        - Multiple items: analyzes position patterns to determine direction.
+        - Single item: infers direction from number-text spatial relationship.
+        - No items: returns UNDEFINED.
+
+        Args:
+            catalog_items: List of catalog items to analyze.
+
+        Returns:
+            The determined layout direction (VERTICAL, HORIZONTAL, or UNDEFINED).
+        """
+        number_shapes = [item.number_shape for item in catalog_items]
+        if len(number_shapes) >= 2:
+            return CatalogPage._layout_direction(number_shapes)
+        if len(catalog_items) == 1:
+            return CatalogPage._infer_single_item_layout_direction(catalog_items[0])
+        return CatalogLayout.UNDEFINED
+
+    @staticmethod
+    def _create_default_catalog_items(slide: Slide) -> CatalogList:
+        prs = slide.part.package.presentation_part.presentation
+        slide_width = int(prs.slide_width)
+        text_left = CATALOG_DEFAULT_LEFT_EMU + CATALOG_DEFAULT_NUMBER_WIDTH_EMU + CATALOG_DEFAULT_TEXT_GAP_EMU
+        text_width = max(
+            CATALOG_DEFAULT_NUMBER_WIDTH_EMU,
+            slide_width - text_left - CATALOG_DEFAULT_RIGHT_MARGIN_EMU,
+        )
+
+        number_shape = slide.shapes.add_textbox(
+            Length(CATALOG_DEFAULT_LEFT_EMU),
+            Length(CATALOG_DEFAULT_TOP_EMU),
+            Length(CATALOG_DEFAULT_NUMBER_WIDTH_EMU),
+            Length(CATALOG_DEFAULT_ITEM_HEIGHT_EMU),
+        )
+        number_shape.text = "01"
+        number_paragraph = number_shape.text_frame.paragraphs[0]
+        number_paragraph.alignment = CATALOG_DEFAULT_NUMBER_ALIGNMENT
+        number_paragraph.font.size = Pt(CATALOG_DEFAULT_NUMBER_FONT_SIZE_PT)
+        number_paragraph.font.bold = CATALOG_DEFAULT_NUMBER_FONT_BOLD
+
+        text_shape = slide.shapes.add_textbox(
+            Length(text_left),
+            Length(CATALOG_DEFAULT_TOP_EMU),
+            Length(text_width),
+            Length(CATALOG_DEFAULT_ITEM_HEIGHT_EMU),
+        )
+        text_shape.text = "Catalog Item"
+        text_paragraph = text_shape.text_frame.paragraphs[0]
+        text_paragraph.font.size = Pt(CATALOG_DEFAULT_TEXT_FONT_SIZE_PT)
+
+        return CatalogList(
+            [
+                CatalogItem(
+                    CatalogPage._shape_info(number_shape),
+                    CatalogPage._shape_info(text_shape),
+                )
+            ]
+        )
+
+    @staticmethod
+    def _get_or_create_catalog_items(slide: Slide) -> CatalogList:
+        """Retrieve catalog items from the slide template, or create default items as fallback.
+
+        Args:
+            slide: The catalog slide to process.
+
+        Returns:
+            List of catalog items found or created.
+
+        Raises:
+            PPTTemplateError: If a non-recoverable template error occurs.
+        """
+        try:
+            return CatalogPage._get_catalog_items(slide)
+        except CatalogTemplateNotFoundError:
+            logger.info("Catalog slide has no template items; creating default catalog item fallback")
+            return CatalogPage._create_default_catalog_items(slide)
 
     @staticmethod
     def _clone_shape_to_slide(
@@ -580,7 +769,19 @@ class CatalogPage(Page):
     ) -> Any:
         """Clone a shape element, reposition it, and insert into the slide.
 
-        Returns the new Shape object wrapper.
+        Args:
+            sp_tree: The slide's shape tree (CT_GroupShape from python-pptx internals).
+            slide: Target slide for the cloned shape.
+            src_shape: Source shape to clone.
+            dx: Horizontal offset in EMU.
+            dy: Vertical offset in EMU.
+
+        Returns:
+            The new Shape object wrapper.
+
+        Note:
+            Type annotations use Any due to python-pptx internal types not being
+            fully exposed in the public API.
         """
         new_el = copy.deepcopy(src_shape.element)
         # Remove custDataLst to avoid conflicts
@@ -635,16 +836,7 @@ class CatalogPage(Page):
             if shape.is_placeholder:
                 # placeholder shapes are not included in the all_shapes list
                 continue
-            shape_info: dict[str, Any] = {
-                "text": shape.text.strip() if shape.has_text_frame else None,  # type: ignore
-                "left": shape.left,
-                "top": shape.top,
-                "width": shape.width,
-                "height": shape.height,
-                "shape_type": shape.shape_type,
-                "shape_id": shape.shape_id,
-                "shape": shape,
-            }
+            shape_info = CatalogPage._shape_info(shape)
             if shape.has_text_frame:
                 text_shapes.append(shape_info)
             all_shapes.append(shape_info)
@@ -660,7 +852,7 @@ class CatalogPage(Page):
 
         match len(number_shapes):
             case 0:
-                raise PPTTemplateError("Catalog page must have at least one chapter numbers")
+                raise CatalogTemplateNotFoundError("Catalog page must have at least one chapter numbers")
             case 1:
                 layout_direction = CatalogLayout.UNDEFINED
             case _:
@@ -755,15 +947,10 @@ class CatalogPage(Page):
             raise PPTGenError("Catalog page must have content.")
         catalog_num = len(content)
         catalog_slide = prs.slides[catalog_page_index]
-        catalog_items = CatalogPage._get_catalog_items(catalog_slide)
+        catalog_items = CatalogPage._get_or_create_catalog_items(catalog_slide)
 
         # Determine layout direction for position calculations
-        number_shape_dicts = [item.number_shape for item in catalog_items]
-        layout_direction = (
-            CatalogPage._layout_direction(number_shape_dicts)
-            if len(number_shape_dicts) >= 2
-            else CatalogLayout.UNDEFINED
-        )
+        layout_direction = CatalogPage._resolve_layout_direction(catalog_items)
 
         if len(catalog_items) > catalog_num:
             sp_tree = catalog_slide.shapes._spTree
@@ -796,28 +983,7 @@ class CatalogPage(Page):
             target_count = min(max_per_page, catalog_num)
 
             # Calculate position step from existing items
-            if layout_direction == CatalogLayout.VERTICAL:
-                positions = [item.number_shape["top"] for item in catalog_items]
-                step = (
-                    int(
-                        sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
-                        / (len(positions) - 1)
-                    )
-                    if len(positions) >= 2
-                    else 0
-                )
-            elif layout_direction == CatalogLayout.HORIZONTAL:
-                positions = [item.number_shape["left"] for item in catalog_items]
-                step = (
-                    int(
-                        sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
-                        / (len(positions) - 1)
-                    )
-                    if len(positions) >= 2
-                    else 0
-                )
-            else:
-                step = 0
+            step = CatalogPage._calculate_catalog_step(catalog_items, layout_direction)
 
             n_existing = len(catalog_items)
             for clone_idx in range(1, target_count - n_existing + 1):

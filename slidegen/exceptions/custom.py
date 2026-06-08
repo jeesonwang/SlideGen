@@ -102,5 +102,11 @@ class PPTTemplateError(ApiError):
     default_code = InsideServerErrorCode
 
 
+class CatalogTemplateNotFoundError(PPTTemplateError):
+    """Raised when catalog slide has no template items"""
+
+    default_code = InsideServerErrorCode
+
+
 class MarkdownDocumentError(ApiError):
     default_code = InsideServerErrorCode

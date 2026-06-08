@@ -254,6 +254,44 @@ class TestPages:
             assert background_index < shape_order[item.number_shape["shape"]._element]
             assert background_index < shape_order[item.text_shape["shape"]._element]
 
+    @pytest.mark.anyio
+    async def test_catalog_page_single_template_item_expands_on_same_slide(self):
+        """A single catalog item should seed more items instead of one item per page."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        number_shape = catalog_slide.shapes.add_textbox(Emu(900000), Emu(1400000), Emu(420000), Emu(320000))
+        number_shape.text = "01"
+        text_shape = catalog_slide.shapes.add_textbox(Emu(1500000), Emu(1400000), Emu(4500000), Emu(320000))
+        text_shape.text = "Existing"
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 4)]
+
+        last_catalog_index = await CatalogPage.generate_slide(presentation, headings, catalog_page_index=0)
+
+        assert last_catalog_index == 0
+        catalog_texts = {
+            shape.text.strip()
+            for shape in catalog_slide.shapes
+            if shape.has_text_frame and shape.text.strip()
+        }
+        assert {"01", "02", "03", "Chapter 1", "Chapter 2", "Chapter 3"} <= catalog_texts
+
+    @pytest.mark.anyio
+    async def test_catalog_page_blank_slide_uses_default_fallback_items(self):
+        """A blank catalog slide should generate usable default catalog items."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 5)]
+
+        last_catalog_index = await CatalogPage.generate_slide(presentation, headings, catalog_page_index=0)
+
+        assert last_catalog_index == 0
+        catalog_texts = {
+            shape.text.strip()
+            for shape in catalog_slide.shapes
+            if shape.has_text_frame and shape.text.strip()
+        }
+        assert {"01", "02", "03", "04", "Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4"} <= catalog_texts
+
     async def test_chapter_home_page_generation(self, presentation, heading_list):
         """test ChapterHomePage"""
         title = Heading(level=2, text="Hello World! This is a test title.")
