@@ -42,6 +42,7 @@ from .codes import (
 from .custom import (
     AccessDeniedError,
     AuthDenyError,
+    CatalogTemplateNotFoundError,
     DatasBaseError,
     ExpireTokenError,
     FileParseError,
@@ -67,6 +68,7 @@ __all__ = [
     "ApiError",
     "AccessDeniedError",
     "AuthDenyError",
+    "CatalogTemplateNotFoundError",
     "DatasBaseError",
     "ExpireTokenError",
     "FileParseError",

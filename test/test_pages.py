@@ -292,6 +292,21 @@ class TestPages:
         }
         assert {"01", "02", "03", "04", "Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4"} <= catalog_texts
 
+    @pytest.mark.anyio
+    async def test_catalog_page_removes_empty_placeholders(self):
+        """Empty layout placeholders should not remain visible in PowerPoint edit view."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[0])
+        nonempty_placeholder = catalog_slide.shapes.placeholders[1]
+        nonempty_placeholder.text = "目录"
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 3)]
+
+        await CatalogPage.generate_slide(presentation, headings, catalog_page_index=0)
+
+        placeholders = list(catalog_slide.shapes.placeholders)
+        assert all(shape.text.strip() for shape in placeholders if shape.has_text_frame)
+        assert nonempty_placeholder in placeholders
+
     async def test_chapter_home_page_generation(self, presentation, heading_list):
         """test ChapterHomePage"""
         title = Heading(level=2, text="Hello World! This is a test title.")

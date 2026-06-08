@@ -760,6 +760,15 @@ class CatalogPage(Page):
             return CatalogPage._create_default_catalog_items(slide)
 
     @staticmethod
+    def _remove_empty_text_placeholders(slide: Slide) -> None:
+        empty_placeholders = [
+            cast(Shape, shape)
+            for shape in slide.shapes.placeholders
+            if shape.has_text_frame and not cast(Shape, shape).text.strip()
+        ]
+        Page.remove_shapes(slide.shapes._spTree, empty_placeholders)
+
+    @staticmethod
     def _clone_shape_to_slide(
         sp_tree: Any,
         slide: Slide,
@@ -947,6 +956,7 @@ class CatalogPage(Page):
             raise PPTGenError("Catalog page must have content.")
         catalog_num = len(content)
         catalog_slide = prs.slides[catalog_page_index]
+        CatalogPage._remove_empty_text_placeholders(catalog_slide)
         catalog_items = CatalogPage._get_or_create_catalog_items(catalog_slide)
 
         # Determine layout direction for position calculations
