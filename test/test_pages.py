@@ -293,6 +293,65 @@ class TestPages:
         assert {"01", "02", "03", "04", "Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4"} <= catalog_texts
 
     @pytest.mark.anyio
+    async def test_catalog_page_blank_slide_uses_shape_json_catalog_items(self, monkeypatch):
+        """A blank catalog slide should use template-specific catalog items from shapes.json."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        source_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        number_shape = source_slide.shapes.add_textbox(Emu(1234567), Emu(2000000), Emu(600000), Emu(350000))
+        number_shape.text = "01"
+        text_shape = source_slide.shapes.add_textbox(Emu(2034567), Emu(2000000), Emu(3000000), Emu(350000))
+        text_shape.text = ""
+
+        catalog_item = SimpleNamespace(
+            number=SimpleNamespace(
+                xml=number_shape._element.xml,
+                zorder=0,
+                text="01",
+                location=Location(
+                    x=number_shape.left,
+                    y=number_shape.top,
+                    width=number_shape.width,
+                    height=number_shape.height,
+                ),
+            ),
+            text=SimpleNamespace(
+                xml=text_shape._element.xml,
+                zorder=1,
+                text="",
+                location=Location(
+                    x=text_shape.left,
+                    y=text_shape.top,
+                    width=text_shape.width,
+                    height=text_shape.height,
+                ),
+            ),
+            background=None,
+        )
+
+        class FakeComponentsManager:
+            metadata = {"slide_width": int(presentation.slide_width), "slide_height": int(presentation.slide_height)}
+
+            def get_catalog_items(self, template_name):
+                assert template_name == "general"
+                return [catalog_item]
+
+        monkeypatch.setattr(pages_module, "components_manager", FakeComponentsManager())
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 3)]
+
+        await CatalogPage.generate_slide(presentation, headings, catalog_page_index=0, template_name="general")
+
+        catalog_items = CatalogPage._get_catalog_items(catalog_slide)
+        assert catalog_items[0].number_shape["left"] == number_shape.left
+        assert catalog_items[0].text_shape["left"] == text_shape.left
+        catalog_texts = {
+            shape.text.strip()
+            for shape in catalog_slide.shapes
+            if shape.has_text_frame and shape.text.strip()
+        }
+        assert {"01", "02", "Chapter 1", "Chapter 2"} <= catalog_texts
+
+    @pytest.mark.anyio
     async def test_catalog_page_default_fallback_items_are_centered_and_larger(self):
         """Default fallback catalog items should read as a centered group."""
         presentation = Presentation()
@@ -856,3 +915,32 @@ class TestPages:
         temp_output = os.path.join(os.path.dirname(__file__), "test_nested_ppt.pptx")
         template_prs.save(temp_output)
         assert os.path.exists(temp_output)
+
+    @pytest.mark.anyio
+    async def test_presentation_orchestrator_passes_template_name_to_catalog_page(self, monkeypatch):
+        """Template name should flow to CatalogPage so shape.json catalog items can be selected."""
+        markdown_document = MarkdownDocument("# Product Strategy\n## Market Context\n### Customer Signals\n")
+        presentation = Presentation()
+        for _ in range(5):
+            presentation.slides.add_slide(presentation.slide_layouts[6])
+        captured = {}
+
+        async def fake_cover(*_args, **_kwargs):
+            return None
+
+        async def fake_catalog(*_args, **kwargs):
+            captured["template_name"] = kwargs.get("template_name")
+            return kwargs.get("catalog_page_index", 1)
+
+        async def fake_page(*_args, **_kwargs):
+            return None
+
+        monkeypatch.setattr(CoverPage, "generate_slide", fake_cover)
+        monkeypatch.setattr(CatalogPage, "generate_slide", fake_catalog)
+        monkeypatch.setattr(ChapterHomePage, "generate_slide", fake_page)
+        monkeypatch.setattr(ChapterContentPage, "generate_slide", fake_page)
+        monkeypatch.setattr(pages_module.EndPage, "generate_slide", fake_page)
+
+        await PresentationOrchestrator().generate(presentation, markdown_document, template_name="purple")
+
+        assert captured["template_name"] == "purple"

@@ -300,4 +300,16 @@ def convert_paragraph_xml(paragraph_xml: str, text_content: str) -> str:
         else:
             p_element.insert(0, r_element)
 
+    elif text_content:
+        r_element = etree.Element(f"{{{drawingml_ns}}}r")
+        t_element = etree.Element(f"{{{drawingml_ns}}}t")
+        t_element.text = text_content
+        r_element.append(t_element)
+
+        p_pr = p_element.find(".//a:pPr", namespaces=root.nsmap)
+        if p_pr is not None:
+            p_pr.addnext(r_element)
+        else:
+            p_element.insert(0, r_element)
+
     return etree.tostring(root, encoding="unicode", pretty_print=True)

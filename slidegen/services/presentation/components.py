@@ -172,6 +172,71 @@ class PagePlaceholder:
         }
 
 
+@dataclass
+class CatalogShapeTemplate:
+    """Stored shape info for one role inside a reusable catalog item."""
+
+    xml: str
+    zorder: int
+    location: Location
+    text: str | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "CatalogShapeTemplate":
+        loc = data.get("location", {})
+        return cls(
+            xml=data["xml"],
+            zorder=data.get("zorder", 0),
+            text=data.get("text"),
+            location=Location(
+                x=loc.get("x", 0),
+                y=loc.get("y", 0),
+                width=loc.get("width", 0),
+                height=loc.get("height", 0),
+            ),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "xml": self.xml,
+            "zorder": self.zorder,
+            "text": self.text,
+            "location": {
+                "x": self.location.x,
+                "y": self.location.y,
+                "width": self.location.width,
+                "height": self.location.height,
+            },
+        }
+
+
+@dataclass
+class CatalogItemTemplate:
+    """Stored reusable catalog item template."""
+
+    number: CatalogShapeTemplate
+    text: CatalogShapeTemplate
+    background: CatalogShapeTemplate | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "CatalogItemTemplate":
+        background = data.get("background")
+        return cls(
+            number=CatalogShapeTemplate.from_dict(data["number"]),
+            text=CatalogShapeTemplate.from_dict(data["text"]),
+            background=CatalogShapeTemplate.from_dict(background) if background else None,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "number": self.number.to_dict(),
+            "text": self.text.to_dict(),
+        }
+        if self.background is not None:
+            data["background"] = self.background.to_dict()
+        return data
+
+
 class Style:
     """Represent a style of shapes, including multiple shapes"""
 
@@ -266,6 +331,7 @@ class ComponentsManager:
         self.metadata: dict[str, Any] = {}
         self.layout_types: dict[str, LayoutType] = {}
         self.page_placeholders: dict[str, dict[str, PagePlaceholder]] = {}
+        self.catalog_items: dict[str, list[CatalogItemTemplate]] = {}
 
         if json_path:
             self.load_from_json(json_path)
@@ -275,9 +341,16 @@ class ComponentsManager:
         self.metadata = {}
         self.layout_types = {}
         self.page_placeholders = {}
+        self.catalog_items = {}
         for key, value in data.items():
             if key == "metadata":
                 self.metadata = dict(value) if isinstance(value, dict) else {}
+            elif key == "catalog_items":
+                for template_name, template_data in value.items():
+                    items_data = template_data.get("items", template_data) if isinstance(template_data, dict) else template_data
+                    self.catalog_items[template_name] = [
+                        CatalogItemTemplate.from_dict(item_data) for item_data in items_data
+                    ]
             elif key == "page_placeholders":
                 for page_type, ph_data in value.items():
                     self.page_placeholders[page_type] = {}
@@ -297,6 +370,13 @@ class ComponentsManager:
             data["metadata"] = self.metadata
         for layout_name, layout in self.layout_types.items():
             data[layout_name] = layout.to_dict()
+
+        if self.catalog_items:
+            data["catalog_items"] = {}
+            for template_name, catalog_items in self.catalog_items.items():
+                data["catalog_items"][template_name] = {
+                    "items": [item.to_dict() for item in catalog_items],
+                }
 
         if self.page_placeholders:
             data["page_placeholders"] = {}
@@ -569,6 +649,12 @@ class ComponentsManager:
         if page_data is None:
             return None
         return page_data.get(role)
+
+    def get_catalog_items(self, template_name: str | None) -> list[CatalogItemTemplate] | None:
+        """Retrieve stored catalog item templates for a presentation template."""
+        if not template_name:
+            return None
+        return self.catalog_items.get(template_name)
 
     @staticmethod
     def is_icon(shape_location: Location) -> bool:

@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -45,6 +46,49 @@ def test_components_manager_loads_metadata_without_layout_pollution(tmp_path):
 
     assert manager.metadata == {"slide_width": 12192000, "slide_height": 6858000}
     assert "metadata" not in manager.layout_types_names
+    assert "one_point" in manager.layout_types_names
+
+
+def test_components_manager_loads_catalog_items_without_layout_pollution(tmp_path):
+    json_path = tmp_path / "shapes.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "metadata": {"slide_width": 12192000, "slide_height": 6858000},
+                "catalog_items": {
+                    "general": {
+                        "items": [
+                            {
+                                "number": {
+                                    "xml": "number-xml",
+                                    "zorder": 0,
+                                    "text": "01",
+                                    "location": {"x": 1, "y": 2, "width": 3, "height": 4},
+                                },
+                                "text": {
+                                    "xml": "text-xml",
+                                    "zorder": 1,
+                                    "text": "Title",
+                                    "location": {"x": 5, "y": 6, "width": 7, "height": 8},
+                                },
+                            }
+                        ]
+                    }
+                },
+                "one_point": {"style0": {}},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    manager = ComponentsManager(json_path)
+
+    catalog_items = manager.get_catalog_items("general")
+    assert catalog_items is not None
+    assert len(catalog_items) == 1
+    assert catalog_items[0].number.text == "01"
+    assert catalog_items[0].text.location.x == 5
+    assert "catalog_items" not in manager.layout_types_names
     assert "one_point" in manager.layout_types_names
 
 
