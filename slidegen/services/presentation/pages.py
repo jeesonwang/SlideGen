@@ -47,13 +47,15 @@ TITLE_TEXTBOX_HORIZONTAL_PADDING_EMU = 228600
 TITLE_TEXTBOX_RIGHT_MARGIN_EMU = 457200
 CATALOG_DEFAULT_LEFT_EMU = 914400
 CATALOG_DEFAULT_TOP_EMU = 1371600
-CATALOG_DEFAULT_NUMBER_WIDTH_EMU = 457200
-CATALOG_DEFAULT_ITEM_HEIGHT_EMU = 342900
-CATALOG_DEFAULT_TEXT_GAP_EMU = 228600
-CATALOG_DEFAULT_ITEM_GAP_EMU = 228600
+CATALOG_DEFAULT_GROUP_WIDTH_RATIO = 0.6
+CATALOG_DEFAULT_MIN_GROUP_WIDTH_EMU = 5486400
+CATALOG_DEFAULT_NUMBER_WIDTH_EMU = 609600
+CATALOG_DEFAULT_ITEM_HEIGHT_EMU = 457200
+CATALOG_DEFAULT_TEXT_GAP_EMU = 342900
+CATALOG_DEFAULT_ITEM_GAP_EMU = 342900
 CATALOG_DEFAULT_RIGHT_MARGIN_EMU = 914400
-CATALOG_DEFAULT_NUMBER_FONT_SIZE_PT = 18
-CATALOG_DEFAULT_TEXT_FONT_SIZE_PT = 18
+CATALOG_DEFAULT_NUMBER_FONT_SIZE_PT = 24
+CATALOG_DEFAULT_TEXT_FONT_SIZE_PT = 24
 CATALOG_DEFAULT_NUMBER_FONT_BOLD = True
 CATALOG_DEFAULT_NUMBER_ALIGNMENT = PP_ALIGN.CENTER
 
@@ -700,48 +702,75 @@ class CatalogPage(Page):
         return CatalogLayout.UNDEFINED
 
     @staticmethod
-    def _create_default_catalog_items(slide: Slide) -> CatalogList:
+    def _calculate_default_catalog_count(slide_height: int, target_count: int) -> int:
+        step = CATALOG_DEFAULT_ITEM_HEIGHT_EMU + CATALOG_DEFAULT_ITEM_GAP_EMU
+        max_per_page = max(1, int((slide_height + CATALOG_DEFAULT_ITEM_GAP_EMU) / step))
+        return max(1, min(target_count, max_per_page))
+
+    @staticmethod
+    def _create_default_catalog_items(slide: Slide, target_count: int = 1) -> CatalogList:
         prs = slide.part.package.presentation_part.presentation
         slide_width = int(prs.slide_width)
-        text_left = CATALOG_DEFAULT_LEFT_EMU + CATALOG_DEFAULT_NUMBER_WIDTH_EMU + CATALOG_DEFAULT_TEXT_GAP_EMU
-        text_width = max(
+        slide_height = int(prs.slide_height)
+        item_count = CatalogPage._calculate_default_catalog_count(slide_height, target_count)
+        available_width = max(
             CATALOG_DEFAULT_NUMBER_WIDTH_EMU,
-            slide_width - text_left - CATALOG_DEFAULT_RIGHT_MARGIN_EMU,
+            slide_width - 2 * CATALOG_DEFAULT_RIGHT_MARGIN_EMU,
         )
-
-        number_shape = slide.shapes.add_textbox(
-            Length(CATALOG_DEFAULT_LEFT_EMU),
-            Length(CATALOG_DEFAULT_TOP_EMU),
-            Length(CATALOG_DEFAULT_NUMBER_WIDTH_EMU),
-            Length(CATALOG_DEFAULT_ITEM_HEIGHT_EMU),
+        preferred_width = max(
+            CATALOG_DEFAULT_MIN_GROUP_WIDTH_EMU,
+            int(slide_width * CATALOG_DEFAULT_GROUP_WIDTH_RATIO),
         )
-        number_shape.text = "01"
-        number_paragraph = number_shape.text_frame.paragraphs[0]
-        number_paragraph.alignment = CATALOG_DEFAULT_NUMBER_ALIGNMENT
-        number_paragraph.font.size = Pt(CATALOG_DEFAULT_NUMBER_FONT_SIZE_PT)
-        number_paragraph.font.bold = CATALOG_DEFAULT_NUMBER_FONT_BOLD
-
-        text_shape = slide.shapes.add_textbox(
-            Length(text_left),
-            Length(CATALOG_DEFAULT_TOP_EMU),
-            Length(text_width),
-            Length(CATALOG_DEFAULT_ITEM_HEIGHT_EMU),
+        group_width = min(available_width, preferred_width)
+        group_left = max(0, int((slide_width - group_width) / 2))
+        text_left = group_left + CATALOG_DEFAULT_NUMBER_WIDTH_EMU + CATALOG_DEFAULT_TEXT_GAP_EMU
+        text_width = max(CATALOG_DEFAULT_NUMBER_WIDTH_EMU, group_width - CATALOG_DEFAULT_NUMBER_WIDTH_EMU)
+        text_width = max(CATALOG_DEFAULT_NUMBER_WIDTH_EMU, text_width - CATALOG_DEFAULT_TEXT_GAP_EMU)
+        group_height = (
+            item_count * CATALOG_DEFAULT_ITEM_HEIGHT_EMU
+            + (item_count - 1) * CATALOG_DEFAULT_ITEM_GAP_EMU
         )
-        text_shape.text = "Catalog Item"
-        text_paragraph = text_shape.text_frame.paragraphs[0]
-        text_paragraph.font.size = Pt(CATALOG_DEFAULT_TEXT_FONT_SIZE_PT)
+        group_top = max(0, int((slide_height - group_height) / 2))
 
-        return CatalogList(
-            [
+        catalog_list = CatalogList()
+        for item_index in range(item_count):
+            item_top = group_top + item_index * (
+                CATALOG_DEFAULT_ITEM_HEIGHT_EMU + CATALOG_DEFAULT_ITEM_GAP_EMU
+            )
+
+            number_shape = slide.shapes.add_textbox(
+                Length(group_left),
+                Length(item_top),
+                Length(CATALOG_DEFAULT_NUMBER_WIDTH_EMU),
+                Length(CATALOG_DEFAULT_ITEM_HEIGHT_EMU),
+            )
+            number_shape.text = str(item_index + 1).zfill(2)
+            number_paragraph = number_shape.text_frame.paragraphs[0]
+            number_paragraph.alignment = CATALOG_DEFAULT_NUMBER_ALIGNMENT
+            number_paragraph.font.size = Pt(CATALOG_DEFAULT_NUMBER_FONT_SIZE_PT)
+            number_paragraph.font.bold = CATALOG_DEFAULT_NUMBER_FONT_BOLD
+
+            text_shape = slide.shapes.add_textbox(
+                Length(text_left),
+                Length(item_top),
+                Length(text_width),
+                Length(CATALOG_DEFAULT_ITEM_HEIGHT_EMU),
+            )
+            text_shape.text = "Catalog Item"
+            text_paragraph = text_shape.text_frame.paragraphs[0]
+            text_paragraph.font.size = Pt(CATALOG_DEFAULT_TEXT_FONT_SIZE_PT)
+
+            catalog_list.append(
                 CatalogItem(
                     CatalogPage._shape_info(number_shape),
                     CatalogPage._shape_info(text_shape),
                 )
-            ]
-        )
+            )
+
+        return catalog_list
 
     @staticmethod
-    def _get_or_create_catalog_items(slide: Slide) -> CatalogList:
+    def _get_or_create_catalog_items(slide: Slide, target_count: int = 1) -> CatalogList:
         """Retrieve catalog items from the slide template, or create default items as fallback.
 
         Args:
@@ -757,7 +786,7 @@ class CatalogPage(Page):
             return CatalogPage._get_catalog_items(slide)
         except CatalogTemplateNotFoundError:
             logger.info("Catalog slide has no template items; creating default catalog item fallback")
-            return CatalogPage._create_default_catalog_items(slide)
+            return CatalogPage._create_default_catalog_items(slide, target_count)
 
     @staticmethod
     def _remove_empty_text_placeholders(slide: Slide) -> None:
@@ -957,7 +986,7 @@ class CatalogPage(Page):
         catalog_num = len(content)
         catalog_slide = prs.slides[catalog_page_index]
         CatalogPage._remove_empty_text_placeholders(catalog_slide)
-        catalog_items = CatalogPage._get_or_create_catalog_items(catalog_slide)
+        catalog_items = CatalogPage._get_or_create_catalog_items(catalog_slide, catalog_num)
 
         # Determine layout direction for position calculations
         layout_direction = CatalogPage._resolve_layout_direction(catalog_items)

@@ -293,6 +293,33 @@ class TestPages:
         assert {"01", "02", "03", "04", "Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4"} <= catalog_texts
 
     @pytest.mark.anyio
+    async def test_catalog_page_default_fallback_items_are_centered_and_larger(self):
+        """Default fallback catalog items should read as a centered group."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 5)]
+
+        await CatalogPage.generate_slide(presentation, headings, catalog_page_index=0)
+
+        catalog_items = CatalogPage._get_catalog_items(catalog_slide)
+        item_shapes = [item.number_shape for item in catalog_items] + [item.text_shape for item in catalog_items]
+        group_left = min(shape["left"] for shape in item_shapes)
+        group_top = min(shape["top"] for shape in item_shapes)
+        group_right = max(shape["left"] + shape["width"] for shape in item_shapes)
+        group_bottom = max(shape["top"] + shape["height"] for shape in item_shapes)
+        group_center_x = (group_left + group_right) / 2
+        group_center_y = (group_top + group_bottom) / 2
+
+        assert abs(group_center_x - int(presentation.slide_width) / 2) < 100000
+        assert abs(group_center_y - int(presentation.slide_height) / 2) < 100000
+        assert group_right - group_left < int(presentation.slide_width) * 0.7
+        for item in catalog_items:
+            number_shape = item.number_shape["shape"]
+            text_shape = item.text_shape["shape"]
+            assert number_shape.text_frame.paragraphs[0].font.size.pt >= 24
+            assert text_shape.text_frame.paragraphs[0].font.size.pt >= 24
+
+    @pytest.mark.anyio
     async def test_catalog_page_removes_empty_placeholders(self):
         """Empty layout placeholders should not remain visible in PowerPoint edit view."""
         presentation = Presentation()
