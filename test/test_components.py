@@ -92,6 +92,51 @@ def test_components_manager_loads_catalog_items_without_layout_pollution(tmp_pat
     assert "one_point" in manager.layout_types_names
 
 
+def test_components_manager_loads_layout_types_container(tmp_path):
+    json_path = tmp_path / "shapes.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "metadata": {"slide_width": 12192000, "slide_height": 6858000},
+                "layout_types": {
+                    "one_point": {"style0": {}},
+                    "two_points": {"style1": {}},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    manager = ComponentsManager(json_path)
+
+    assert "layout_types" not in manager.layout_types_names
+    assert manager.layout_types_names == ["one_point", "two_points"]
+
+
+def test_components_manager_saves_layout_types_container(tmp_path):
+    source_path = tmp_path / "source.json"
+    output_path = tmp_path / "output.json"
+    source_path.write_text(
+        json.dumps(
+            {
+                "metadata": {"slide_width": 12192000, "slide_height": 6858000},
+                "one_point": {"style0": {}},
+                "two_points": {"style1": {}},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    manager = ComponentsManager(source_path)
+    manager.save_to_json(output_path, backup=False)
+    saved = json.loads(output_path.read_text(encoding="utf-8"))
+
+    assert "layout_types" in saved
+    assert set(saved["layout_types"]) == {"one_point", "two_points"}
+    assert "one_point" not in saved
+    assert "two_points" not in saved
+
+
 def test_add_style():
     path = "data/深度学习原理架构与应用.pptx"
     presentation = Presentation(path)

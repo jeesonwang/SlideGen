@@ -345,6 +345,9 @@ class ComponentsManager:
         for key, value in data.items():
             if key == "metadata":
                 self.metadata = dict(value) if isinstance(value, dict) else {}
+            elif key == "layout_types":
+                for layout_name, layout_data in value.items():
+                    self.layout_types[layout_name] = LayoutType(layout_name, layout_data)
             elif key == "catalog_items":
                 for template_name, template_data in value.items():
                     items_data = template_data.get("items", template_data) if isinstance(template_data, dict) else template_data
@@ -368,8 +371,10 @@ class ComponentsManager:
         data: dict[str, Any] = {}
         if self.metadata:
             data["metadata"] = self.metadata
-        for layout_name, layout in self.layout_types.items():
-            data[layout_name] = layout.to_dict()
+        if self.layout_types:
+            data["layout_types"] = {}
+            for layout_name, layout in self.layout_types.items():
+                data["layout_types"][layout_name] = layout.to_dict()
 
         if self.catalog_items:
             data["catalog_items"] = {}
