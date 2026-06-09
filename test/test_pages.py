@@ -195,6 +195,72 @@ class TestPages:
         assert shape.text_frame.vertical_anchor == MSO_ANCHOR.TOP
         assert all(paragraph.alignment == PP_ALIGN.JUSTIFY for paragraph in shape.text_frame.paragraphs)
 
+    def _add_catalog_item(
+        self,
+        slide,
+        *,
+        number: str,
+        text: str,
+        left: int,
+        top: int,
+        dx_text: int = 700000,
+        dy_text: int = 0,
+    ):
+        number_shape = slide.shapes.add_textbox(Emu(left), Emu(top), Emu(420000), Emu(300000))
+        number_shape.text = number
+        text_shape = slide.shapes.add_textbox(Emu(left + dx_text), Emu(top + dy_text), Emu(2500000), Emu(300000))
+        text_shape.text = text
+        return number_shape, text_shape
+
+    def _catalog_template_from_shapes(self, number_shape, text_shape, background_shape=None):
+        return SimpleNamespace(
+            number=SimpleNamespace(
+                xml=number_shape._element.xml,
+                zorder=1,
+                text=number_shape.text,
+                location=Location(
+                    x=int(number_shape.left),
+                    y=int(number_shape.top),
+                    width=int(number_shape.width),
+                    height=int(number_shape.height),
+                ),
+            ),
+            text=SimpleNamespace(
+                xml=text_shape._element.xml,
+                zorder=2,
+                text=text_shape.text,
+                location=Location(
+                    x=int(text_shape.left),
+                    y=int(text_shape.top),
+                    width=int(text_shape.width),
+                    height=int(text_shape.height),
+                ),
+            ),
+            background=None
+            if background_shape is None
+            else SimpleNamespace(
+                xml=background_shape._element.xml,
+                zorder=0,
+                text=background_shape.text if background_shape.has_text_frame else None,
+                location=Location(
+                    x=int(background_shape.left),
+                    y=int(background_shape.top),
+                    width=int(background_shape.width),
+                    height=int(background_shape.height),
+                ),
+            ),
+        )
+
+    def _install_catalog_library(self, monkeypatch, presentation, catalog_items):
+        class FakeComponentsManager:
+            metadata = {"slide_width": int(presentation.slide_width), "slide_height": int(presentation.slide_height)}
+
+            def get_catalog_items(self, template_name):
+                assert template_name == "general"
+                return catalog_items
+
+        monkeypatch.setattr(pages_module, "components_manager", FakeComponentsManager())
+
     async def test_catalog_page_generation(self, presentation, heading_list):
         """test CatalogPage"""
 
@@ -350,6 +416,81 @@ class TestPages:
             if shape.has_text_frame and shape.text.strip()
         }
         assert {"01", "02", "Chapter 1", "Chapter 2"} <= catalog_texts
+
+    @pytest.mark.anyio
+    async def test_catalog_page_single_template_item_prefers_shape_json_catalog_items(self, monkeypatch):
+        """A weak single-item slide should be replaced by template library catalog items."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        self._add_catalog_item(catalog_slide, number="01", text="Old single", left=3000000, top=2600000)
+
+        source_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        library_templates = []
+        for index, top in enumerate([900000, 1400000, 1900000], start=1):
+            number_shape, text_shape = self._add_catalog_item(
+                source_slide,
+                number=str(index).zfill(2),
+                text="",
+                left=900000,
+                top=top,
+            )
+            library_templates.append(self._catalog_template_from_shapes(number_shape, text_shape))
+        self._install_catalog_library(monkeypatch, presentation, library_templates)
+
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 4)]
+        last_catalog_index = await CatalogPage.generate_slide(
+            presentation,
+            headings,
+            catalog_page_index=0,
+            template_name="general",
+        )
+
+        assert last_catalog_index == 0
+        catalog_items = CatalogPage._get_catalog_items(catalog_slide)
+        assert [item.number_shape["left"] for item in catalog_items] == [900000, 900000, 900000]
+        assert [item.number_shape["top"] for item in catalog_items] == [900000, 1400000, 1900000]
+        visible_texts = {
+            shape.text.strip()
+            for shape in catalog_slide.shapes
+            if shape.has_text_frame and shape.text.strip()
+        }
+        assert "Old single" not in visible_texts
+        assert {"01", "02", "03", "Chapter 1", "Chapter 2", "Chapter 3"} <= visible_texts
+
+    @pytest.mark.anyio
+    async def test_catalog_page_insufficient_template_items_prefers_shape_json_catalog_items(self, monkeypatch):
+        """A slide with too few catalog items should be replaced instead of locally cloned."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        self._add_catalog_item(catalog_slide, number="01", text="Old one", left=400000, top=400000)
+        self._add_catalog_item(catalog_slide, number="02", text="Old two", left=900000, top=900000)
+
+        source_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        library_templates = []
+        for index, top in enumerate([1200000, 1700000, 2200000, 2700000], start=1):
+            number_shape, text_shape = self._add_catalog_item(
+                source_slide,
+                number=str(index).zfill(2),
+                text="",
+                left=1600000,
+                top=top,
+            )
+            library_templates.append(self._catalog_template_from_shapes(number_shape, text_shape))
+        self._install_catalog_library(monkeypatch, presentation, library_templates)
+
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 5)]
+        await CatalogPage.generate_slide(presentation, headings, catalog_page_index=0, template_name="general")
+
+        catalog_items = CatalogPage._get_catalog_items(catalog_slide)
+        assert [item.number_shape["left"] for item in catalog_items] == [1600000, 1600000, 1600000, 1600000]
+        visible_texts = {
+            shape.text.strip()
+            for shape in catalog_slide.shapes
+            if shape.has_text_frame and shape.text.strip()
+        }
+        assert "Old one" not in visible_texts
+        assert "Old two" not in visible_texts
+        assert {"Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4"} <= visible_texts
 
     @pytest.mark.anyio
     async def test_catalog_page_default_fallback_items_are_centered_and_larger(self):

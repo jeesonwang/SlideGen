@@ -8,7 +8,7 @@ import unicodedata
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from loguru import logger
 from PIL import Image
@@ -454,6 +454,15 @@ class CatalogList(list[CatalogItem]):
         return [item.asdict() for item in self]
 
 
+@dataclass
+class CatalogItemsResolution:
+    """Resolved catalog items plus clone policy for the current catalog slide."""
+
+    items: CatalogList
+    source: Literal["slide", "library", "default"]
+    allow_clone: bool
+
+
 class CatalogPage(Page):
     """Presentation catalog page"""
 
@@ -830,31 +839,60 @@ class CatalogPage(Page):
         return catalog_list
 
     @staticmethod
+    def _has_catalog_items_in_library(template_name: str | None) -> bool:
+        get_catalog_items = getattr(components_manager, "get_catalog_items", None)
+        if get_catalog_items is None:
+            return False
+        catalog_item_templates = get_catalog_items(template_name)
+        return bool(catalog_item_templates)
+
+    @staticmethod
+    def _remove_catalog_items(slide: Slide, catalog_items: CatalogList) -> None:
+        if not catalog_items:
+            return
+        sp_tree = slide.shapes._spTree
+        shapes_to_remove = []
+        for item in catalog_items:
+            shapes_to_remove.append(item.number_shape["shape"])
+            shapes_to_remove.append(item.text_shape["shape"])
+            if item.background_shape:
+                shapes_to_remove.append(item.background_shape["shape"])
+        Page.remove_shapes(sp_tree, shapes_to_remove)
+
+    @staticmethod
     def _get_or_create_catalog_items(
         slide: Slide,
         target_count: int = 1,
         template_name: str | None = None,
-    ) -> CatalogList:
-        """Retrieve catalog items from the slide template, or create default items as fallback.
-
-        Args:
-            slide: The catalog slide to process.
-
-        Returns:
-            List of catalog items found or created.
-
-        Raises:
-            PPTTemplateError: If a non-recoverable template error occurs.
-        """
+    ) -> CatalogItemsResolution:
+        """Retrieve catalog items and record whether the selected source may be cloned."""
+        extracted_items = CatalogList()
         try:
-            return CatalogPage._get_catalog_items(slide)
+            extracted_items = CatalogPage._get_catalog_items(slide)
         except CatalogTemplateNotFoundError:
-            catalog_items = CatalogPage._create_catalog_items_from_library(slide, template_name, target_count)
-            if catalog_items:
-                logger.info("Catalog slide has no template items; using shape.json catalog items for {}", template_name)
-                return catalog_items
-            logger.info("Catalog slide has no template items; creating default catalog item fallback")
-            return CatalogPage._create_default_catalog_items(slide, target_count)
+            pass
+
+        should_use_library = len(extracted_items) <= 1 or len(extracted_items) < target_count
+        if should_use_library and CatalogPage._has_catalog_items_in_library(template_name):
+            CatalogPage._remove_catalog_items(slide, extracted_items)
+            library_items = CatalogPage._create_catalog_items_from_library(slide, template_name, target_count)
+            if library_items:
+                logger.info(
+                    "Catalog slide has {} extracted items; using shapes.json catalog items for {}",
+                    len(extracted_items),
+                    template_name,
+                )
+                return CatalogItemsResolution(items=library_items, source="library", allow_clone=False)
+
+        if extracted_items:
+            return CatalogItemsResolution(items=extracted_items, source="slide", allow_clone=True)
+
+        logger.info("Catalog slide has no template items; creating default catalog item fallback")
+        return CatalogItemsResolution(
+            items=CatalogPage._create_default_catalog_items(slide, target_count),
+            source="default",
+            allow_clone=True,
+        )
 
     @staticmethod
     def _remove_empty_text_placeholders(slide: Slide) -> None:
@@ -1055,7 +1093,8 @@ class CatalogPage(Page):
         catalog_num = len(content)
         catalog_slide = prs.slides[catalog_page_index]
         CatalogPage._remove_empty_text_placeholders(catalog_slide)
-        catalog_items = CatalogPage._get_or_create_catalog_items(catalog_slide, catalog_num, template_name)
+        resolution = CatalogPage._get_or_create_catalog_items(catalog_slide, catalog_num, template_name)
+        catalog_items = resolution.items
 
         # Determine layout direction for position calculations
         layout_direction = CatalogPage._resolve_layout_direction(catalog_items)
