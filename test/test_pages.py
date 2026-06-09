@@ -614,16 +614,20 @@ class TestPages:
         """Fallback capacity should use the left/top boundary for negative offsets."""
         presentation = Presentation()
         slide = presentation.slides.add_slide(presentation.slide_layouts[6])
-        self._add_catalog_item(slide, number="01", text="One", left=2800000, top=2600000)
-        self._add_catalog_item(slide, number="02", text="Two", left=1800000, top=1800000)
+        self._add_catalog_item(slide, number="01", text="One", left=2800000, top=3300000)
+        self._add_catalog_item(slide, number="02", text="Two", left=2200000, top=1800000)
 
         catalog_items = CatalogPage._get_catalog_items(slide)
+        dx_per_item, dy_per_item = CatalogPage._calculate_catalog_offset(catalog_items)
         max_per_page = CatalogPage._calculate_max_per_page(
             catalog_items,
             int(presentation.slide_height),
             int(presentation.slide_width),
         )
 
+        assert len(catalog_items) == 2
+        assert dx_per_item < 0
+        assert dy_per_item < 0
         assert max_per_page == 3
 
     @pytest.mark.anyio

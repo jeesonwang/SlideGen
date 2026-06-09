@@ -1138,13 +1138,6 @@ class CatalogPage(Page):
                         min_distance = distance
                         closest_text_shape = text_shape
 
-            if closest_text_shape is None:
-                for text_shape in except_number_shapes:
-                    distance = CatalogPage._calculate_distance(number_shape, text_shape)
-                    if distance < min_distance:
-                        min_distance = distance
-                        closest_text_shape = text_shape
-
             if closest_text_shape:
                 catalog_list.append(CatalogItem(number_shape, closest_text_shape))
                 try:
