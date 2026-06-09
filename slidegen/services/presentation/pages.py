@@ -463,6 +463,14 @@ class CatalogItemsResolution:
     allow_clone: bool
 
 
+@dataclass(frozen=True)
+class CatalogItemBounds:
+    left: int
+    top: int
+    right: int
+    bottom: int
+
+
 class CatalogPage(Page):
     """Presentation catalog page"""
 
@@ -582,32 +590,34 @@ class CatalogPage(Page):
 
     @staticmethod
     def _calculate_max_per_page(
-        catalog_items: "CatalogList",
-        layout_direction: "CatalogLayout",
+        catalog_items: CatalogList,
         slide_height: int,
         slide_width: int,
     ) -> int:
-        """Calculate max catalog items per page based on spacing and margins.
+        """Calculate fallback clone capacity using full vector movement and item bounds."""
+        if not catalog_items:
+            return 0
 
-        Uses the average spacing between existing items and the distance from the
-        first item to the slide edge to determine how many items fit on one page.
-        Falls back to len(catalog_items) if spacing can't be determined (< 2 items
-        or undefined layout).
-        """
-        if len(catalog_items) == 0 or layout_direction == CatalogLayout.UNDEFINED:
+        dx_per_item, dy_per_item = CatalogPage._calculate_catalog_offset(catalog_items)
+        if dx_per_item == 0 and dy_per_item == 0:
             return len(catalog_items)
 
-        step = CatalogPage._calculate_catalog_step(catalog_items, layout_direction)
-        if step <= 0:
-            return len(catalog_items)
-
-        first_item = catalog_items[0]
-        if layout_direction == CatalogLayout.VERTICAL:
-            usable = slide_height - min(first_item.number_shape["top"], first_item.text_shape["top"])
-        else:  # HORIZONTAL
-            usable = slide_width - min(first_item.number_shape["left"], first_item.text_shape["left"])
-
-        return max(len(catalog_items), int(usable / step))
+        source_item = catalog_items[-1]
+        item_bounds = CatalogPage._catalog_item_bounds(source_item)
+        max_extra_by_x = CatalogPage._calculate_axis_capacity(
+            start_min=item_bounds.left,
+            start_max=item_bounds.right,
+            step=dx_per_item,
+            axis_size=slide_width,
+        )
+        max_extra_by_y = CatalogPage._calculate_axis_capacity(
+            start_min=item_bounds.top,
+            start_max=item_bounds.bottom,
+            step=dy_per_item,
+            axis_size=slide_height,
+        )
+        max_extra = min(max_extra_by_x, max_extra_by_y)
+        return max(len(catalog_items), len(catalog_items) + max_extra)
 
     @staticmethod
     def _catalog_item_shapes(item: CatalogItem) -> list[dict[str, Any]]:
@@ -624,6 +634,23 @@ class CatalogPage(Page):
         right = max(shape["left"] + shape["width"] for shape in shapes)
         bottom = max(shape["top"] + shape["height"] for shape in shapes)
         return right - left, bottom - top
+
+    @staticmethod
+    def _catalog_item_bounds(item: CatalogItem) -> CatalogItemBounds:
+        shapes = CatalogPage._catalog_item_shapes(item)
+        left = min(shape["left"] for shape in shapes)
+        top = min(shape["top"] for shape in shapes)
+        right = max(shape["left"] + shape["width"] for shape in shapes)
+        bottom = max(shape["top"] + shape["height"] for shape in shapes)
+        return CatalogItemBounds(left=left, top=top, right=right, bottom=bottom)
+
+    @staticmethod
+    def _calculate_axis_capacity(start_min: int, start_max: int, step: int, axis_size: int) -> int:
+        if step == 0:
+            return 1_000_000
+        if step > 0:
+            return max(0, int((axis_size - start_max) / step))
+        return max(0, int(start_min / abs(step)))
 
     @staticmethod
     def _calculate_catalog_offset(catalog_items: CatalogList) -> tuple[int, int]:
@@ -653,53 +680,6 @@ class CatalogPage(Page):
             ), 0
 
         return 0, 0
-
-    @staticmethod
-    def _calculate_catalog_step(
-        catalog_items: "CatalogList",
-        layout_direction: "CatalogLayout",
-    ) -> int:
-        """Calculate the spacing between catalog items along the layout direction.
-
-        For multiple items, computes average spacing from existing positions.
-        For a single item, estimates spacing from item dimensions plus default gap.
-
-        Args:
-            catalog_items: List of catalog items with position information.
-            layout_direction: Direction in which items are arranged.
-
-        Returns:
-            Step size in EMU (English Metric Units), or 0 if calculation is not possible.
-        """
-        if len(catalog_items) >= 2:
-            key = "top" if layout_direction == CatalogLayout.VERTICAL else "left"
-            positions = [item.number_shape[key] for item in catalog_items]
-            return int(
-                sum(abs(positions[i + 1] - positions[i]) for i in range(len(positions) - 1))
-                / (len(positions) - 1)
-            )
-
-        if len(catalog_items) != 1:
-            return 0
-
-        item = catalog_items[0]
-        shapes = [item.number_shape, item.text_shape]
-        if item.background_shape:
-            shapes.append(item.background_shape)
-
-        if layout_direction == CatalogLayout.VERTICAL:
-            start_pos = min(shape["top"] for shape in shapes)
-            end_pos = max(shape["top"] + shape["height"] for shape in shapes)
-        elif layout_direction == CatalogLayout.HORIZONTAL:
-            start_pos = min(shape["left"] for shape in shapes)
-            end_pos = max(shape["left"] + shape["width"] for shape in shapes)
-        else:
-            return 0
-
-        return max(
-            CATALOG_DEFAULT_ITEM_HEIGHT_EMU + CATALOG_DEFAULT_ITEM_GAP_EMU,
-            end_pos - start_pos + CATALOG_DEFAULT_ITEM_GAP_EMU,
-        )
 
     @staticmethod
     def _infer_single_item_layout_direction(item: CatalogItem) -> CatalogLayout:
@@ -1158,6 +1138,13 @@ class CatalogPage(Page):
                         min_distance = distance
                         closest_text_shape = text_shape
 
+            if closest_text_shape is None:
+                for text_shape in except_number_shapes:
+                    distance = CatalogPage._calculate_distance(number_shape, text_shape)
+                    if distance < min_distance:
+                        min_distance = distance
+                        closest_text_shape = text_shape
+
             if closest_text_shape:
                 catalog_list.append(CatalogItem(number_shape, closest_text_shape))
                 try:
@@ -1242,7 +1229,6 @@ class CatalogPage(Page):
                     raise PPTTemplateError("Presentation slide dimensions must be defined for catalog pagination")
                 max_per_page = CatalogPage._calculate_max_per_page(
                     catalog_items,
-                    layout_direction,
                     int(slide_height),
                     int(slide_width),
                 )

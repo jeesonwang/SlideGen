@@ -594,6 +594,38 @@ class TestPages:
         assert catalog_items[2].number_shape["left"] == 2100000
         assert catalog_items[2].number_shape["top"] == 2100000
 
+    def test_catalog_diagonal_layout_capacity_uses_both_axes(self):
+        """Diagonal fallback capacity should be constrained by both x and y bounds."""
+        presentation = Presentation()
+        slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        self._add_catalog_item(slide, number="01", text="One", left=4900000, top=4200000)
+        self._add_catalog_item(slide, number="02", text="Two", left=5700000, top=5000000)
+
+        catalog_items = CatalogPage._get_catalog_items(slide)
+        max_per_page = CatalogPage._calculate_max_per_page(
+            catalog_items,
+            int(presentation.slide_height),
+            int(presentation.slide_width),
+        )
+
+        assert max_per_page == 2
+
+    def test_catalog_negative_offset_capacity(self):
+        """Fallback capacity should use the left/top boundary for negative offsets."""
+        presentation = Presentation()
+        slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        self._add_catalog_item(slide, number="01", text="One", left=2800000, top=2600000)
+        self._add_catalog_item(slide, number="02", text="Two", left=1800000, top=1800000)
+
+        catalog_items = CatalogPage._get_catalog_items(slide)
+        max_per_page = CatalogPage._calculate_max_per_page(
+            catalog_items,
+            int(presentation.slide_height),
+            int(presentation.slide_width),
+        )
+
+        assert max_per_page == 3
+
     @pytest.mark.anyio
     async def test_catalog_page_default_fallback_items_are_centered_and_larger(self):
         """Default fallback catalog items should read as a centered group."""
