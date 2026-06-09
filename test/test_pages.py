@@ -579,6 +579,22 @@ class TestPages:
         assert {"03", "04", "Chapter 3", "Chapter 4"} <= second_page_texts
 
     @pytest.mark.anyio
+    async def test_catalog_diagonal_layout_cloning(self):
+        """Fallback cloning should preserve both dx and dy from existing catalog anchors."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        self._add_catalog_item(catalog_slide, number="01", text="One", left=900000, top=900000)
+        self._add_catalog_item(catalog_slide, number="02", text="Two", left=1500000, top=1500000)
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 4)]
+
+        await CatalogPage.generate_slide(presentation, headings, catalog_page_index=0)
+
+        catalog_items = CatalogPage._get_catalog_items(catalog_slide)
+        assert len(catalog_items) == 3
+        assert catalog_items[2].number_shape["left"] == 2100000
+        assert catalog_items[2].number_shape["top"] == 2100000
+
+    @pytest.mark.anyio
     async def test_catalog_page_default_fallback_items_are_centered_and_larger(self):
         """Default fallback catalog items should read as a centered group."""
         presentation = Presentation()

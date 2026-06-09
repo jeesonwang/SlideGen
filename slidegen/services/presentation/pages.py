@@ -610,6 +610,51 @@ class CatalogPage(Page):
         return max(len(catalog_items), int(usable / step))
 
     @staticmethod
+    def _catalog_item_shapes(item: CatalogItem) -> list[dict[str, Any]]:
+        shapes = [item.number_shape, item.text_shape]
+        if item.background_shape:
+            shapes.append(item.background_shape)
+        return shapes
+
+    @staticmethod
+    def _catalog_item_size(item: CatalogItem) -> tuple[int, int]:
+        shapes = CatalogPage._catalog_item_shapes(item)
+        left = min(shape["left"] for shape in shapes)
+        top = min(shape["top"] for shape in shapes)
+        right = max(shape["left"] + shape["width"] for shape in shapes)
+        bottom = max(shape["top"] + shape["height"] for shape in shapes)
+        return right - left, bottom - top
+
+    @staticmethod
+    def _calculate_catalog_offset(catalog_items: CatalogList) -> tuple[int, int]:
+        """Calculate the full offset vector between adjacent catalog items."""
+        if len(catalog_items) >= 2:
+            positions = [(item.number_shape["left"], item.number_shape["top"]) for item in catalog_items]
+            avg_dx = sum(positions[i + 1][0] - positions[i][0] for i in range(len(positions) - 1)) / (
+                len(positions) - 1
+            )
+            avg_dy = sum(positions[i + 1][1] - positions[i][1] for i in range(len(positions) - 1)) / (
+                len(positions) - 1
+            )
+            return int(avg_dx), int(avg_dy)
+
+        if len(catalog_items) == 1:
+            item = catalog_items[0]
+            direction = CatalogPage._infer_single_item_layout_direction(item)
+            item_width, item_height = CatalogPage._catalog_item_size(item)
+            if direction == CatalogLayout.VERTICAL:
+                return 0, max(
+                    item_height + CATALOG_DEFAULT_ITEM_GAP_EMU,
+                    CATALOG_DEFAULT_ITEM_HEIGHT_EMU + CATALOG_DEFAULT_ITEM_GAP_EMU,
+                )
+            return max(
+                item_width + CATALOG_DEFAULT_ITEM_GAP_EMU,
+                CATALOG_DEFAULT_NUMBER_WIDTH_EMU + CATALOG_DEFAULT_ITEM_GAP_EMU,
+            ), 0
+
+        return 0, 0
+
+    @staticmethod
     def _calculate_catalog_step(
         catalog_items: "CatalogList",
         layout_direction: "CatalogLayout",
@@ -959,16 +1004,12 @@ class CatalogPage(Page):
     ) -> None:
         sp_tree = slide.shapes._spTree
         source_item = catalog_items[-1]
-        step = CatalogPage._calculate_catalog_step(catalog_items, layout_direction)
+        dx_per_item, dy_per_item = CatalogPage._calculate_catalog_offset(catalog_items)
 
         n_existing = len(catalog_items)
         for clone_idx in range(1, target_count - n_existing + 1):
-            if layout_direction == CatalogLayout.VERTICAL:
-                dx, dy = 0, step * clone_idx
-            elif layout_direction == CatalogLayout.HORIZONTAL:
-                dx, dy = step * clone_idx, 0
-            else:
-                dx, dy = 0, 0
+            dx = dx_per_item * clone_idx
+            dy = dy_per_item * clone_idx
 
             # Clone background shape first so it stays below the number and text.
             new_bg_info = None
