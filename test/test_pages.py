@@ -405,17 +405,32 @@ class TestPages:
         monkeypatch.setattr(pages_module, "components_manager", FakeComponentsManager())
         headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 3)]
 
-        await CatalogPage.generate_slide(presentation, headings, catalog_page_index=0, template_name="general")
+        last_catalog_index = await CatalogPage.generate_slide(
+            presentation,
+            headings,
+            catalog_page_index=0,
+            template_name="general",
+        )
 
+        assert last_catalog_index == 1
         catalog_items = CatalogPage._get_catalog_items(catalog_slide)
+        assert len(catalog_items) == 1
         assert catalog_items[0].number_shape["left"] == number_shape.left
         assert catalog_items[0].text_shape["left"] == text_shape.left
-        catalog_texts = {
+        first_page_texts = {
             shape.text.strip()
             for shape in catalog_slide.shapes
             if shape.has_text_frame and shape.text.strip()
         }
-        assert {"01", "02", "Chapter 1", "Chapter 2"} <= catalog_texts
+        second_page_texts = {
+            shape.text.strip()
+            for shape in presentation.slides[1].shapes
+            if shape.has_text_frame and shape.text.strip()
+        }
+        assert {"01", "Chapter 1"} <= first_page_texts
+        assert "Chapter 2" not in first_page_texts
+        assert {"02", "Chapter 2"} <= second_page_texts
+        assert "Chapter 1" not in second_page_texts
 
     @pytest.mark.anyio
     async def test_catalog_page_single_template_item_prefers_shape_json_catalog_items(self, monkeypatch):
@@ -491,6 +506,77 @@ class TestPages:
         assert "Old one" not in visible_texts
         assert "Old two" not in visible_texts
         assert {"Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4"} <= visible_texts
+
+    @pytest.mark.anyio
+    async def test_catalog_page_shape_json_items_paginate_without_cloning(self, monkeypatch):
+        """Library catalog items define the safe page capacity and should not be cloned."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        self._add_catalog_item(catalog_slide, number="01", text="Old single", left=3000000, top=2600000)
+
+        source_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        library_templates = []
+        for index, top in enumerate([900000, 1400000], start=1):
+            number_shape, text_shape = self._add_catalog_item(
+                source_slide,
+                number=str(index).zfill(2),
+                text="",
+                left=900000,
+                top=top,
+            )
+            library_templates.append(self._catalog_template_from_shapes(number_shape, text_shape))
+        self._install_catalog_library(monkeypatch, presentation, library_templates)
+
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 6)]
+        last_catalog_index = await CatalogPage.generate_slide(
+            presentation,
+            headings,
+            catalog_page_index=0,
+            template_name="general",
+        )
+
+        assert last_catalog_index == 2
+        for slide_index in range(0, last_catalog_index + 1):
+            catalog_items = CatalogPage._get_catalog_items(presentation.slides[slide_index])
+            assert len(catalog_items) <= 2
+
+    @pytest.mark.anyio
+    async def test_catalog_page_shape_json_pagination_does_not_leave_previous_page_content(self, monkeypatch):
+        """Duplicated catalog slides should clear previous page items before inserting library items."""
+        presentation = Presentation()
+        catalog_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        self._add_catalog_item(catalog_slide, number="01", text="Old single", left=3000000, top=2600000)
+
+        source_slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+        library_templates = []
+        for index, top in enumerate([900000, 1400000], start=1):
+            number_shape, text_shape = self._add_catalog_item(
+                source_slide,
+                number=str(index).zfill(2),
+                text="",
+                left=900000,
+                top=top,
+            )
+            library_templates.append(self._catalog_template_from_shapes(number_shape, text_shape))
+        self._install_catalog_library(monkeypatch, presentation, library_templates)
+
+        headings = [Heading(level=2, text=f"Chapter {i}") for i in range(1, 5)]
+        last_catalog_index = await CatalogPage.generate_slide(
+            presentation,
+            headings,
+            catalog_page_index=0,
+            template_name="general",
+        )
+
+        assert last_catalog_index == 1
+        second_page_texts = {
+            shape.text.strip()
+            for shape in presentation.slides[1].shapes
+            if shape.has_text_frame and shape.text.strip()
+        }
+        assert "Chapter 1" not in second_page_texts
+        assert "Chapter 2" not in second_page_texts
+        assert {"03", "04", "Chapter 3", "Chapter 4"} <= second_page_texts
 
     @pytest.mark.anyio
     async def test_catalog_page_default_fallback_items_are_centered_and_larger(self):

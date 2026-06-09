@@ -951,6 +951,85 @@ class CatalogPage(Page):
         raise PPTGenError("Failed to find cloned shape after insertion")
 
     @staticmethod
+    def _extend_catalog_items_by_cloning(
+        slide: Slide,
+        catalog_items: CatalogList,
+        target_count: int,
+        layout_direction: CatalogLayout,
+    ) -> None:
+        sp_tree = slide.shapes._spTree
+        source_item = catalog_items[-1]
+        step = CatalogPage._calculate_catalog_step(catalog_items, layout_direction)
+
+        n_existing = len(catalog_items)
+        for clone_idx in range(1, target_count - n_existing + 1):
+            if layout_direction == CatalogLayout.VERTICAL:
+                dx, dy = 0, step * clone_idx
+            elif layout_direction == CatalogLayout.HORIZONTAL:
+                dx, dy = step * clone_idx, 0
+            else:
+                dx, dy = 0, 0
+
+            # Clone background shape first so it stays below the number and text.
+            new_bg_info = None
+            if source_item.background_shape:
+                new_bg_wrapper = CatalogPage._clone_shape_to_slide(
+                    sp_tree,
+                    slide,
+                    source_item.background_shape["shape"],
+                    dx,
+                    dy,
+                )
+                new_bg_info = {
+                    "text": None,
+                    "left": source_item.background_shape["left"] + dx,
+                    "top": source_item.background_shape["top"] + dy,
+                    "width": source_item.background_shape["width"],
+                    "height": source_item.background_shape["height"],
+                    "shape_type": source_item.background_shape["shape_type"],
+                    "shape_id": new_bg_wrapper.shape_id,
+                    "shape": new_bg_wrapper,
+                }
+
+            new_number_shape_wrapper = CatalogPage._clone_shape_to_slide(
+                sp_tree,
+                slide,
+                source_item.number_shape["shape"],
+                dx,
+                dy,
+            )
+            new_number_info = {
+                "text": "",
+                "left": source_item.number_shape["left"] + dx,
+                "top": source_item.number_shape["top"] + dy,
+                "width": source_item.number_shape["width"],
+                "height": source_item.number_shape["height"],
+                "shape_type": source_item.number_shape["shape_type"],
+                "shape_id": new_number_shape_wrapper.shape_id,
+                "shape": new_number_shape_wrapper,
+            }
+
+            new_text_shape_wrapper = CatalogPage._clone_shape_to_slide(
+                sp_tree,
+                slide,
+                source_item.text_shape["shape"],
+                dx,
+                dy,
+            )
+            new_text_info = {
+                "text": "",
+                "left": source_item.text_shape["left"] + dx,
+                "top": source_item.text_shape["top"] + dy,
+                "width": source_item.text_shape["width"],
+                "height": source_item.text_shape["height"],
+                "shape_type": source_item.text_shape["shape_type"],
+                "shape_id": new_text_shape_wrapper.shape_id,
+                "shape": new_text_shape_wrapper,
+            }
+
+            catalog_items.append(CatalogItem(new_number_info, new_text_info, new_bg_info))
+
+    @staticmethod
     def _layout_direction(number_shapes: list[dict[str, Any]]) -> CatalogLayout:
         """Judge the layout direction of the catalog page"""
         if len(number_shapes) < 2:
@@ -1114,94 +1193,31 @@ class CatalogPage(Page):
                 )
             catalog_items = catalog_items[:catalog_num]  # type: ignore
         elif len(catalog_items) < catalog_num:
-            # Template has fewer catalog slots than content — clone shapes to fill the page
-            slide_height = prs.slide_height
-            slide_width = prs.slide_width
-            if slide_height is None or slide_width is None:
-                raise PPTTemplateError("Presentation slide dimensions must be defined for catalog pagination")
-            max_per_page = CatalogPage._calculate_max_per_page(
-                catalog_items,
-                layout_direction,
-                int(slide_height),
-                int(slide_width),
-            )
-            sp_tree = catalog_slide.shapes._spTree
-            source_item = catalog_items[-1]
-            target_count = min(max_per_page, catalog_num)
-
-            # Calculate position step from existing items
-            step = CatalogPage._calculate_catalog_step(catalog_items, layout_direction)
-
-            n_existing = len(catalog_items)
-            for clone_idx in range(1, target_count - n_existing + 1):
-                if layout_direction == CatalogLayout.VERTICAL:
-                    dx, dy = 0, step * clone_idx
-                elif layout_direction == CatalogLayout.HORIZONTAL:
-                    dx, dy = step * clone_idx, 0
-                else:
-                    dx, dy = 0, 0
-
-                # Clone background shape first so it stays below the number and text.
-                new_bg_info = None
-                if source_item.background_shape:
-                    new_bg_wrapper = CatalogPage._clone_shape_to_slide(
-                        sp_tree,
-                        catalog_slide,
-                        source_item.background_shape["shape"],
-                        dx,
-                        dy,
-                    )
-                    new_bg_info = {
-                        "text": None,
-                        "left": source_item.background_shape["left"] + dx,
-                        "top": source_item.background_shape["top"] + dy,
-                        "width": source_item.background_shape["width"],
-                        "height": source_item.background_shape["height"],
-                        "shape_type": source_item.background_shape["shape_type"],
-                        "shape_id": new_bg_wrapper.shape_id,
-                        "shape": new_bg_wrapper,
-                    }
-
-                # Clone number shape
-                new_number_shape_wrapper = CatalogPage._clone_shape_to_slide(
-                    sp_tree,
-                    catalog_slide,
-                    source_item.number_shape["shape"],
-                    dx,
-                    dy,
+            # Template has fewer catalog slots than content; clone local slots or paginate library slots.
+            if resolution.allow_clone:
+                slide_height = prs.slide_height
+                slide_width = prs.slide_width
+                if slide_height is None or slide_width is None:
+                    raise PPTTemplateError("Presentation slide dimensions must be defined for catalog pagination")
+                max_per_page = CatalogPage._calculate_max_per_page(
+                    catalog_items,
+                    layout_direction,
+                    int(slide_height),
+                    int(slide_width),
                 )
-                new_number_info = {
-                    "text": "",
-                    "left": source_item.number_shape["left"] + dx,
-                    "top": source_item.number_shape["top"] + dy,
-                    "width": source_item.number_shape["width"],
-                    "height": source_item.number_shape["height"],
-                    "shape_type": source_item.number_shape["shape_type"],
-                    "shape_id": new_number_shape_wrapper.shape_id,
-                    "shape": new_number_shape_wrapper,
-                }
-
-                # Clone text shape
-                new_text_shape_wrapper = CatalogPage._clone_shape_to_slide(
-                    sp_tree,
+                target_count = min(max_per_page, catalog_num)
+                CatalogPage._extend_catalog_items_by_cloning(
                     catalog_slide,
-                    source_item.text_shape["shape"],
-                    dx,
-                    dy,
+                    catalog_items,
+                    target_count,
+                    layout_direction,
                 )
-                new_text_info = {
-                    "text": "",
-                    "left": source_item.text_shape["left"] + dx,
-                    "top": source_item.text_shape["top"] + dy,
-                    "width": source_item.text_shape["width"],
-                    "height": source_item.text_shape["height"],
-                    "shape_type": source_item.text_shape["shape_type"],
-                    "shape_id": new_text_shape_wrapper.shape_id,
-                    "shape": new_text_shape_wrapper,
-                }
-
-                new_item = CatalogItem(new_number_info, new_text_info, new_bg_info)
-                catalog_items.append(new_item)
+            else:
+                logger.debug(
+                    "CatalogPage: using {} catalog items from {}; remaining content will paginate",
+                    len(catalog_items),
+                    resolution.source,
+                )
 
         # Fill catalog items with content
         fill_count = min(len(catalog_items), catalog_num)
