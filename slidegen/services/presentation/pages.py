@@ -604,20 +604,30 @@ class CatalogPage(Page):
 
         source_item = catalog_items[-1]
         item_bounds = CatalogPage._catalog_item_bounds(source_item)
-        max_extra_by_x = CatalogPage._calculate_axis_capacity(
-            start_min=item_bounds.left,
-            start_max=item_bounds.right,
-            step=dx_per_item,
-            axis_size=slide_width,
-        )
-        max_extra_by_y = CatalogPage._calculate_axis_capacity(
-            start_min=item_bounds.top,
-            start_max=item_bounds.bottom,
-            step=dy_per_item,
-            axis_size=slide_height,
-        )
-        max_extra = min(max_extra_by_x, max_extra_by_y)
-        return max(len(catalog_items), len(catalog_items) + max_extra)
+        # Only axes with a non-zero step constrain capacity; a zero step keeps the item
+        # on that axis (no advancement, no boundary to hit).
+        axis_limits: list[int] = []
+        if dx_per_item != 0:
+            axis_limits.append(
+                CatalogPage._calculate_axis_capacity(
+                    start_min=item_bounds.left,
+                    start_max=item_bounds.right,
+                    step=dx_per_item,
+                    axis_size=slide_width,
+                )
+            )
+        if dy_per_item != 0:
+            axis_limits.append(
+                CatalogPage._calculate_axis_capacity(
+                    start_min=item_bounds.top,
+                    start_max=item_bounds.bottom,
+                    step=dy_per_item,
+                    axis_size=slide_height,
+                )
+            )
+        # At least one axis is non-zero (early-return above), so axis_limits is non-empty.
+        max_extra = min(axis_limits)
+        return len(catalog_items) + max_extra
 
     @staticmethod
     def _catalog_item_shapes(item: CatalogItem) -> list[dict[str, Any]]:
@@ -625,15 +635,6 @@ class CatalogPage(Page):
         if item.background_shape:
             shapes.append(item.background_shape)
         return shapes
-
-    @staticmethod
-    def _catalog_item_size(item: CatalogItem) -> tuple[int, int]:
-        shapes = CatalogPage._catalog_item_shapes(item)
-        left = min(shape["left"] for shape in shapes)
-        top = min(shape["top"] for shape in shapes)
-        right = max(shape["left"] + shape["width"] for shape in shapes)
-        bottom = max(shape["top"] + shape["height"] for shape in shapes)
-        return right - left, bottom - top
 
     @staticmethod
     def _catalog_item_bounds(item: CatalogItem) -> CatalogItemBounds:
@@ -645,16 +646,27 @@ class CatalogPage(Page):
         return CatalogItemBounds(left=left, top=top, right=right, bottom=bottom)
 
     @staticmethod
+    def _catalog_item_size(item: CatalogItem) -> tuple[int, int]:
+        bounds = CatalogPage._catalog_item_bounds(item)
+        return bounds.right - bounds.left, bounds.bottom - bounds.top
+
+    @staticmethod
     def _calculate_axis_capacity(start_min: int, start_max: int, step: int, axis_size: int) -> int:
-        if step == 0:
-            return 1_000_000
+        """Extra clones that fit along one axis. ``step`` MUST be non-zero — callers should
+        skip the axis entirely when the step is 0 (no advancement, no constraint)."""
+        assert step != 0, "axis with zero step does not constrain capacity"
         if step > 0:
             return max(0, int((axis_size - start_max) / step))
         return max(0, int(start_min / abs(step)))
 
     @staticmethod
     def _calculate_catalog_offset(catalog_items: CatalogList) -> tuple[int, int]:
-        """Calculate the full offset vector between adjacent catalog items."""
+        """Calculate the full offset vector between adjacent catalog items.
+
+        Uses the chapter number anchor so decorative/background shapes with aligned
+        bounds do not flatten a real diagonal movement vector. Capacity checks still
+        use full item bounds separately.
+        """
         if len(catalog_items) >= 2:
             positions = [(item.number_shape["left"], item.number_shape["top"]) for item in catalog_items]
             avg_dx = sum(positions[i + 1][0] - positions[i][0] for i in range(len(positions) - 1)) / (
@@ -864,14 +876,6 @@ class CatalogPage(Page):
         return catalog_list
 
     @staticmethod
-    def _has_catalog_items_in_library(template_name: str | None) -> bool:
-        get_catalog_items = getattr(components_manager, "get_catalog_items", None)
-        if get_catalog_items is None:
-            return False
-        catalog_item_templates = get_catalog_items(template_name)
-        return bool(catalog_item_templates)
-
-    @staticmethod
     def _remove_catalog_items(slide: Slide, catalog_items: CatalogList) -> None:
         if not catalog_items:
             return
@@ -890,24 +894,44 @@ class CatalogPage(Page):
         target_count: int = 1,
         template_name: str | None = None,
     ) -> CatalogItemsResolution:
-        """Retrieve catalog items and record whether the selected source may be cloned."""
+        """Retrieve catalog items and record whether the selected source may be cloned.
+
+        Preference order when the slide can't satisfy ``target_count`` on its own:
+
+        1. Library items from ``shapes.json`` — only when they would offer strictly more
+           slots than the slide. Built BEFORE the old shapes are removed so a failed
+           library build leaves the slide intact.
+        2. Local extracted items, cloned to fill remaining slots (``allow_clone=True``).
+        3. Default generated items as a last resort.
+        """
         extracted_items = CatalogList()
         try:
             extracted_items = CatalogPage._get_catalog_items(slide)
         except CatalogTemplateNotFoundError:
             pass
 
-        should_use_library = len(extracted_items) <= 1 or len(extracted_items) < target_count
-        if should_use_library and CatalogPage._has_catalog_items_in_library(template_name):
-            CatalogPage._remove_catalog_items(slide, extracted_items)
+        # Consult the library when the slide alone is unlikely to satisfy ``target_count``:
+        # ≤1 extracted item (weak basis for measuring an offset) or fewer slots than needed.
+        # The library is only actually swapped in when it offers AT LEAST AS MANY slots
+        # as the slide. The ``>= extracted`` guard prevents shrinking page capacity when
+        # the slide already has more usable slots than the library (e.g. extracted=3,
+        # library=2, target=5 — local cloning beats the swap). Equality keeps the library
+        # as the canonical fixed-capacity layout across paginated duplicate slides.
+        should_consider_library = len(extracted_items) <= 1 or len(extracted_items) < target_count
+        if should_consider_library:
             library_items = CatalogPage._create_catalog_items_from_library(slide, template_name, target_count)
-            if library_items:
+            if library_items and len(library_items) >= len(extracted_items):
+                CatalogPage._remove_catalog_items(slide, extracted_items)
                 logger.info(
                     "Catalog slide has {} extracted items; using shapes.json catalog items for {}",
                     len(extracted_items),
                     template_name,
                 )
                 return CatalogItemsResolution(items=library_items, source="library", allow_clone=False)
+            # Library was built but rejected — clean up its freshly-inserted shapes so
+            # the slide isn't left with both sets present.
+            if library_items:
+                CatalogPage._remove_catalog_items(slide, library_items)
 
         if extracted_items:
             return CatalogItemsResolution(items=extracted_items, source="slide", allow_clone=True)
