@@ -27,6 +27,7 @@ from slidegen.schemas.image_prompt import ImagePrompt
 from slidegen.schemas.theme import PresentationTheme
 from slidegen.services.document.markdown import Heading
 from slidegen.services.presentation.components import (
+    CatalogItemTemplate,
     ChapterLayout,
     ComponentContentType,
     Location,
@@ -772,17 +773,12 @@ class CatalogPage(Page):
         text_left = group_left + CATALOG_DEFAULT_NUMBER_WIDTH_EMU + CATALOG_DEFAULT_TEXT_GAP_EMU
         text_width = max(CATALOG_DEFAULT_NUMBER_WIDTH_EMU, group_width - CATALOG_DEFAULT_NUMBER_WIDTH_EMU)
         text_width = max(CATALOG_DEFAULT_NUMBER_WIDTH_EMU, text_width - CATALOG_DEFAULT_TEXT_GAP_EMU)
-        group_height = (
-            item_count * CATALOG_DEFAULT_ITEM_HEIGHT_EMU
-            + (item_count - 1) * CATALOG_DEFAULT_ITEM_GAP_EMU
-        )
+        group_height = item_count * CATALOG_DEFAULT_ITEM_HEIGHT_EMU + (item_count - 1) * CATALOG_DEFAULT_ITEM_GAP_EMU
         group_top = max(0, int((slide_height - group_height) / 2))
 
         catalog_list = CatalogList()
         for item_index in range(item_count):
-            item_top = group_top + item_index * (
-                CATALOG_DEFAULT_ITEM_HEIGHT_EMU + CATALOG_DEFAULT_ITEM_GAP_EMU
-            )
+            item_top = group_top + item_index * (CATALOG_DEFAULT_ITEM_HEIGHT_EMU + CATALOG_DEFAULT_ITEM_GAP_EMU)
 
             number_shape = slide.shapes.add_textbox(
                 Length(group_left),
@@ -825,7 +821,7 @@ class CatalogPage(Page):
         if get_catalog_items is None:
             return CatalogList()
 
-        catalog_item_templates = get_catalog_items(template_name)
+        catalog_item_templates: list[CatalogItemTemplate] | None = get_catalog_items(template_name)
         if not catalog_item_templates:
             return CatalogList()
 
