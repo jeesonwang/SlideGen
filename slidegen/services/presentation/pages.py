@@ -980,7 +980,6 @@ class CatalogPage(Page):
         slide: Slide,
         catalog_items: CatalogList,
         target_count: int,
-        layout_direction: CatalogLayout,
     ) -> None:
         sp_tree = slide.shapes._spTree
         source_item = catalog_items[-1]
@@ -1196,9 +1195,6 @@ class CatalogPage(Page):
         resolution = CatalogPage._get_or_create_catalog_items(catalog_slide, catalog_num, template_name)
         catalog_items = resolution.items
 
-        # Determine layout direction for position calculations
-        layout_direction = CatalogPage._resolve_layout_direction(catalog_items)
-
         if len(catalog_items) > catalog_num:
             sp_tree = catalog_slide.shapes._spTree
             # delete the excess shape pairs from the slide
@@ -1230,7 +1226,6 @@ class CatalogPage(Page):
                     catalog_slide,
                     catalog_items,
                     target_count,
-                    layout_direction,
                 )
             else:
                 logger.debug(
