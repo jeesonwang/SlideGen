@@ -35,7 +35,7 @@ from slidegen.services.presentation.components import (
     components_manager,
 )
 from slidegen.services.presentation.icon_searcher import IconSearcher, icon_searcher
-from slidegen.services.presentation.image_generator import ImageGenerator
+from slidegen.services.presentation.image_generator import ImageGenerator, image_generator
 from slidegen.utils.slide import (
     add_para_by_xml,
     add_shape_by_xml,
@@ -1399,9 +1399,7 @@ class ChapterContentPage(Page):
     Divide the chapter content slides into one-point, two-point, three-point, and four-point slides.
     """
 
-    image_generator: ImageGenerator = ImageGenerator(
-        settings.TEMP_DIRECTORY or os.path.join(os.getcwd(), "generated_images")
-    )
+    image_generator: ImageGenerator = image_generator
     icon_searcher: IconSearcher = icon_searcher
 
     @staticmethod

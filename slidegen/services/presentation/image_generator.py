@@ -132,3 +132,8 @@ class ImageGenerator:
                 logger.exception("Pixabay response parsing failed or no result")
                 raise
             return await download_file(image_url, output_directory)
+
+
+image_generator = ImageGenerator(
+    settings.TEMP_DIRECTORY or os.path.join(os.getcwd(), "generated_images")
+)
