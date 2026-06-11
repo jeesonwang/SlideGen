@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import uuid
 from pathlib import Path
+from urllib.parse import urlparse
 
 import aiohttp
 from loguru import logger
@@ -13,12 +14,13 @@ async def download_file(url: str, output_directory: str) -> str:
 
     - use aiohttp to download asynchronously
     - if directory does not exist, create it
-    - file name uses uuid, preserves original extension (if any)
+    - file name uses uuid, preserves original extension (if any);
+      query string in URL is stripped before extracting the suffix
     """
     try:
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
-        suffix = Path(url).suffix or ".jpg"
+        suffix = Path(urlparse(url).path).suffix or ".jpg"
         filename = f"{uuid.uuid4()}{suffix}"
         filepath = os.path.join(output_directory, filename)
 
