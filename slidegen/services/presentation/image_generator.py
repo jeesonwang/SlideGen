@@ -91,7 +91,7 @@ class ImageGenerator:
         client = genai.Client()
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-2.0-flash-preview-image-generation",
+            model=settings.GOOGLE_IMAGE_MODEL,
             contents=prompt,
             config=GenerateContentConfig(response_modalities=["TEXT", "IMAGE"]),
         )

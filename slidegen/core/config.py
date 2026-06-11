@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     PEXELS_API_KEY: str | None = None
     PIXABAY_API_KEY: str | None = None
     GOOGLE_API_KEY: str | None = None
+    GOOGLE_IMAGE_MODEL: str = "gemini-2.5-flash-image"
     OPENAI_API_KEY: str | None = None
     OPENAI_IMAGE_MODEL: str = "gpt-image-1.5"
 
